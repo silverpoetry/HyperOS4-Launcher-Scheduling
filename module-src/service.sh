@@ -14,6 +14,8 @@ GESTURE_FILE="$MODDIR/gesture.active"
 WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
 MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 
+. "$MODDIR/thread-policy.sh"
+
 cleanup_stale_processes() {
   local pid args list
   list="$MODDIR/processes.$$"
@@ -21,7 +23,7 @@ cleanup_stale_processes() {
   while read -r pid args; do
     [ "$pid" = "$$" ] && continue
     case "$args" in
-      *"$MODDIR/service.sh"*|*"$MODDIR/bin/launcher-logwatch"*)
+      *"$MODDIR/service.sh"*|*launcher-logwatch*)
         kill -9 "$pid" 2>/dev/null
         ;;
     esac
@@ -30,14 +32,16 @@ cleanup_stale_processes() {
 }
 
 cleanup_stale_processes
+restore_launcher_threads
 : >"$LOG_FILE"
 chmod 0644 "$LOG_FILE" 2>/dev/null
 exec >>"$LOG_FILE" 2>&1
 
-echo "=== HyperOS 4 Launcher Scheduling v2.8 ==="
+echo "=== HyperOS 4 Launcher Scheduling v3.0 ==="
 date 2>/dev/null || true
 echo $$ >"$PID_FILE"
 [ -f "$ENABLE_FILE" ] || echo enabled >"$ENABLE_FILE"
+[ -f "$THREAD_POLICY_STATE_FILE" ] || echo enabled >"$THREAD_POLICY_STATE_FILE"
 echo booting >"$MODE_FILE"
 echo 0 >"$SERIAL_FILE"
 echo 0 >"$EPOCH_FILE"
@@ -359,6 +363,7 @@ monitor_launcher() {
   local line package serial
   LAUNCHER_PID="$1"
   refresh_policy_pids
+  apply_launcher_base_affinity "$LAUNCHER_PID"
   log_state "monitor launcher_pid=$LAUNCHER_PID"
 
   "$MODDIR/bin/launcher-logwatch" 2>/dev/null |
@@ -373,6 +378,7 @@ monitor_launcher() {
           com.miui.home)
             rm -f "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
             increment_file "$SERIAL_FILE" >/dev/null
+            trigger_launcher_thread_boost "$LAUNCHER_PID" launcher-resumed
             set_mode home launcher-resumed
             ;;
           *)
@@ -381,6 +387,7 @@ monitor_launcher() {
                 cache_resume_package "$package" "$PENDING_SOURCE_FILE"
                 restore_resumed_source_target
                 serial="$(increment_file "$SERIAL_FILE")"
+                trigger_launcher_thread_boost "$LAUNCHER_PID" app-resumed
                 set_mode leaving app-resumed
                 schedule_app_fallback "$serial"
                 ;;
@@ -391,25 +398,30 @@ monitor_launcher() {
         ;;
       *"onOverviewToggle is_home_and_overview_same=true"*|*"on_animation_start called type: CloseApp"*)
         increment_file "$SERIAL_FILE" >/dev/null
+        trigger_launcher_thread_boost "$LAUNCHER_PID" overview-toggle
         begin_launcher_transition
         ;;
       *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
         : >"$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
+        trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-start
         begin_launcher_transition
         ;;
       *SceneTransitionDetectorService*SceneAnimationSignalType.gestureToHome*)
         rm -f "$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
+        trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-to-home
         set_mode home gesture-committed-home
         ;;
       *SceneTransitionDetectorService*enterOverviewState*)
         rm -f "$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
+        trigger_launcher_thread_boost "$LAUNCHER_PID" overview-entered
         set_mode recents overview-entered
         ;;
       *SceneTransitionDetectorService*exitOverviewState*|*SceneAnimationSignalType.openingRemoteAnimationOpen*)
         increment_file "$SERIAL_FILE" >/dev/null
+        trigger_launcher_thread_boost "$LAUNCHER_PID" launcher-exit-start
         set_mode leaving launcher-exit-start
         ;;
       *SceneAnimationSignalType.openingRemoteAnimationClose*)
@@ -421,6 +433,7 @@ monitor_launcher() {
           rm -f "$GESTURE_FILE"
           increment_file "$SERIAL_FILE" >/dev/null
           restore_source_after_cancel
+          trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-canceled
           set_mode app launcher-transition-canceled
         fi
         ;;
@@ -428,6 +441,7 @@ monitor_launcher() {
         rm -f "$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
         restore_source_after_cancel
+        trigger_launcher_thread_boost "$LAUNCHER_PID" remote-back-canceled
         set_mode app launcher-transition-canceled
         ;;
     esac
@@ -445,6 +459,7 @@ done
 while true; do
   if [ "$(cat "$ENABLE_FILE" 2>/dev/null)" != enabled ]; then
     set_mode app module-disabled
+    restore_launcher_threads
     sleep 2
     continue
   fi

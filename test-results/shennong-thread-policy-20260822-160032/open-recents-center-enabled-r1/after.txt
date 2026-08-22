@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{c962b08 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:01:54 mono=926.15 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:56 mono=927.50 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:01:56 mono=927.67 thread-boost serial=1 reason=gesture-start
+2026-08-22 16:01:56 mono=927.78 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:56 mono=927.79 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:56 mono=927.88 thread-boost serial=2 reason=launcher-resumed
+2026-08-22 16:01:56 mono=927.99 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:56 mono=927.99 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:56 mono=928.00 mode=home reason=launcher-resumed
+2026-08-22 16:01:56 mono=928.24 thread-boost serial=3 reason=overview-entered
+2026-08-22 16:01:56 mono=928.27 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:57 mono=928.43 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:57 mono=928.45 mode=recents reason=overview-entered
+2026-08-22 16:01:58 mono=929.30 thread-boost-reset serial=3
+2026-08-22 16:01:58 mono=930.19 thread-boost serial=4 reason=launcher-exit-start
+2026-08-22 16:01:59 mono=930.31 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:59 mono=930.32 mode=leaving reason=launcher-exit-start
+2026-08-22 16:01:59 mono=930.38 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:59 mono=930.42 thread-boost serial=5 reason=app-resumed
+2026-08-22 16:01:59 mono=930.49 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:59 mono=930.56 thread-boost serial=6 reason=launcher-exit-start
+2026-08-22 16:01:59 mono=930.75 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:59 mono=931.09 mode=app reason=launcher-exit-complete
+2026-08-22 16:02:00 mono=931.63 thread-boost-reset serial=6

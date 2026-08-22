@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{347d6c2 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:06:38 mono=1210.13 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:40 mono=1211.58 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:06:40 mono=1211.76 thread-boost serial=1 reason=gesture-start
+2026-08-22 16:06:40 mono=1211.86 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:40 mono=1211.87 mode=entering reason=launcher-transition-start
+2026-08-22 16:06:40 mono=1211.98 thread-boost serial=2 reason=launcher-resumed
+2026-08-22 16:06:40 mono=1212.05 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:40 mono=1212.11 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:40 mono=1212.13 mode=home reason=launcher-resumed
+2026-08-22 16:06:41 mono=1212.32 thread-boost serial=3 reason=overview-entered
+2026-08-22 16:06:41 mono=1212.34 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:41 mono=1212.46 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:41 mono=1212.48 mode=recents reason=overview-entered
+2026-08-22 16:06:42 mono=1213.38 thread-boost-reset serial=3
+2026-08-22 16:06:42 mono=1214.24 thread-boost serial=4 reason=launcher-exit-start
+2026-08-22 16:06:43 mono=1214.36 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:43 mono=1214.36 mode=leaving reason=launcher-exit-start
+2026-08-22 16:06:43 mono=1214.41 thread-boost serial=5 reason=launcher-exit-start
+2026-08-22 16:06:43 mono=1214.49 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:43 mono=1214.55 app-cached role=pending-source pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:43 mono=1214.60 thread-boost serial=6 reason=app-resumed
+2026-08-22 16:06:43 mono=1214.78 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:43 mono=1215.08 mode=app reason=launcher-exit-complete
+2026-08-22 16:06:44 mono=1215.67 thread-boost-reset serial=6

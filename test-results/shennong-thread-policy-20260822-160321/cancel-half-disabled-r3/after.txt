@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{d476371 u0 com.android.settings/com.android.settings.MiuiSettings}
+2026-08-22 16:05:46 mono=1157.54 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:46 mono=1157.55 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:46 mono=1157.61 thread-boost serial=4 reason=launcher-resumed
+2026-08-22 16:05:46 mono=1157.70 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:46 mono=1157.70 mode=home reason=launcher-resumed
+2026-08-22 16:05:46 mono=1157.72 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:46 mono=1158.00 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:46 mono=1158.21 thread-boost serial=5 reason=overview-entered
+2026-08-22 16:05:47 mono=1158.37 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:47 mono=1158.40 mode=recents reason=overview-entered
+2026-08-22 16:05:47 mono=1159.28 thread-boost-reset serial=5
+2026-08-22 16:05:53 mono=1164.54 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:53 mono=1164.55 mode=leaving reason=launcher-exit-start
+2026-08-22 16:05:53 mono=1164.61 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:53 mono=1164.62 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:05:53 mono=1165.16 mode=app reason=launcher-exit-complete
+2026-08-22 16:05:55 mono=1166.58 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1166.58 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:55 mono=1166.70 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1166.71 mode=home reason=launcher-resumed
+2026-08-22 16:05:55 mono=1166.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1167.03 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1167.03 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:05:55 mono=1167.26 mode=app reason=launcher-transition-canceled

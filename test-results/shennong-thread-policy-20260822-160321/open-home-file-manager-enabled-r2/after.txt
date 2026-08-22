@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{c962b08 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:04:31 mono=1083.26 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:31 mono=1083.27 mode=home reason=launcher-resumed
+2026-08-22 16:04:32 mono=1083.32 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:32 mono=1083.61 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:32 mono=1083.64 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:04:32 mono=1083.84 mode=app reason=launcher-transition-canceled
+2026-08-22 16:04:38 mono=1089.77 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:04:38 mono=1089.97 thread-boost serial=1 reason=launcher-resumed
+2026-08-22 16:04:38 mono=1090.12 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:38 mono=1090.13 mode=home reason=launcher-resumed
+2026-08-22 16:04:38 mono=1090.25 thread-boost serial=2 reason=overview-toggle
+2026-08-22 16:04:39 mono=1090.35 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:39 mono=1090.37 mode=entering reason=launcher-transition-start
+2026-08-22 16:04:39 mono=1090.59 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:39 mono=1090.89 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:40 mono=1091.30 thread-boost-reset serial=2
+2026-08-22 16:04:41 mono=1092.73 thread-boost serial=3 reason=launcher-exit-start
+2026-08-22 16:04:41 mono=1092.85 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:41 mono=1092.86 mode=leaving reason=launcher-exit-start
+2026-08-22 16:04:41 mono=1092.93 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:04:41 mono=1092.96 thread-boost serial=4 reason=app-resumed
+2026-08-22 16:04:41 mono=1093.05 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:42 mono=1093.47 mode=app reason=launcher-exit-complete
+2026-08-22 16:04:42 mono=1094.01 thread-boost-reset serial=4

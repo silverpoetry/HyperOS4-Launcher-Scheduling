@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{347d6c2 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:06:11 mono=1182.61 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:13 mono=1185.14 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:13 mono=1185.15 mode=leaving reason=launcher-exit-start
+2026-08-22 16:06:14 mono=1185.46 app-cached role=pending-source pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:14 mono=1185.59 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:14 mono=1185.82 mode=app reason=launcher-exit-complete
+2026-08-22 16:06:19 mono=1190.43 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:06:19 mono=1190.61 thread-boost serial=1 reason=launcher-resumed
+2026-08-22 16:06:19 mono=1190.73 source-yield pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:19 mono=1190.75 mode=home reason=launcher-resumed
+2026-08-22 16:06:19 mono=1190.80 thread-boost serial=2 reason=overview-toggle
+2026-08-22 16:06:19 mono=1190.91 source-yield pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:19 mono=1190.94 mode=entering reason=launcher-transition-start
+2026-08-22 16:06:19 mono=1191.18 source-yield pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:20 mono=1191.49 source-yield pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:20 mono=1191.86 thread-boost-reset serial=2
+2026-08-22 16:06:22 mono=1193.37 thread-boost serial=3 reason=launcher-exit-start
+2026-08-22 16:06:22 mono=1193.46 source-yield pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:22 mono=1193.47 mode=leaving reason=launcher-exit-start
+2026-08-22 16:06:22 mono=1193.55 app-cached role=pending-source pid=12927 uid=10174 name=id.fileexplorer
+2026-08-22 16:06:22 mono=1193.56 target-restored pid=12927 reason=resumed-source-pid
+2026-08-22 16:06:22 mono=1193.59 thread-boost serial=4 reason=app-resumed
+2026-08-22 16:06:22 mono=1194.12 mode=app reason=launcher-exit-complete
+2026-08-22 16:06:23 mono=1194.64 thread-boost-reset serial=4

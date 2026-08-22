@@ -1,6 +1,16 @@
 # Changelog
 
-2.1–2.7 是同日实机收敛候选；2.8 是完成快滑、慢滑、取消、桌面打开应用和最近任务打开应用验证后的发布版本。
+2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
+
+## 3.0
+
+- 恢复 Launcher 逐线程亲和：`1.ui`、`1.raster` 和 Rust 主线程使用性能集合，Impeller 资源管理线程使用去掉 prime 的性能集合，fence 等待线程保留在最低容量簇。
+- 不再写死 Sheng 的 `f8/78/07`。运行时根据设备 `top-app/background` cpuset 和 `cpu_capacity` 推导，Shennong 实测为 `9c/1c/03`。
+- 恢复 1 秒的逐线程 uclamp：raster 768、UI 640、Rust 512、ResMgr 384；稳定状态回到 0/1024。
+- 用单个原生 `launcher-threadctl` 扫描 TID 并直接调用 affinity/uclamp syscall，替代每轮约二十个 `taskset/uclampset` 子进程。Shennong 实测整批 apply/reset 各约 10 ms。
+- 拓扑在 cpuset 内容变化时重新推导，避免开机初期 cpuset 尚未初始化而错误退化为全核。
+- 已知线程按原始快照恢复；快照后新生的同类线程按设备 `all/little` 语义恢复，解决线程继承亲和后无法完全禁用的问题。
+- 在 Shennong 上对快滑、慢滑、半程取消、桌面打开应用和最近任务打开应用完成隔离 A/B。逐线程核心放置有效，FrameTimeline 改善具有场景性，不宣称消除所有 jank。
 
 ## 2.8
 

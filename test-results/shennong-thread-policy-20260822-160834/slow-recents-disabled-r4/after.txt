@@ -1,0 +1,26 @@
+recents
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 16:08:56 mono=1347.57 mode=entering reason=launcher-transition-start
+2026-08-22 16:08:56 mono=1347.64 thread-boost serial=3 reason=launcher-resumed
+2026-08-22 16:08:56 mono=1347.73 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:56 mono=1347.75 mode=home reason=launcher-resumed
+2026-08-22 16:08:56 mono=1347.75 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:56 mono=1348.02 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:56 mono=1348.22 thread-boost serial=4 reason=overview-entered
+2026-08-22 16:08:57 mono=1348.37 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:57 mono=1348.39 mode=recents reason=overview-entered
+2026-08-22 16:08:57 mono=1349.27 thread-boost-reset serial=4
+2026-08-22 16:09:03 mono=1354.56 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:03 mono=1354.57 mode=leaving reason=launcher-exit-start
+2026-08-22 16:09:03 mono=1354.68 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:03 mono=1354.74 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:03 mono=1354.75 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:09:03 mono=1355.25 mode=app reason=launcher-exit-complete
+2026-08-22 16:09:05 mono=1356.63 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:05 mono=1356.64 mode=entering reason=launcher-transition-start
+2026-08-22 16:09:05 mono=1356.75 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:05 mono=1356.76 mode=home reason=launcher-resumed
+2026-08-22 16:09:05 mono=1356.81 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:05 mono=1357.09 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:06 mono=1357.40 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:09:06 mono=1357.42 mode=recents reason=overview-entered

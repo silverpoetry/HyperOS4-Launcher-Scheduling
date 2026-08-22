@@ -1,0 +1,26 @@
+home
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 15:58:45 mono=737.19 thread-boost serial=23 reason=launcher-resumed
+2026-08-22 15:58:45 mono=737.28 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:45 mono=737.28 mode=home reason=launcher-resumed
+2026-08-22 15:58:45 mono=737.30 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:46 mono=737.37 thread-boost serial=24 reason=gesture-to-home
+2026-08-22 15:58:46 mono=737.53 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:46 mono=737.58 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:47 mono=738.43 thread-boost-reset serial=24
+2026-08-22 15:58:57 mono=748.92 thread-boost serial=25 reason=launcher-exit-start
+2026-08-22 15:58:57 mono=749.02 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:57 mono=749.03 mode=leaving reason=launcher-exit-start
+2026-08-22 15:58:57 mono=749.09 app-cached role=pending-source pid=10973 uid=10309 name=llq.chrome.beta
+2026-08-22 15:58:57 mono=749.12 thread-boost serial=26 reason=app-resumed
+2026-08-22 15:58:57 mono=749.20 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 15:58:58 mono=749.63 mode=app reason=launcher-exit-complete
+2026-08-22 15:58:58 mono=750.15 thread-boost-reset serial=26
+2026-08-22 16:00:34 mono=845.83 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:36 mono=847.80 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:36 mono=847.81 mode=entering reason=launcher-transition-start
+2026-08-22 16:00:36 mono=847.94 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:36 mono=847.94 mode=home reason=launcher-resumed
+2026-08-22 16:00:36 mono=848.00 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:36 mono=848.05 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:36 mono=848.28 source-yield pid=25021 uid=1000 name=ndroid.settings

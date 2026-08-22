@@ -1,0 +1,26 @@
+home
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 16:08:37 mono=1328.32 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:38 mono=1330.17 thread-boost serial=19 reason=gesture-start
+2026-08-22 16:08:39 mono=1330.31 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.31 mode=entering reason=launcher-transition-start
+2026-08-22 16:08:39 mono=1330.38 thread-boost serial=20 reason=launcher-resumed
+2026-08-22 16:08:39 mono=1330.46 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.47 mode=home reason=launcher-resumed
+2026-08-22 16:08:39 mono=1330.53 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.61 thread-boost serial=21 reason=gesture-to-home
+2026-08-22 16:08:39 mono=1330.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.80 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:40 mono=1331.67 thread-boost-reset serial=21
+2026-08-22 16:08:45 mono=1337.00 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:45 mono=1337.01 mode=leaving reason=launcher-exit-start
+2026-08-22 16:08:45 mono=1337.07 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:45 mono=1337.08 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:08:46 mono=1337.63 mode=app reason=launcher-exit-complete
+2026-08-22 16:08:47 mono=1338.93 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:47 mono=1338.94 mode=entering reason=launcher-transition-start
+2026-08-22 16:08:47 mono=1339.06 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:47 mono=1339.07 mode=home reason=launcher-resumed
+2026-08-22 16:08:47 mono=1339.12 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:47 mono=1339.18 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:48 mono=1339.41 source-yield pid=25021 uid=1000 name=ndroid.settings

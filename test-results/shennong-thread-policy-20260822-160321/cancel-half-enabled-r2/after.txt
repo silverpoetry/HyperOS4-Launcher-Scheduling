@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{d476371 u0 com.android.settings/com.android.settings.MiuiSettings}
+2026-08-22 16:04:14 mono=1066.13 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:15 mono=1066.42 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:15 mono=1066.43 mode=recents reason=overview-entered
+2026-08-22 16:04:20 mono=1072.18 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:04:21 mono=1072.35 thread-boost serial=1 reason=launcher-exit-start
+2026-08-22 16:04:21 mono=1072.44 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:21 mono=1072.46 mode=leaving reason=launcher-exit-start
+2026-08-22 16:04:21 mono=1072.64 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:21 mono=1072.66 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:04:21 mono=1072.74 thread-boost serial=2 reason=app-resumed
+2026-08-22 16:04:21 mono=1073.12 mode=app reason=launcher-exit-complete
+2026-08-22 16:04:22 mono=1073.80 thread-boost-reset serial=2
+2026-08-22 16:04:22 mono=1074.15 thread-boost serial=3 reason=gesture-start
+2026-08-22 16:04:22 mono=1074.26 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:22 mono=1074.27 mode=entering reason=launcher-transition-start
+2026-08-22 16:04:23 mono=1074.33 thread-boost serial=4 reason=launcher-resumed
+2026-08-22 16:04:23 mono=1074.41 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:23 mono=1074.42 mode=home reason=launcher-resumed
+2026-08-22 16:04:23 mono=1074.44 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:23 mono=1074.70 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:04:23 mono=1074.72 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:04:23 mono=1074.79 thread-boost serial=5 reason=gesture-canceled
+2026-08-22 16:04:23 mono=1075.04 mode=app reason=launcher-transition-canceled
+2026-08-22 16:04:24 mono=1075.86 thread-boost-reset serial=5

@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{c962b08 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:01:12 mono=883.66 mode=app reason=launcher-transition-canceled
+2026-08-22 16:01:20 mono=891.51 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:01:20 mono=891.69 thread-boost serial=1 reason=gesture-start
+2026-08-22 16:01:20 mono=891.80 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:20 mono=891.81 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:20 mono=891.95 thread-boost serial=2 reason=launcher-resumed
+2026-08-22 16:01:20 mono=892.04 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:20 mono=892.11 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:20 mono=892.14 mode=home reason=launcher-resumed
+2026-08-22 16:01:20 mono=892.25 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:01:21 mono=892.35 thread-boost serial=3 reason=gesture-canceled
+2026-08-22 16:01:21 mono=892.63 mode=app reason=launcher-transition-canceled
+2026-08-22 16:01:22 mono=893.43 thread-boost-reset serial=3
+2026-08-22 16:01:27 mono=898.55 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:27 mono=898.56 mode=home reason=launcher-resumed
+2026-08-22 16:01:27 mono=898.65 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:27 mono=898.66 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:27 mono=898.87 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:27 mono=899.16 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=901.58 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=901.59 mode=leaving reason=launcher-exit-start
+2026-08-22 16:01:30 mono=901.84 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:30 mono=901.97 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=902.20 mode=app reason=launcher-exit-complete

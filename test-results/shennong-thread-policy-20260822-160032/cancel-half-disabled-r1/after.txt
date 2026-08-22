@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{d476371 u0 com.android.settings/com.android.settings.MiuiSettings}
+2026-08-22 16:01:02 mono=873.87 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:02 mono=873.88 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:02 mono=873.94 thread-boost serial=4 reason=launcher-resumed
+2026-08-22 16:01:02 mono=874.02 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:02 mono=874.03 mode=home reason=launcher-resumed
+2026-08-22 16:01:02 mono=874.05 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:03 mono=874.32 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:03 mono=874.54 thread-boost serial=5 reason=overview-entered
+2026-08-22 16:01:03 mono=874.69 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:03 mono=874.72 mode=recents reason=overview-entered
+2026-08-22 16:01:04 mono=875.60 thread-boost-reset serial=5
+2026-08-22 16:01:09 mono=880.95 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:09 mono=880.96 mode=leaving reason=launcher-exit-start
+2026-08-22 16:01:09 mono=881.03 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:09 mono=881.04 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:01:10 mono=881.61 mode=app reason=launcher-exit-complete
+2026-08-22 16:01:11 mono=882.93 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:11 mono=882.94 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:11 mono=883.05 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:11 mono=883.06 mode=home reason=launcher-resumed
+2026-08-22 16:01:11 mono=883.11 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:12 mono=883.37 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:12 mono=883.39 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:01:12 mono=883.66 mode=app reason=launcher-transition-canceled

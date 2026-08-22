@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{c962b08 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:01:27 mono=899.16 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=901.58 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=901.59 mode=leaving reason=launcher-exit-start
+2026-08-22 16:01:30 mono=901.84 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:30 mono=901.97 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:01:30 mono=902.20 mode=app reason=launcher-exit-complete
+2026-08-22 16:01:35 mono=906.83 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:01:35 mono=907.01 thread-boost serial=1 reason=launcher-resumed
+2026-08-22 16:01:35 mono=907.11 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:35 mono=907.14 mode=home reason=launcher-resumed
+2026-08-22 16:01:35 mono=907.18 thread-boost serial=2 reason=overview-toggle
+2026-08-22 16:01:36 mono=907.30 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:36 mono=907.32 mode=entering reason=launcher-transition-start
+2026-08-22 16:01:36 mono=907.57 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:36 mono=907.86 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:36 mono=908.23 thread-boost-reset serial=2
+2026-08-22 16:01:38 mono=909.84 thread-boost serial=3 reason=launcher-exit-start
+2026-08-22 16:01:38 mono=909.93 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:38 mono=909.94 mode=leaving reason=launcher-exit-start
+2026-08-22 16:01:38 mono=910.01 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:01:38 mono=910.02 target-restored pid=26422 reason=resumed-source-pid
+2026-08-22 16:01:38 mono=910.05 thread-boost serial=4 reason=app-resumed
+2026-08-22 16:01:39 mono=910.57 mode=app reason=launcher-exit-complete
+2026-08-22 16:01:39 mono=911.09 thread-boost-reset serial=4

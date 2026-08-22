@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=2.8
-versionCode=28
+version=3.0
+versionCode=30
 author=Codex
-description=Applies source-app, wallpaper, and MIMD cgroup policy while Launcher owns a transition, Home, or Recents. Uses lifecycle events rather than blur heuristics. No fixed CPU indices, broad scan, or frequency lock.
+description=Applies source-app, wallpaper, and MIMD cgroup policy throughout Launcher lifecycles, plus topology-derived per-thread Launcher affinity and short transition uclamp boosts. No fixed CPU indices or frequency lock.

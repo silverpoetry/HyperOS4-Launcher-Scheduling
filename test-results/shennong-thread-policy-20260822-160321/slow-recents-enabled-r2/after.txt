@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{d476371 u0 com.android.settings/com.android.settings.MiuiSettings}
+2026-08-22 16:01:59 mono=931.09 mode=app reason=launcher-exit-complete
+2026-08-22 16:02:00 mono=931.63 thread-boost-reset serial=6
+2026-08-22 16:02:13 mono=944.78 thread-boost serial=7 reason=gesture-start
+2026-08-22 16:02:13 mono=944.89 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:13 mono=944.90 mode=entering reason=launcher-transition-start
+2026-08-22 16:02:13 mono=944.97 thread-boost serial=8 reason=launcher-resumed
+2026-08-22 16:02:13 mono=945.06 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:13 mono=945.07 mode=home reason=launcher-resumed
+2026-08-22 16:02:13 mono=945.08 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:13 mono=945.13 thread-boost serial=9 reason=overview-entered
+2026-08-22 16:02:14 mono=945.30 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:14 mono=945.34 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:14 mono=945.33 mode=recents reason=overview-entered
+2026-08-22 16:02:14 mono=946.20 thread-boost serial=10 reason=launcher-exit-start
+2026-08-22 16:02:15 mono=946.36 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:15 mono=946.37 mode=leaving reason=launcher-exit-start
+2026-08-22 16:02:15 mono=946.41 thread-boost serial=11 reason=launcher-exit-start
+2026-08-22 16:02:15 mono=946.54 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:15 mono=946.68 app-cached role=pending-source pid=10973 uid=10309 name=llq.chrome.beta
+2026-08-22 16:02:15 mono=946.76 thread-boost serial=12 reason=app-resumed
+2026-08-22 16:02:15 mono=946.90 source-yield pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:02:15 mono=947.20 mode=app reason=launcher-exit-complete
+2026-08-22 16:02:16 mono=947.83 thread-boost-reset serial=12
+2026-08-22 16:03:38 mono=1030.22 app-cached role=source pid=25021 uid=1000 name=ndroid.settings

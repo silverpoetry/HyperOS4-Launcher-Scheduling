@@ -5,9 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-$source = Join-Path $root 'native\launcher_logwatch.c'
 $outputDirectory = Join-Path $root 'module-src\bin'
-$output = Join-Path $outputDirectory 'launcher-logwatch'
 
 $sdkCandidates = @(
     $AndroidSdk,
@@ -38,9 +36,16 @@ if (-not $compiler) {
     throw 'No Windows Android NDK arm64 compiler was found. Pass -AndroidSdk or set ANDROID_SDK_ROOT.'
 }
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
-& $compiler -fPIE -pie -Oz '-Wl,--strip-all' -ldl -o $output $source
-if ($LASTEXITCODE -ne 0) {
-    throw "NDK compiler failed to build launcher-logwatch: $LASTEXITCODE"
+foreach ($target in @(
+    @{ Source = 'launcher_logwatch.c'; Output = 'launcher-logwatch'; Libraries = @('-ldl') },
+    @{ Source = 'launcher_threadctl.c'; Output = 'launcher-threadctl'; Libraries = @() }
+)) {
+    $source = Join-Path $root (Join-Path 'native' $target.Source)
+    $output = Join-Path $outputDirectory $target.Output
+    & $compiler -fPIE -pie -Oz '-Wl,--strip-all' @($target.Libraries) -o $output $source
+    if ($LASTEXITCODE -ne 0) {
+        throw "NDK compiler failed to build $($target.Output): $LASTEXITCODE"
+    }
+    Get-Item -LiteralPath $output
+    Get-FileHash -LiteralPath $output -Algorithm SHA256
 }
-Get-Item -LiteralPath $output
-Get-FileHash -LiteralPath $output -Algorithm SHA256

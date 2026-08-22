@@ -1,0 +1,26 @@
+home
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 16:06:57 mono=1228.99 source-yield pid=10973 uid=10309 name=llq.chrome.beta
+2026-08-22 16:06:57 mono=1229.01 mode=recents reason=overview-entered
+2026-08-22 16:06:58 mono=1229.89 thread-boost-reset serial=15
+2026-08-22 16:06:59 mono=1230.39 thread-boost serial=16 reason=launcher-exit-start
+2026-08-22 16:06:59 mono=1230.49 source-yield pid=10973 uid=10309 name=llq.chrome.beta
+2026-08-22 16:06:59 mono=1230.50 mode=leaving reason=launcher-exit-start
+2026-08-22 16:06:59 mono=1230.57 app-cached role=pending-source pid=10973 uid=10309 name=llq.chrome.beta
+2026-08-22 16:06:59 mono=1230.58 target-restored pid=10973 reason=resumed-source-pid
+2026-08-22 16:06:59 mono=1230.61 thread-boost serial=17 reason=app-resumed
+2026-08-22 16:06:59 mono=1230.76 thread-boost serial=18 reason=launcher-exit-start
+2026-08-22 16:06:59 mono=1231.24 mode=app reason=launcher-exit-complete
+2026-08-22 16:07:00 mono=1231.82 thread-boost-reset serial=18
+2026-08-22 16:08:37 mono=1328.32 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:38 mono=1330.17 thread-boost serial=19 reason=gesture-start
+2026-08-22 16:08:39 mono=1330.31 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.31 mode=entering reason=launcher-transition-start
+2026-08-22 16:08:39 mono=1330.38 thread-boost serial=20 reason=launcher-resumed
+2026-08-22 16:08:39 mono=1330.46 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.47 mode=home reason=launcher-resumed
+2026-08-22 16:08:39 mono=1330.53 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.61 thread-boost serial=21 reason=gesture-to-home
+2026-08-22 16:08:39 mono=1330.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:39 mono=1330.80 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:08:40 mono=1331.67 thread-boost-reset serial=21

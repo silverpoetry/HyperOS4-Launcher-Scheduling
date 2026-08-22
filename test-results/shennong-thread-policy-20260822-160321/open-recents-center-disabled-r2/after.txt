@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{c962b08 u0 com.android.fileexplorer/com.android.fileexplorer.FileExplorerTabActivity}
+2026-08-22 16:05:00 mono=1111.66 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:00 mono=1111.67 mode=leaving reason=launcher-exit-start
+2026-08-22 16:05:00 mono=1111.75 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:05:00 mono=1111.80 thread-boost serial=5 reason=app-resumed
+2026-08-22 16:05:00 mono=1111.88 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:00 mono=1111.99 thread-boost serial=6 reason=launcher-exit-start
+2026-08-22 16:05:00 mono=1112.19 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:01 mono=1112.51 mode=app reason=launcher-exit-complete
+2026-08-22 16:05:01 mono=1113.08 thread-boost-reset serial=6
+2026-08-22 16:05:07 mono=1118.67 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.13 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.14 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:08 mono=1120.26 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.26 mode=home reason=launcher-resumed
+2026-08-22 16:05:09 mono=1120.31 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.59 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.92 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.94 mode=recents reason=overview-entered
+2026-08-22 16:05:11 mono=1122.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:11 mono=1122.77 mode=leaving reason=launcher-exit-start
+2026-08-22 16:05:11 mono=1122.85 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:05:11 mono=1122.94 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:11 mono=1123.04 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:12 mono=1123.48 mode=app reason=launcher-exit-complete

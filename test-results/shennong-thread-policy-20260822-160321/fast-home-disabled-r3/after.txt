@@ -1,0 +1,26 @@
+home
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 16:05:01 mono=1113.08 thread-boost-reset serial=6
+2026-08-22 16:05:07 mono=1118.67 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.13 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.14 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:08 mono=1120.26 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:08 mono=1120.26 mode=home reason=launcher-resumed
+2026-08-22 16:05:09 mono=1120.31 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.59 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.92 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:09 mono=1120.94 mode=recents reason=overview-entered
+2026-08-22 16:05:11 mono=1122.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:11 mono=1122.77 mode=leaving reason=launcher-exit-start
+2026-08-22 16:05:11 mono=1122.85 app-cached role=pending-source pid=26422 uid=10174 name=id.fileexplorer
+2026-08-22 16:05:11 mono=1122.94 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:11 mono=1123.04 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:12 mono=1123.48 mode=app reason=launcher-exit-complete
+2026-08-22 16:05:18 mono=1129.40 app-cached role=source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:20 mono=1131.36 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:20 mono=1131.37 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:20 mono=1131.49 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:20 mono=1131.50 mode=home reason=launcher-resumed
+2026-08-22 16:05:20 mono=1131.55 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:20 mono=1131.60 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:20 mono=1131.82 source-yield pid=25021 uid=1000 name=ndroid.settings

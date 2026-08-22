@@ -2,6 +2,8 @@
 
 MODDIR=${0%/*}
 
+. "$MODDIR/thread-policy.sh"
+
 kill_tree() {
   local target="$1"
   local child
@@ -14,6 +16,7 @@ kill_tree() {
 
 daemon_pid="$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
 [ -n "$daemon_pid" ] && kill_tree "$daemon_pid"
+restore_launcher_threads
 
 write_controller_group() {
   local pid="$1"
@@ -65,3 +68,4 @@ rm -f "$MODDIR/source-app" "$MODDIR/source-app.tmp"
 rm -f "$MODDIR/pending-source-app" "$MODDIR/pending-source-app.tmp"
 rm -f "$MODDIR/active-source-groups"
 rm -f "$MODDIR/gesture.active"
+rm -f "$MODDIR/thread-policy.state"

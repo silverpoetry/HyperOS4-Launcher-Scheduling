@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-ui_print "- Installing HyperOS 4 Launcher Scheduling v2.8"
+ui_print "- Installing HyperOS 4 Launcher Scheduling v3.0"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
@@ -13,12 +13,15 @@ esac
 set_perm "$MODPATH/service.sh" 0 0 0755
 set_perm "$MODPATH/uninstall.sh" 0 0 0755
 set_perm "$MODPATH/action.sh" 0 0 0755
+set_perm "$MODPATH/thread-policy.sh" 0 0 0755
 set_perm "$MODPATH/bin/launcher-logwatch" 0 0 0755
+set_perm "$MODPATH/bin/launcher-threadctl" 0 0 0755
 
 rm -f "$MODPATH/disable" "$MODPATH/remove"
 
 ui_print "- Policy starts when Launcher takes over the remote transition"
 ui_print "- Policy remains active throughout Home, Recents, and Launcher exit"
 ui_print "- Device-defined cgroups are used; no CPU number is hard-coded"
+ui_print "- Launcher render threads use topology-derived affinity and short uclamp boosts"
 ui_print "- Original wallpaper and MIMD groups are restored on exit"
 ui_print "- No blur threshold, foreground polling, or broad process scan"

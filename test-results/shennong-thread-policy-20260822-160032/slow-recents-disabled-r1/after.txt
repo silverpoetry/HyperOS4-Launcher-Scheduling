@@ -1,0 +1,26 @@
+recents
+  mCurrentFocus=Window{c594984 u0 com.miui.home/com.miui.home.launcher.Launcher}
+2026-08-22 16:00:44 mono=855.63 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:44 mono=856.20 thread-boost serial=4 reason=gesture-start
+2026-08-22 16:00:44 mono=856.29 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:45 mono=856.30 mode=entering reason=launcher-transition-start
+2026-08-22 16:00:45 mono=856.37 thread-boost serial=5 reason=launcher-resumed
+2026-08-22 16:00:45 mono=856.45 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:45 mono=856.46 mode=home reason=launcher-resumed
+2026-08-22 16:00:45 mono=856.48 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:45 mono=856.50 thread-boost serial=6 reason=gesture-to-home
+2026-08-22 16:00:45 mono=856.63 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:45 mono=856.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:46 mono=857.54 thread-boost-reset serial=6
+2026-08-22 16:00:52 mono=863.49 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:52 mono=863.50 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:00:52 mono=863.59 mode=leaving reason=app-resumed
+2026-08-22 16:00:52 mono=864.20 mode=app reason=launcher-exit-complete
+2026-08-22 16:00:54 mono=865.43 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:54 mono=865.44 mode=entering reason=launcher-transition-start
+2026-08-22 16:00:54 mono=865.55 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:54 mono=865.56 mode=home reason=launcher-resumed
+2026-08-22 16:00:54 mono=865.62 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:54 mono=865.89 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:54 mono=866.20 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:00:54 mono=866.22 mode=recents reason=overview-entered

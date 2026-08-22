@@ -1,0 +1,26 @@
+app
+  mCurrentFocus=Window{d476371 u0 com.android.settings/com.android.settings.MiuiSettings}
+2026-08-22 16:05:53 mono=1164.55 mode=leaving reason=launcher-exit-start
+2026-08-22 16:05:53 mono=1164.61 app-cached role=pending-source pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:53 mono=1164.62 target-restored pid=25021 reason=resumed-source-pid
+2026-08-22 16:05:53 mono=1165.16 mode=app reason=launcher-exit-complete
+2026-08-22 16:05:55 mono=1166.58 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1166.58 mode=entering reason=launcher-transition-start
+2026-08-22 16:05:55 mono=1166.70 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1166.71 mode=home reason=launcher-resumed
+2026-08-22 16:05:55 mono=1166.76 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1167.03 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:05:55 mono=1167.03 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:05:55 mono=1167.26 mode=app reason=launcher-transition-canceled
+2026-08-22 16:06:03 mono=1175.07 thread-topology all=ff perf=9c mid=1c little=3
+2026-08-22 16:06:03 mono=1175.24 thread-boost serial=1 reason=gesture-start
+2026-08-22 16:06:04 mono=1175.34 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:04 mono=1175.35 mode=entering reason=launcher-transition-start
+2026-08-22 16:06:04 mono=1175.46 thread-boost serial=2 reason=launcher-resumed
+2026-08-22 16:06:04 mono=1175.55 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:04 mono=1175.61 source-yield pid=25021 uid=1000 name=ndroid.settings
+2026-08-22 16:06:04 mono=1175.64 mode=home reason=launcher-resumed
+2026-08-22 16:06:04 mono=1175.71 source-restored pid=25021 reason=enter-canceled
+2026-08-22 16:06:04 mono=1175.77 thread-boost serial=3 reason=gesture-canceled
+2026-08-22 16:06:04 mono=1176.02 mode=app reason=launcher-transition-canceled
+2026-08-22 16:06:05 mono=1176.84 thread-boost-reset serial=3

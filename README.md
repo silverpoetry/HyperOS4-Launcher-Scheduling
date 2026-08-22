@@ -31,11 +31,25 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 
 模块不会移动 Launcher、SystemUI、当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复为模块首次记录的原始 cgroup。
 
+Launcher 自身采用逐线程策略：
+
+```text
+1.ui / 1.raster / rt-launcher-mai → top-app 中不属于 background 的 CPU
+IplrVkResMgr                      → 上述集合去掉最高 capacity 的 prime CPU
+IplrVkFenceWait                  → 最低 cpu_capacity 的 CPU 簇
+```
+
+转场事件到来后，raster、UI、Rust 和 ResMgr 分别短时使用 768、640、512 和 384 的 uclamp minimum，一秒后恢复为 0/1024。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
+
+Shennong 实测推导为 `perf=9c (CPU2-4,7)`、`mid=1c (CPU2-4)`、`little=03 (CPU0-1)`。原来的 Sheng 布局会自然推导为与旧版 `f8/78/07` 相同的类别关系。
+
 ## 事件监听
 
 `module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd main buffer，仅输出状态机使用的 Launcher 生命周期消息。
 
 采用原生监听器是因为文本 `logcat` 接到 shell 管道后在实机上出现约 0.4 秒块缓冲；反复以单事件模式启动 logcat 又会漏掉紧邻的 resumed 和动画完成事件。原生监听器只有一个连续读取进程，用 `write()` 逐条交给状态机，不注入 Launcher，也不修改系统日志配置。
+
+`module-src/bin/launcher-threadctl` 从 `native/launcher_threadctl.c` 构建。它在一个进程内枚举目标 TID，并直接批量设置 affinity/uclamp。旧 shell 实现一次动画需要启动约二十个工具进程，实测约 0.8 秒；原生批处理 apply/reset 各约 10 ms。
 
 ## ActivityManager 二次提升
 
@@ -61,15 +75,15 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-dist/HyperOS4-Launcher-Scheduling-v2.8.zip
-dist/HyperOS4-Launcher-Scheduling-v2.8.zip.sha256
+dist/HyperOS4-Launcher-Scheduling-v3.0.zip
+dist/HyperOS4-Launcher-Scheduling-v3.0.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
 
 ## 验证
 
-v2.8 已在 Sheng HyperOS 4 实机完成：
+生命周期状态机已在 Sheng HyperOS 4 实机完成：
 
 - 快滑回桌面；
 - 慢滑进入最近任务；
@@ -79,13 +93,21 @@ v2.8 已在 Sheng HyperOS 4 实机完成：
 - source、目标、壁纸、MIMD 和 Launcher 的实际 cpuset/cpuctl 检查；
 - 单守护、单原生监听器检查。
 
-验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md) 和 [现场报告](test-results/sheng-20260822-v2.8/REPORT.md)。
+逐线程策略已在 Shennong HyperOS 4 实机完成隔离 A/B：
+
+- 快滑回桌面、慢滑进入最近任务、上滑半程取消；
+- 从桌面打开应用、从最近任务打开应用；
+- 目标线程按 CPU 的 `task-clock`；
+- 轻量 SurfaceFlinger FrameTimeline；
+- 禁用后的亲和/uclamp 恢复和重新启用。
+
+验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
 
 ## 项目结构
 
 ```text
-module-src/       KernelSU 模块源码和构建后的 arm64 监听器
-native/           launcher-logwatch C 源码
+module-src/       KernelSU 模块源码和构建后的 arm64 工具
+native/           launcher-logwatch 与 launcher-threadctl C 源码
 dist/             当前正式 ZIP 与 SHA-256
 docs/             状态机和验证文档
 tools/            原生构建与短时验证脚本
