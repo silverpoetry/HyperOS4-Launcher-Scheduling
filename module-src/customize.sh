@@ -1,6 +1,8 @@
 #!/system/bin/sh
 
-ui_print "- Installing HyperOS 4 Launcher Scheduling v3.1"
+module_version="$(sed -n 's/^version=//p' "$MODPATH/module.prop" | head -n 1)"
+[ -n "$module_version" ] || module_version=unknown
+ui_print "- Installing HyperOS 4 Launcher Scheduling v$module_version"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
