@@ -75,8 +75,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-dist/HyperOS4-Launcher-Scheduling-v3.0.zip
-dist/HyperOS4-Launcher-Scheduling-v3.0.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v3.0.zip
+../output/HyperOS4-Launcher-Scheduling-v3.0.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
@@ -108,11 +108,10 @@ dist/HyperOS4-Launcher-Scheduling-v3.0.zip.sha256
 ```text
 module-src/       KernelSU 模块源码和构建后的 arm64 工具
 native/           launcher-logwatch 与 launcher-threadctl C 源码
-dist/             当前正式 ZIP 与 SHA-256
+../output/        Magisk 项目集合共用的正式 ZIP 与 SHA-256
 docs/             状态机和验证文档
 tools/            原生构建与短时验证脚本
 test-results/     A/B 数据与实机报告
-support/          独立运行辅助工具
 CHANGELOG.md      版本变更记录
 VERSION           当前版本
 ```

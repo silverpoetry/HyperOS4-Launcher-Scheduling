@@ -1,6 +1,0 @@
-id=shennong_host_adb_tcp_5555_v1
-name=Shennong Host ADB TCP 5555
-version=v1
-versionCode=1
-author=Codex
-description=Opens authenticated ADB on TCP 5555 after every shennong host-system boot. No system partition or USB configuration is changed.

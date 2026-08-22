@@ -1,5 +1,11 @@
 # Changelog
 
+## Project collection move - 2026-08-22
+
+- 项目移动到 `D:\Projects\Magisk\HyperOS4-Launcher-Scheduling`。
+- 构建成品统一写入父级 `..\output`，不再在仓库内维护 `dist` 副本。
+- 原 Shennong 专用 ADB 5555 支持项目已拆分为独立的通用模块项目。
+
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
 ## 3.0
