@@ -33,13 +33,28 @@ def read_frames(case_dir: Path) -> dict:
             processor.query(
                 """
                 select
-                  coalesce(p.name, 'unknown') process_name,
+                  case
+                    when p.name is not null then p.name
+                    when a.layer_name like '%com.miui.home%' then 'com.miui.home'
+                    when a.layer_name like '%com.android.systemui%'
+                      or a.layer_name like '%StatusBar%'
+                      or a.layer_name like '%NavigationBar%'
+                      or a.layer_name like '%Floating Dock%' then 'com.android.systemui'
+                    when a.surface_frame_token is null then '/system/bin/surfaceflinger'
+                    else 'unknown'
+                  end process_name,
                   a.dur / 1e6 dur_ms,
                   a.jank_severity_type severity,
                   a.jank_type jank_type
                 from actual_frame_timeline_slice a
                 left join process p using (upid)
                 where p.name in ('com.miui.home', 'com.android.systemui', '/system/bin/surfaceflinger')
+                   or a.layer_name like '%com.miui.home%'
+                   or a.layer_name like '%com.android.systemui%'
+                   or a.layer_name like '%StatusBar%'
+                   or a.layer_name like '%NavigationBar%'
+                   or a.layer_name like '%Floating Dock%'
+                   or a.surface_frame_token is null
                 """
             )
         )

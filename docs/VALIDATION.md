@@ -102,3 +102,17 @@ SurfaceFlinger/SystemUI 仍有少量正反向离群 jank，不能从这组样本
 快回桌面的第一对样本采集窗口明显不完整，FrameTimeline 的全局离群统计不采用该对。其余样本中 SystemUI/SurfaceFlinger 仍有少量双向离群，3.1 没有证明可以消除系统合成侧的偶发 jank。运行期检查确认，动画内 Raster 为 `9c/min=928`、UI/Rust 为 `1c/min=768/512`；动画结束后恢复 `9c/min=0`。
 
 Scene 的“官方调度”模式仍保留 `scene-daemon`。它会在稳定应用态将 Launcher 基础亲和恢复为 `ff`，但动画中现场读取仍是模块的 `9c/1c/03` 和对应 uclamp。模块按动画事件重新应用策略，不在稳定应用态持续轮询或与外部调度器争写。
+
+## Sheng v3.1 后台负载验证
+
+2026-08-22 在 Sheng 横屏 `3048×2032` 上测试。后台腾讯会议主进程含 199 个线程，位于 `cpuset/background` 和 `cpuctl/background`，只允许 CPU0-2。正式窗口中 profile 1 和 profile 2 的会议平均 CPU 占用分别约为 55.5% 和 55.6% 单核，负载强度相当。
+
+Sheng 拓扑为 `perf=f8 (CPU3-7)`、`mid=78 (CPU3-6)`、`little=07 (CPU0-2)`。三轮交替 A/B 结果：
+
+| 场景 | Raster CPU7：3.0 | 3.1 | Raster task-clock | Launcher p95 | Launcher Full/Partial jank |
+|---|---:|---:|---:|---:|---:|
+| 快回桌面 | 33.3% | 86.1% | -14.2% | 6.253 → 6.233 ms | 0 / 0 |
+| 慢进最近任务 | 32.3% | 83.6% | -21.5% | 11.380 → 10.149 ms | 0 / 0 |
+| 半程取消 | 28.9% | 77.1% | -16.0% | 7.170 → 5.277 ms | 0 / 0 |
+
+UI 被分流至 CPU3-6 后 task-clock 增加约 13.6%–29.8%，但 Launcher 帧 p95 没有恶化。SurfaceFlinger 和 SystemUI 层的少量离群在不同场景中正反向变化，没有证明 3.1 会统一改善系统合成侧 jank。完整说明见 `docs/SHENG-HIGH-LOAD-VALIDATION.md`。

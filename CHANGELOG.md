@@ -15,6 +15,7 @@
 - 动画结束不再只清除 uclamp；批处理工具同时恢复 3.0 的基础亲和，避免动画期线程分流残留。
 - 拒绝采用 Raster 强绑 prime 的候选。它可将 Raster 的 CPU7 占比提高到 85%–94%，但实测会增加 SurfaceFlinger deadline miss。
 - 交替 A/B 中，平衡策略将 Raster task-clock 在快回桌面、慢进最近任务和半程取消中分别降低约 4.4%、13.4% 和 7.7%；Launcher 没有 Full/Partial jank。SystemUI/SurfaceFlinger 的零星离群未显示确定改善，因此不宣称本版本消除所有系统合成掉帧。
+- 在 Sheng 上以后台腾讯会议约 55% 单核持续负载完成相同交替 A/B。Raster task-clock 分别降低约 14.2%、21.5% 和 16.0%，Launcher p95 在快回桌面基本持平，在慢进最近任务和半程取消分别降低约 10.8% 和 26.4%。
 
 ## 3.0
 
