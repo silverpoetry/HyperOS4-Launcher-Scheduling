@@ -10,3 +10,4 @@
 test-results/*.xml
 test-results/thread-affinity-v2.9/
 test-results/thread-policy-*.txt
+test-results/shennong-prime-tuning-*/

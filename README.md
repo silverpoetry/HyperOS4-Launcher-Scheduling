@@ -39,7 +39,16 @@ IplrVkResMgr                      → 上述集合去掉最高 capacity 的 prim
 IplrVkFenceWait                  → 最低 cpu_capacity 的 CPU 簇
 ```
 
-转场事件到来后，raster、UI、Rust 和 ResMgr 分别短时使用 768、640、512 和 384 的 uclamp minimum，一秒后恢复为 0/1024。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
+转场事件到来后再进行一层短时分流：
+
+```text
+1.raster                         → performance 集合，uclamp minimum 928
+1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合，uclamp minimum 768/512
+IplrVkResMgr                    → 去掉 prime 的 performance 集合，uclamp minimum 384
+IplrVkFenceWait                 → 最低 cpu_capacity 的 CPU 簇，不提升 uclamp
+```
+
+一秒后恢复基础亲和及 0/1024 uclamp。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
 
 Shennong 实测推导为 `perf=9c (CPU2-4,7)`、`mid=1c (CPU2-4)`、`little=03 (CPU0-1)`。原来的 Sheng 布局会自然推导为与旧版 `f8/78/07` 相同的类别关系。
 
@@ -75,8 +84,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v3.0.zip
-../output/HyperOS4-Launcher-Scheduling-v3.0.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v3.1.zip
+../output/HyperOS4-Launcher-Scheduling-v3.1.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。

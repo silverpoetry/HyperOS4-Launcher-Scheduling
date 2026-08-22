@@ -84,3 +84,21 @@ SurfaceFlinger/SystemUI 仍有少量正反向离群 jank，不能从这组样本
 - 构建产物生成 SHA-256 文件。
 
 当前验证针对 Sheng 这一版 HyperOS 4 Launcher 日志协议。桌面大版本更新后应重新运行生命周期测试。
+
+## Shennong v3.1 prime 倾向验证
+
+2026-08-22 在恢复官方 cpuset 后重新测试。官方值为 `top-app=0-7`、`background=0-1,5-6`；3.0 基线仍推导出 `perf=9c`，但 Raster 在 CPU7 的 task-clock 占比只有约 6.5%–16.2%。原因是原 Raster uclamp 768 低于 CPU2-4 的 capacity 923，EAS 无需使用 capacity 1024 的 CPU7。
+
+先测试 Raster 动画期强绑动态 prime。CPU7 占比达到 85%–94%，但快回桌面和慢进最近任务中增加了 SurfaceFlinger Full/Partial jank，因此弃用。
+
+最终策略保持 Raster 的 `perf` 迁移空间，将 Raster uclamp 设为 928；UI/Rust 动画期进入 `mid`，避免与 Raster 争 prime。三轮交替 A/B 结果：
+
+| 场景 | Raster CPU7 占比：3.0 | 3.1 | Raster task-clock 变化 | Launcher Full/Partial jank |
+|---|---:|---:|---:|---:|
+| 快回桌面 | 18.8% | 34.6% | -4.4% | 0 / 0 |
+| 慢进最近任务 | 6.5% | 49.0% | -13.4% | 0 / 0 |
+| 半程取消 | 13.7% | 57.2% | -7.7% | 0 / 0 |
+
+快回桌面的第一对样本采集窗口明显不完整，FrameTimeline 的全局离群统计不采用该对。其余样本中 SystemUI/SurfaceFlinger 仍有少量双向离群，3.1 没有证明可以消除系统合成侧的偶发 jank。运行期检查确认，动画内 Raster 为 `9c/min=928`、UI/Rust 为 `1c/min=768/512`；动画结束后恢复 `9c/min=0`。
+
+Scene 的“官方调度”模式仍保留 `scene-daemon`。它会在稳定应用态将 Launcher 基础亲和恢复为 `ff`，但动画中现场读取仍是模块的 `9c/1c/03` 和对应 uclamp。模块按动画事件重新应用策略，不在稳定应用态持续轮询或与外部调度器争写。

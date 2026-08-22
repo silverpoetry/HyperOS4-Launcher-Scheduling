@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=3.0
-versionCode=30
+version=3.1
+versionCode=31
 author=Codex
-description=Applies source-app, wallpaper, and MIMD cgroup policy throughout Launcher lifecycles, plus topology-derived per-thread Launcher affinity and short transition uclamp boosts. No fixed CPU indices or frequency lock.
+description=Applies Launcher lifecycle cgroup policy plus topology-derived animation-time thread separation and a short Raster prime-core preference. No fixed CPU indices or frequency lock.

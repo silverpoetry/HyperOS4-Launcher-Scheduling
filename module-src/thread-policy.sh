@@ -9,6 +9,7 @@ THREAD_SNAPSHOT_FILE="$MODDIR/launcher-thread-original"
 THREAD_LAUNCHER_PID_FILE="$MODDIR/launcher-thread-pid"
 THREAD_BOOST_SERIAL_FILE="$MODDIR/launcher-thread-boost.serial"
 THREAD_POLICY_STATE_FILE="$MODDIR/thread-policy.state"
+THREAD_BOOST_PROFILE_FILE="$MODDIR/thread-boost-profile"
 THREAD_TOPOLOGY_FILE="$MODDIR/launcher-thread-topology"
 THREAD_TOPOLOGY_INPUT_FILE="$MODDIR/launcher-thread-topology.input"
 THREAD_BOOST_MS=1
@@ -191,11 +192,13 @@ snapshot_launcher_thread() {
   printf '%s %s %s %s\n' "$launcher_pid" "$tid" "$name" "$mask" >>"$THREAD_SNAPSHOT_FILE"
 }
 
-reset_launcher_uclamp() {
+reset_launcher_boost() {
   local launcher_pid="$1"
   [ -x "$THREADCTL" ] || return 0
-  "$THREADCTL" reset "$launcher_pid" >/dev/null 2>&1 ||
-    thread_log "thread-uclamp-reset-failed launcher_pid=$launcher_pid"
+  derive_launcher_masks
+  "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
+    "$THREAD_LITTLE_MASK" 0 >/dev/null 2>&1 ||
+    thread_log "thread-boost-reset-failed launcher_pid=$launcher_pid"
 }
 
 restore_launcher_threads() {
@@ -263,14 +266,20 @@ apply_launcher_base_affinity() {
   for tid in $THREAD_RUST; do snapshot_launcher_thread "$launcher_pid" "$tid" rt-launcher-mai; done
   for tid in $THREAD_RESMGR; do snapshot_launcher_thread "$launcher_pid" "$tid" IplrVkResMgr; done
   for tid in $THREAD_FENCE; do snapshot_launcher_thread "$launcher_pid" "$tid" IplrVkFenceWait; done
-  "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" 0 >/dev/null 2>&1 ||
+  "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
+    "$THREAD_LITTLE_MASK" 0 >/dev/null 2>&1 ||
     thread_log "thread-affinity-batch-failed launcher_pid=$launcher_pid"
 }
 
 apply_launcher_uclamp_boost() {
   local launcher_pid="$1"
+  local profile
   apply_launcher_base_affinity "$launcher_pid"
-  "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" 1 >/dev/null 2>&1 ||
+  read_thread_file "$THREAD_BOOST_PROFILE_FILE"
+  profile="$THREAD_FILE_VALUE"
+  case "$profile" in 1|2) ;; *) profile=2 ;; esac
+  "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
+    "$THREAD_LITTLE_MASK" "$profile" >/dev/null 2>&1 ||
     thread_log "thread-boost-batch-failed launcher_pid=$launcher_pid"
 }
 
@@ -297,7 +306,7 @@ trigger_launcher_thread_boost() {
     sleep "$THREAD_BOOST_MS"
     read_thread_file "$THREAD_BOOST_SERIAL_FILE"
     [ "$THREAD_FILE_VALUE" = "$serial" ] || exit 0
-    reset_launcher_uclamp "$launcher_pid"
+    reset_launcher_boost "$launcher_pid"
     thread_log "thread-boost-reset serial=$serial"
   ) &
 }

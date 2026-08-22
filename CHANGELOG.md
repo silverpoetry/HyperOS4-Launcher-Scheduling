@@ -8,6 +8,14 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 3.1
+
+- 确认 Shennong 官方调度下，3.0 的 `perf=9c` 虽包含 CPU7，但 768/640 的 uclamp 已可由 CPU2-4 满足；三轮基线中 Raster 在 CPU7 的占比仅约 6.5%–16.2%。
+- 动画期将 UI 和 Rust 线程放入动态推导的 `mid` 集合，Raster 保持可在 `perf` 集合迁移。Raster uclamp 调整为 928，UI 调整为 768，使 Raster 倾向 prime，同时在 SurfaceFlinger 占用 prime 时仍可退回其它性能核心。
+- 动画结束不再只清除 uclamp；批处理工具同时恢复 3.0 的基础亲和，避免动画期线程分流残留。
+- 拒绝采用 Raster 强绑 prime 的候选。它可将 Raster 的 CPU7 占比提高到 85%–94%，但实测会增加 SurfaceFlinger deadline miss。
+- 交替 A/B 中，平衡策略将 Raster task-clock 在快回桌面、慢进最近任务和半程取消中分别降低约 4.4%、13.4% 和 7.7%；Launcher 没有 Full/Partial jank。SystemUI/SurfaceFlinger 的零星离群未显示确定改善，因此不宣称本版本消除所有系统合成掉帧。
+
 ## 3.0
 
 - 恢复 Launcher 逐线程亲和：`1.ui`、`1.raster` 和 Rust 主线程使用性能集合，Impeller 资源管理线程使用去掉 prime 的性能集合，fence 等待线程保留在最低容量簇。

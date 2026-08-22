@@ -106,10 +106,10 @@ static int set_uclamp(pid_t tid, uint32_t minimum, uint32_t maximum) {
     return (int)syscall(__NR_sched_setattr, tid, &attr, 0);
 }
 
-static uint32_t boost_minimum(enum thread_class thread_class) {
+static uint32_t boost_minimum(enum thread_class thread_class, int boost_mode) {
     switch (thread_class) {
-        case CLASS_RASTER: return 768;
-        case CLASS_UI: return 640;
+        case CLASS_RASTER: return boost_mode >= 2 ? 928 : 768;
+        case CLASS_UI: return boost_mode >= 2 ? 768 : 640;
         case CLASS_RUST: return 512;
         case CLASS_RESMGR: return 384;
         default: return 0;
@@ -138,23 +138,24 @@ int main(int argc, char **argv) {
     uint64_t mid_mask = 0;
     uint64_t little_mask = 0;
     int reset_only;
-    int boost;
+    int boost_mode;
 
     if (argc < 3) {
-        fprintf(stderr, "usage: %s apply PID PERF MID LITTLE BOOST | reset PID\n", argv[0]);
+        fprintf(stderr, "usage: %s apply PID PERF MID LITTLE MODE | reset PID\n", argv[0]);
         return 2;
     }
     reset_only = strcmp(argv[1], "reset") == 0;
     if (!reset_only && strcmp(argv[1], "apply") != 0) return 2;
     pid = (pid_t)strtol(argv[2], NULL, 10);
     if (pid <= 0) return 2;
-    boost = 0;
+    boost_mode = 0;
     if (!reset_only) {
         if (argc != 7) return 2;
         perf_mask = strtoull(argv[3], NULL, 16);
         mid_mask = strtoull(argv[4], NULL, 16);
         little_mask = strtoull(argv[5], NULL, 16);
-        boost = atoi(argv[6]) != 0;
+        boost_mode = atoi(argv[6]);
+        if (boost_mode < 0 || boost_mode > 2) return 2;
         if (perf_mask == 0 || mid_mask == 0 || little_mask == 0) return 2;
     }
 
@@ -182,11 +183,12 @@ int main(int argc, char **argv) {
         }
 
         affinity_mask = perf_mask;
+        if (boost_mode >= 2 && (thread_class == CLASS_UI || thread_class == CLASS_RUST)) affinity_mask = mid_mask;
         if (thread_class == CLASS_RESMGR) affinity_mask = mid_mask;
         if (thread_class == CLASS_FENCE) affinity_mask = little_mask;
         if (set_affinity_mask(tid, affinity_mask) != 0) ++counts.affinity_fail;
-        if (boost && thread_class != CLASS_FENCE &&
-            set_uclamp(tid, boost_minimum(thread_class), 1024) != 0) {
+        if (thread_class != CLASS_FENCE &&
+            set_uclamp(tid, boost_mode ? boost_minimum(thread_class, boost_mode) : 0, 1024) != 0) {
             ++counts.clamp_fail;
         }
     }

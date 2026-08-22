@@ -37,7 +37,7 @@ restore_launcher_threads
 chmod 0644 "$LOG_FILE" 2>/dev/null
 exec >>"$LOG_FILE" 2>&1
 
-echo "=== HyperOS 4 Launcher Scheduling v3.0 ==="
+echo "=== HyperOS 4 Launcher Scheduling v3.1 ==="
 date 2>/dev/null || true
 echo $$ >"$PID_FILE"
 [ -f "$ENABLE_FILE" ] || echo enabled >"$ENABLE_FILE"

@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-ui_print "- Installing HyperOS 4 Launcher Scheduling v3.0"
+ui_print "- Installing HyperOS 4 Launcher Scheduling v3.1"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
