@@ -9,7 +9,6 @@ SERIAL_FILE="$MODDIR/transition.serial"
 EPOCH_FILE="$MODDIR/policy.epoch"
 SOURCE_FILE="$MODDIR/source-app"
 PENDING_SOURCE_FILE="$MODDIR/pending-source-app"
-SOURCE_GROUP_FILE="$MODDIR/active-source-groups"
 GESTURE_FILE="$MODDIR/gesture.active"
 WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
 MIMD_GROUP_FILE="$MODDIR/mimd-groups"
@@ -46,7 +45,7 @@ echo booting >"$MODE_FILE"
 echo 0 >"$SERIAL_FILE"
 echo 0 >"$EPOCH_FILE"
 rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
-rm -f "$SOURCE_GROUP_FILE" "$GESTURE_FILE"
+rm -f "$MODDIR/active-source-groups" "$GESTURE_FILE"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
@@ -202,15 +201,8 @@ cache_current_activity() {
   pid="$(pidof "$resumed" 2>/dev/null)"
   pid=${pid%% *}
   cache_pid_record "$pid" "$SOURCE_FILE"
+  place_resumed_record_top_app "$SOURCE_FILE" initial-resumed-activity
   set_mode app initial-resumed-activity
-}
-
-capture_active_source_groups() {
-  local pid uid name
-  rm -f "$SOURCE_GROUP_FILE"
-  [ -r "$SOURCE_FILE" ] || return 0
-  read -r pid uid name <"$SOURCE_FILE"
-  capture_groups_once "$pid" "$SOURCE_GROUP_FILE"
 }
 
 suppress_source() {
@@ -224,30 +216,87 @@ suppress_source() {
   log_state "source-yield pid=$pid uid=$uid name=$name"
 }
 
+suppress_source_snapshot() {
+  local expected_epoch="$1"
+  local expected_source="$2"
+  local pid uid name mode current_source
+  [ "$(cat "$EPOCH_FILE" 2>/dev/null)" = "$expected_epoch" ] || return 0
+  mode="$(cat "$MODE_FILE" 2>/dev/null)"
+  [ "$mode" != app ] || return 0
+  current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
+  [ "$current_source" = "$expected_source" ] || return 0
+  read -r pid uid name <<EOF
+$expected_source
+EOF
+  case "$pid" in ''|*[!0-9]*) return 0 ;; esac
+  [ -d "/proc/$pid" ] || return 0
+  is_protected_pid "$pid" && return 0
+
+  # Use the captured PID rather than re-reading SOURCE_FILE after the guards.
+  # The latter may already contain the next app if set_mode(app) committed it.
+  move_pid_to_background "$pid"
+  log_state "source-yield pid=$pid uid=$uid name=$name reason=delayed-reassert"
+
+  # Close the last preemption window: a worker can pass all checks just before
+  # the main state machine completes or protects the same PID as its target.
+  mode="$(cat "$MODE_FILE" 2>/dev/null)"
+  current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
+  if is_protected_pid "$pid" ||
+    { [ "$mode" = app ] && [ "$current_source" = "$expected_source" ]; }; then
+    write_controller_group "$pid" /dev/cpuset /top-app
+    write_controller_group "$pid" /dev/cpuctl /top-app
+    log_state "source-reassert-rolled-back pid=$pid mode=$mode"
+  fi
+}
+
 restore_source_after_cancel() {
-  local pid uid name cpuset cpu
+  local pid uid name
   # Invalidate all delayed source writes before restoring the source. A task
   # that already passed its old epoch check must not win after this restore.
   increment_file "$EPOCH_FILE" >/dev/null
-  [ -r "$SOURCE_FILE" ] && [ -r "$SOURCE_GROUP_FILE" ] || return 0
+  [ -r "$SOURCE_FILE" ] || return 0
   read -r pid uid name <"$SOURCE_FILE"
-  read -r cpuset cpu <"$SOURCE_GROUP_FILE"
-  write_controller_group "$pid" /dev/cpuset "$cpuset"
-  write_controller_group "$pid" /dev/cpuctl "$cpu"
+  write_controller_group "$pid" /dev/cpuset /top-app
+  write_controller_group "$pid" /dev/cpuctl /top-app
   log_state "source-restored pid=$pid reason=enter-canceled"
 }
 
-restore_resumed_source_target() {
-  local source_pid source_uid source_name pending_pid pending_uid pending_name cpuset cpu
-  [ -r "$SOURCE_FILE" ] && [ -r "$PENDING_SOURCE_FILE" ] &&
-    [ -r "$SOURCE_GROUP_FILE" ] || return 0
-  read -r source_pid source_uid source_name <"$SOURCE_FILE"
+place_resumed_record_top_app() {
+  local record="$1"
+  local reason="$2"
+  local pid uid name cpuset cpu
+  [ -r "$record" ] || return 0
+  read -r pid uid name <"$record"
+  case "$pid" in ''|*[!0-9]*) return 0 ;; esac
+  [ -d "/proc/$pid" ] || return 0
+  read_controller_group "$pid" cpuset
+  cpuset="$CGROUP_RESULT"
+  read_controller_group "$pid" cpu
+  cpu="$CGROUP_RESULT"
+  if [ "$cpuset" != /top-app ] || [ "$cpu" != /top-app ]; then
+    write_controller_group "$pid" /dev/cpuset /top-app
+    write_controller_group "$pid" /dev/cpuctl /top-app
+    log_state "target-top-app pid=$pid reason=$reason from_cpuset=$cpuset from_cpuctl=$cpu"
+  fi
+}
+
+restore_resumed_target() {
+  local pending_pid pending_uid pending_name
+  [ -r "$PENDING_SOURCE_FILE" ] || return 0
   read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
-  [ "$source_pid" = "$pending_pid" ] || return 0
-  read -r cpuset cpu <"$SOURCE_GROUP_FILE"
-  write_controller_group "$pending_pid" /dev/cpuset "$cpuset"
-  write_controller_group "$pending_pid" /dev/cpuctl "$cpu"
-  log_state "target-restored pid=$pending_pid reason=resumed-source-pid"
+
+  # A resumed app can no longer be a yield target. This also repairs a stale
+  # background/foreground placement if a delayed source job raced
+  # ActivityManager or if the captured source group was only a gesture-time
+  # transitional group.
+  place_resumed_record_top_app "$PENDING_SOURCE_FILE" activity-resumed
+}
+
+restore_source_for_app_completion() {
+  local pid uid name
+  [ -r "$SOURCE_FILE" ] || return 0
+  read -r pid uid name <"$SOURCE_FILE"
+  place_resumed_record_top_app "$SOURCE_FILE" app-completion
 }
 
 apply_policy() {
@@ -301,23 +350,34 @@ set_mode() {
   current="$(cat "$MODE_FILE" 2>/dev/null)"
 
   if [ "$current" = "$next" ]; then
-    [ "$next" != app ] && apply_policy
+    if [ "$next" = app ]; then
+      place_resumed_record_top_app "$SOURCE_FILE" stable-app-reassert
+    else
+      apply_policy
+    fi
     return 0
   fi
 
   if [ "$current" = app ] && [ "$next" != app ]; then
     increment_file "$EPOCH_FILE" >/dev/null
-    capture_active_source_groups
   fi
 
-  echo "$next" >"$MODE_FILE"
   if [ "$next" = app ]; then
     increment_file "$EPOCH_FILE" >/dev/null
     rm -f "$GESTURE_FILE"
     restore_processes
+    if [ -r "$PENDING_SOURCE_FILE" ]; then
+      restore_resumed_target
+    else
+      restore_source_for_app_completion
+    fi
     commit_pending_source
-    rm -f "$SOURCE_GROUP_FILE"
+    echo "$next" >"$MODE_FILE"
+    # This is deliberately last. It repairs a delayed source worker that ran
+    # between target restoration and the stable-app state commit.
+    place_resumed_record_top_app "$SOURCE_FILE" stable-app-commit
   else
+    echo "$next" >"$MODE_FILE"
     apply_policy
   fi
   log_state "mode=$next reason=$reason"
@@ -336,7 +396,7 @@ schedule_source_reassert() {
       [ "$mode" != app ] || exit 0
       current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
       [ "$current_source" = "$source_snapshot" ] || exit 0
-      suppress_source
+      suppress_source_snapshot "$epoch" "$source_snapshot"
     done
   ) &
 }
@@ -384,8 +444,11 @@ monitor_launcher() {
           *)
             case "$(cat "$MODE_FILE" 2>/dev/null)" in
               entering|home|recents|leaving)
+                # Cancel delayed writes from the old transition before the
+                # resumed target is restored.
+                increment_file "$EPOCH_FILE" >/dev/null
                 cache_resume_package "$package" "$PENDING_SOURCE_FILE"
-                restore_resumed_source_target
+                restore_resumed_target
                 serial="$(increment_file "$SERIAL_FILE")"
                 trigger_launcher_thread_boost "$LAUNCHER_PID" app-resumed
                 set_mode leaving app-resumed

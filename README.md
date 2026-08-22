@@ -70,7 +70,9 @@ Shennong A/B 测试发现，第一次把 source 写入 background 后约 100–1
 
 `source-app` 保存进入 Launcher 前的应用，`pending-source-app` 保存离开 Launcher 时刚恢复的目标。pending PID 始终受保护，不会被策略当作 source 退避。
 
-如果用户重新打开的目标与 source 是同一 PID，模块会用进入 Launcher 前保存的 cgroup 快照主动恢复它。进入稳定 `app` 后，pending 才提交为下一轮 source。
+目标应用收到 resumed 事件后立即脱离 source 退避策略，并明确放回系统的 `top-app` cpuset/cpuctl。这里不复用手势开始时记录到的 source cgroup：ActivityManager 可能已经在事件到达模块前把应用临时降为 `foreground`，该瞬时组不是稳定前台态的恢复目标。进入稳定 `app` 后，pending 才提交为下一轮 source。
+
+延迟重写始终使用本轮捕获的 source PID，不能在唤醒后重新读取已经换成目标应用的 `source-app`。写入后还会复核 pending、状态和 source 快照；若同一 PID 已成为 resumed 目标，则立即回滚到 `top-app`。稳定 `app` 提交的最后一步再次执行该不变量，避免极快连续手势把应用留在 `background` 或 `foreground`。
 
 ## 构建
 
@@ -84,8 +86,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v3.1.zip
-../output/HyperOS4-Launcher-Scheduling-v3.1.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v3.2.zip
+../output/HyperOS4-Launcher-Scheduling-v3.2.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
@@ -101,6 +103,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 - 从最近任务打开同一应用；
 - source、目标、壁纸、MIMD 和 Launcher 的实际 cpuset/cpuctl 检查；
 - 单守护、单原生监听器检查。
+- 文件管理连续快速返回、取消、回桌面和重新打开组合；稳定 `app` 状态保持 `top-app`/CPU `0-7`。
 
 逐线程策略已在 Shennong HyperOS 4 实机完成隔离 A/B：
 
@@ -110,7 +113,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 - 轻量 SurfaceFlinger FrameTimeline；
 - 禁用后的亲和/uclamp 恢复和重新启用。
 
-验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
+验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
 
 ## 项目结构
 

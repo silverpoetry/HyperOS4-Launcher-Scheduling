@@ -50,7 +50,9 @@ pending-source-app  离开 Launcher 时刚恢复的目标应用
 
 进入时只降低 `source-app`。目标应用恢复时先写入 pending，不能立即覆盖 source，否则退出动画期间的重复策略应用会错误降低正在打开的目标应用。只有进入 `app` 后，pending 才提交为下一轮 source。
 
-pending PID 属于保护集合。如果用户重新打开的目标与 source 是同一进程，模块还会用进入 Launcher 前保存的 cgroup 快照主动恢复它。原因是模块曾在 ActivityManager 之外改过该 PID，ActivityManager 可能认为目标已经是 top-app 而不重复写 cgroup。
+pending PID 属于保护集合。目标收到 resumed 事件后明确回到 `top-app`，即使它与 source 是同一进程也不能继续沿用退避状态。不能直接恢复手势开始时捕获的 cgroup，因为事件到达模块时 ActivityManager 可能已经把源应用临时降到 `foreground`；稳定 resumed Activity 的语义目标是 `top-app`。
+
+延迟重写持有本轮 source 快照和 PID，不在执行时重新解析可能已提交为新目标的 `source-app`。写入后再次检查 pending 和稳定状态；若 PID 已成为 resumed 目标，立即回滚到 `top-app`。进入 `app` 的最后一步再次落实当前 source 的 `top-app` 状态。
 
 ## 手势会话
 
@@ -58,7 +60,7 @@ pending PID 属于保护集合。如果用户重新打开的目标与 source 是
 
 ## 异步任务约束
 
-`policy.epoch` 只在策略启用或解除时变化。120/320 ms 的源应用重新写入必须匹配相同 epoch 和相同 source 内容。
+`policy.epoch` 在策略启用、解除或目标应用 resumed 时变化。120/320 ms 的源应用重新写入必须匹配相同 epoch 和相同 source 内容，并固定使用创建任务时记录的 PID。
 
 取消路径先递增 epoch，再恢复 source。这样已经睡眠结束、但尚未执行写入的旧任务会先失效，不会在恢复之后把前台应用再次送回 background。
 
@@ -69,8 +71,10 @@ pending PID 属于保护集合。如果用户重新打开的目标与 source 是
 ## 不变量
 
 1. `app` 状态下壁纸和 MIMD 必须处于记录的原始 cgroup。
-2. 目标应用不能在 Launcher 退出动画中成为 `source-app`。
-3. Launcher、SystemUI、输入法和显示链进程不能成为退避对象。
-4. 视觉 blur 变化不能触发或结束 CPU 策略。
-5. 模块重启和卸载必须恢复壁纸及 MIMD，并终止旧监听器。
-6. `gestureToApp` 不能脱离当前手势会话单独触发取消。
+2. 稳定 `app` 状态下当前 resumed source 必须处于 `cpuset/top-app` 和 `cpuctl/top-app`。
+3. 目标应用不能在 Launcher 退出动画中成为 `source-app`。
+4. Launcher、SystemUI、输入法和显示链进程不能成为退避对象。
+5. 视觉 blur 变化不能触发或结束 CPU 策略。
+6. 模块重启和卸载必须恢复壁纸及 MIMD，并终止旧监听器。
+7. `gestureToApp` 不能脱离当前手势会话单独触发取消。
+8. 延迟 source 写入后必须复核目标保护条件，不能只依赖写入前检查。

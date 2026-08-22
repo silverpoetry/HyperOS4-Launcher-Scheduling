@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=3.1
-versionCode=31
+version=3.2
+versionCode=32
 author=Codex
-description=Applies Launcher lifecycle cgroup policy plus topology-derived animation-time thread separation and a short Raster prime-core preference. No fixed CPU indices or frequency lock.
+description=Applies Launcher lifecycle cgroup policy, race-safe resumed-app restoration, topology-derived thread separation, and a short Raster prime-core preference. No fixed CPU indices or frequency lock.

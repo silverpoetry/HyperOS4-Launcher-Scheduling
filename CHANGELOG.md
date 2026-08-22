@@ -8,6 +8,14 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 3.2
+
+- 修复快速连续手势后源应用可能永久留在 `background`（Sheng 为 CPU `0-2`）或 `foreground`（CPU `0-6`）的问题。
+- resumed 应用按 Android 前台语义恢复到 `top-app`，不再把手势开始后捕获的临时 `foreground` 组误作稳定恢复目标。
+- `activityResumed` 在恢复目标前使旧 policy epoch 失效，延迟重写固定使用本轮 source PID，不会在醒来后误读已经提交的新 source。
+- 延迟重写增加写后竞态复核；稳定 `app` 提交最后再次落实 `top-app` 不变量，覆盖已经通过旧检查才被抢占的工作线程。
+- Sheng 文件管理复现中，修复前稳定 `app` 的 100/100 个采样均为 `background`/CPU `0-2`；修复后完成八轮快速返回、取消和重新打开，所有完成态均为 `top-app`/CPU `0-7`。
+
 ## 3.1
 
 - 确认 Shennong 官方调度下，3.0 的 `perf=9c` 虽包含 CPU7，但 768/640 的 uclamp 已可由 CPU2-4 满足；三轮基线中 Raster 在 CPU7 的占比仅约 6.5%–16.2%。
