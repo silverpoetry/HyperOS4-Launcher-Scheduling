@@ -1,0 +1,8 @@
+# Local UI inspection artifacts
+/*.png
+/*.xml
+/support/**/window-*.xml
+
+# PowerShell and editor noise
+*.tmp
+*.bak

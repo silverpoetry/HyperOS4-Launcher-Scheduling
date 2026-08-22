@@ -1,0 +1,6 @@
+Performance counter statistics,
+2,0.796198(ms),task-clock,0.001590,cpus used,
+3,1.230781(ms),task-clock,0.002458,cpus used,
+4,0.140574(ms),task-clock,0.000281,cpus used,
+7,1.962605(ms),task-clock,0.003920,cpus used,
+Total test time,0.500637,seconds,

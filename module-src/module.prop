@@ -1,6 +1,6 @@
-id=sheng_recents_cpu_boost_v1
-name=Sheng Recents Source-App Yield
-version=1.0
-versionCode=14
+id=hyperos4_recents_source_app_yield
+name=HyperOS 4 Recents Source-App Yield
+version=1.1
+versionCode=15
 author=Codex
-description=Leaves launcher scheduling untouched. A lightweight event listener caches the latest resumed source app, which yields at the earliest Overview-toggle signal. MIMD and wallpaper briefly move off performance cores, then restore. Launcher, SystemUI, IME, and display chain are protected. No broad scan or frequency lock.
+description=Generic HyperOS 4 module. The latest resumed source app yields through device-defined background cgroups at the earliest Recents signal, with guarded reassertion after ActivityManager transitions. Wallpaper and MIMD briefly yield and then restore. No fixed CPU indices, broad scan, frequency lock, or launcher scheduling change.

@@ -1,0 +1,9 @@
+case=enabled_perf_2
+module_state=enabled
+source_pid=10351
+background_cpus=0-1,5-6
+foreground_cpus=0-7
+top_app_cpus=0-7
+before_cgroup=3:cpuset:/top-app
+after_cgroup=3:cpuset:/background
+done

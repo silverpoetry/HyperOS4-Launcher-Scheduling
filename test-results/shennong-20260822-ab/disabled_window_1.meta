@@ -1,0 +1,8 @@
+case=disabled_window_1
+module_state=disabled
+source_pid=10351
+background_cpus=0-1,5-6
+before_cgroup=3:cpuset:/top-app
+window_start_cgroup=3:cpuset:/foreground
+window_end_cgroup=3:cpuset:/background
+done

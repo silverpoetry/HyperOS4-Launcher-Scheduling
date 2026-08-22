@@ -10,15 +10,15 @@ kill_tree() {
   for child in $(cat "/proc/$target/task/$target/children" 2>/dev/null); do
     kill_tree "$child"
   done
-  kill "$target" 2>/dev/null
+  kill -9 "$target" 2>/dev/null
 }
 
 if [ "$(cat "$STATEFILE" 2>/dev/null)" = "enabled" ]; then
   echo disabled >"$STATEFILE"
-  echo "Recents external-competitor suppression disabled."
+  echo "Recents source-app yield disabled."
 else
   echo enabled >"$STATEFILE"
-  echo "Recents external-competitor suppression enabled."
+  echo "Recents source-app yield enabled."
 fi
 
 daemon_pid="$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
@@ -28,4 +28,4 @@ nohup /system/bin/sh "$MODDIR/service.sh" >/dev/null 2>&1 &
 sleep 1
 
 echo
-tail -n 30 /data/local/tmp/sheng-recents-cpu-boost-v1.log 2>/dev/null
+tail -n 30 /data/local/tmp/hyperos4-recents-source-app-yield.log 2>/dev/null

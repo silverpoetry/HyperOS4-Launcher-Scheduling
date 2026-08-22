@@ -1,0 +1,18 @@
+case=enabled_fixed_2
+module_state=enabled
+background_cpus=0-1,5-6
+pids source=10351 launcher=6030 systemui=5999 wallpaper=5417 sf=2457
+sample label=before uptime=1488.52 source_ticks=2735 launcher_ticks=3770 systemui_ticks=6010 wallpaper_ticks=406 sf_ticks=15371 source_cpuset=/top-app wallpaper_cpuset=/foreground
+cgroup uptime=1488.55 source=/top-app wallpaper=/foreground
+sample label=input_done uptime=1488.62 source_ticks=2735 launcher_ticks=3771 systemui_ticks=6011 wallpaper_ticks=406 sf_ticks=15371 source_cpuset=/background wallpaper_cpuset=/foreground
+cgroup uptime=1488.63 source=/background wallpaper=/background
+cgroup uptime=1488.74 source=/foreground wallpaper=/background
+cgroup uptime=1488.86 source=/background wallpaper=/background
+sample label=plus_250ms uptime=1488.93 source_ticks=2739 launcher_ticks=3792 systemui_ticks=6021 wallpaper_ticks=406 sf_ticks=15384 source_cpuset=/background wallpaper_cpuset=/background
+sample label=plus_500ms uptime=1489.19 source_ticks=2739 launcher_ticks=3806 systemui_ticks=6043 wallpaper_ticks=406 sf_ticks=15395 source_cpuset=/background wallpaper_cpuset=/background
+sample label=plus_1000ms uptime=1489.72 source_ticks=2749 launcher_ticks=3818 systemui_ticks=6073 wallpaper_ticks=406 sf_ticks=15400 source_cpuset=/background wallpaper_cpuset=/foreground
+cgroup uptime=1489.73 source=/background wallpaper=/foreground
+sample label=plus_1500ms uptime=1490.26 source_ticks=2753 launcher_ticks=3818 systemui_ticks=6073 wallpaper_ticks=406 sf_ticks=15400 source_cpuset=/background wallpaper_cpuset=/foreground
+sample label=end uptime=1492.70 source_ticks=2802 launcher_ticks=3818 systemui_ticks=6077 wallpaper_ticks=406 sf_ticks=15407 source_cpuset=/background wallpaper_cpuset=/foreground
+sample label=resumed uptime=1493.82 source_ticks=2834 launcher_ticks=3858 systemui_ticks=6096 wallpaper_ticks=407 sf_ticks=15437 source_cpuset=/top-app wallpaper_cpuset=/foreground
+done

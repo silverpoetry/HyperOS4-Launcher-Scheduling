@@ -1,0 +1,10 @@
+=== HyperOS 4 Recents Source-App Yield v1.0 ===
+Sat Aug 22 09:02:49 CST 2026
+daemon_pid=18000
+uptime_cs=138496 monitor launcher_pid=6030
+uptime_cs=141320 suppress-source pid=10351 uid=10284 name=com.tencent.mm
+uptime_cs=141324 enter generation=1 cgroup_ms=40
+uptime_cs=141340 reassert-source pid=10351 generation=1
+uptime_cs=141363 reassert-source pid=10351 generation=1
+uptime_cs=141432 restore generation=1
+uptime_cs=141741 exit generation=2

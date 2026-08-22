@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $src = Join-Path $root 'module-src'
 $dist = Join-Path $root 'dist'
-$zipName = 'HyperOS4-Recents-Source-App-Yield-v1.1.zip'
+$zipName = 'Shennong-Host-ADB-TCP-5555-v1.zip'
 $zip = Join-Path $dist $zipName
 
 if (Test-Path -LiteralPath $dist) {
