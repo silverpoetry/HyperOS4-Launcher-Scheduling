@@ -39,6 +39,13 @@ WALLPAPER_CPU_ORIGINAL=/foreground
 [ -r "$MODDIR/wallpaper-groups" ] &&
   read -r WALLPAPER_CPUSET_ORIGINAL WALLPAPER_CPU_ORIGINAL <"$MODDIR/wallpaper-groups"
 
+if [ -r "$MODDIR/source-app" ] && [ -r "$MODDIR/active-source-groups" ]; then
+  read -r SOURCE_PID SOURCE_UID SOURCE_NAME <"$MODDIR/source-app"
+  read -r SOURCE_CPUSET_ORIGINAL SOURCE_CPU_ORIGINAL <"$MODDIR/active-source-groups"
+  write_controller_group "$SOURCE_PID" /dev/cpuset "$SOURCE_CPUSET_ORIGINAL"
+  write_controller_group "$SOURCE_PID" /dev/cpuctl "$SOURCE_CPU_ORIGINAL"
+fi
+
 for mimd in $(pidof vendor.xiaomi.hardware.mimd@2.0-service 2>/dev/null); do
   [ -d "/proc/$mimd" ] || continue
   write_controller_group "$mimd" /dev/cpuset "$MIMD_CPUSET_ORIGINAL"
@@ -51,4 +58,10 @@ for wallpaper in $(pidof com.miui.miwallpaper 2>/dev/null); do
   write_controller_group "$wallpaper" /dev/cpuctl "$WALLPAPER_CPU_ORIGINAL"
 done
 
+rm -f /data/local/tmp/hyperos4-launcher-scheduling.log
 rm -f /data/local/tmp/hyperos4-recents-source-app-yield.log
+rm -f "$MODDIR/launcher-mode" "$MODDIR/transition.serial" "$MODDIR/policy.epoch"
+rm -f "$MODDIR/source-app" "$MODDIR/source-app.tmp"
+rm -f "$MODDIR/pending-source-app" "$MODDIR/pending-source-app.tmp"
+rm -f "$MODDIR/active-source-groups"
+rm -f "$MODDIR/gesture.active"

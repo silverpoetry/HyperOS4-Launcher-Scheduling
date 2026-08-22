@@ -3,8 +3,17 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $src = Join-Path $root 'module-src'
 $dist = Join-Path $root 'dist'
-$zipName = 'HyperOS4-Recents-Source-App-Yield-v1.1.zip'
+$nativeBuilder = Join-Path $root 'tools\Build-Native.ps1'
+$version = (Get-Content -LiteralPath (Join-Path $root 'VERSION') -Raw).Trim()
+$zipName = "HyperOS4-Launcher-Scheduling-v$version.zip"
 $zip = Join-Path $dist $zipName
+$rootFull = [IO.Path]::GetFullPath($root).TrimEnd([IO.Path]::DirectorySeparatorChar)
+$distFull = [IO.Path]::GetFullPath($dist)
+if (-not $distFull.StartsWith("$rootFull$([IO.Path]::DirectorySeparatorChar)", [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to replace a dist directory outside the repository: $distFull"
+}
+
+& $nativeBuilder | Out-Null
 
 if (Test-Path -LiteralPath $dist) {
     Remove-Item -LiteralPath $dist -Recurse -Force

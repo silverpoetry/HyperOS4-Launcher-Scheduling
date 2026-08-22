@@ -15,10 +15,10 @@ kill_tree() {
 
 if [ "$(cat "$STATEFILE" 2>/dev/null)" = "enabled" ]; then
   echo disabled >"$STATEFILE"
-  echo "Recents source-app yield disabled."
+  echo "Launcher scheduling policy disabled."
 else
   echo enabled >"$STATEFILE"
-  echo "Recents source-app yield enabled."
+  echo "Launcher scheduling policy enabled."
 fi
 
 daemon_pid="$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
@@ -28,4 +28,4 @@ nohup /system/bin/sh "$MODDIR/service.sh" >/dev/null 2>&1 &
 sleep 1
 
 echo
-tail -n 30 /data/local/tmp/hyperos4-recents-source-app-yield.log 2>/dev/null
+tail -n 30 /data/local/tmp/hyperos4-launcher-scheduling.log 2>/dev/null

@@ -1,0 +1,68 @@
+# Changelog
+
+2.1–2.7 是同日实机收敛候选；2.8 是完成快滑、慢滑、取消、桌面打开应用和最近任务打开应用验证后的发布版本。
+
+## 2.8
+
+- 增加显式 `gesture.active` 生命周期。只有本轮收到 `gestureStart` 且尚未提交到 home/recents 时，`gestureToApp` 才按取消处理。
+- 从稳定最近任务点击当前应用卡片时，同名 `gestureToApp` 不再短暂切到 app；策略保持到真正的 Launcher 退出完成。
+
+## 2.7
+
+- pending 目标与 source 使用同一 PID 时，按进入 Launcher 前记录的 cgroup 主动恢复目标；不能依赖 ActivityManager 在 resumed 后重复写一次它认为已经正确的 top-app 状态。
+- 取消手势先递增 policy epoch，再恢复 source，关闭已通过旧 epoch 检查的异步重写与取消恢复之间的竞态窗口。
+
+## 2.6
+
+- 将 pending 目标 PID 加入保护集合。用户从桌面或最近任务重新打开与旧 source 相同的应用时，目标 resumed 后不会因 PID 相同而继续被当作上一前台应用退避。
+
+## 2.5
+
+- 用单个 arm64 `launcher-logwatch` 通过 Android `liblog` 直接读取 logd main buffer，并用 `write()` 逐条输出经过严格筛选的 Launcher 生命周期事件。
+- 应用恢复事件改从 Launcher 的 `ActivityObserverLauncher activityResumed pkg=` 获取，再按包名解析 PID；不再解析 logcat 格式中的 PID。
+- 实机连续监听完整捕获 `gestureStart → Launcher resumed → gestureToHome`，避免文本 logcat 的约 0.4 秒块缓冲和单事件重启缺口。
+
+## 2.4
+
+- 保留单个连续 logcat 监听器，并用随模块构建的 arm64 `liblinebuf.so` 将 stdout 设为逐行缓冲。
+- 实机对照确认普通长驻管道约延迟 0.4 秒；逐行缓冲在事件产生时立即输出，同时不产生 2.3 单事件重启窗口造成的生命周期事件丢失。
+- 原生辅助库只在模块的 logcat 子进程中通过 `LD_PRELOAD` 生效，不注入 Launcher 或其它系统进程。
+
+## 2.3
+
+- 将长驻 logcat 管道改为单匹配事件读取。每次 `-m 1` 退出会立即刷新事件，随后以 `-T 1` 重启并用 epoch 行去重，消除长驻 stdout 的块缓冲延迟。
+- 状态日志加入 `/proc/uptime` 单调时间，可量化事件、退避和恢复的先后关系。
+
+## 2.2
+
+- 修复 `wm_on_resume_called` 中右对齐 PID 的解析。logcat 在 PID 前加入空格时，2.1 会拒绝该记录，导致源应用未建立且策略只作用于壁纸/MIMD。
+- 仅在 source/pending-source 内容变化时记录一次缓存结果，供实机验收，不启用高频调试日志。
+
+## 2.1
+
+- 根据 Sheng 实机 Launcher 日志加入全屏手势生命周期：`gestureStart`、`gestureToHome`、`gestureToApp`。
+- 策略在 Launcher 正式接管手势时启用；不等待快滑/慢滑的最终提交。
+- 取消手势时恢复源应用进入前记录的 cpuset 与 cpuctl。
+- 保留按键最近任务和 RemoteBack 路径作为并行入口。
+
+## 2.0 - 2026-08-22
+
+- Replace the Recents-only trigger with an explicit Launcher lifecycle state machine.
+- Start policy when Quickstep/remote animation takes control, before Launcher becomes the resumed Activity.
+- Keep policy active through Home, Recents, and the complete Launcher exit animation.
+- Remove the `PassBlurWindow` fallback, blur coupling, 750 ms entry deduplication, and one-second wallpaper/MIMD restore timer.
+- Separate the previous source application from the newly resumed target application so the target is never demoted during its opening animation.
+- Restore the original source cgroups when an app-to-Launcher gesture is canceled.
+- Preserve v1.1's device-defined cgroups, original wallpaper/MIMD group restoration, guarded 120/320 ms source reassertion, and stale-listener cleanup.
+- Keep module ID `hyperos4_recents_source_app_yield` for in-place upgrades.
+
+## 1.1 - 2026-08-22
+
+- Generalize scheduling to device-defined cgroups and validate it on Shennong.
+- Reassert source placement after ActivityManager's early foreground promotion.
+- Record and restore wallpaper/MIMD original groups.
+- Clean stale monitor processes on module restart.
+
+## 1.0 - 2026-08-22
+
+- Initial Sheng Recents source-application yield implementation.
