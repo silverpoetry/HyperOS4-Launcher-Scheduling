@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=4.1
-versionCode=41
+version=4.2
+versionCode=42
 author=github: silverpoetry
 description=HyperOS 4 Launcher thread scheduling, source-app CPU isolation, and transition-time background-cluster frequency control.

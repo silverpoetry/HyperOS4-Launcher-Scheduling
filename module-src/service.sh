@@ -44,7 +44,7 @@ restore_frequency_state_quiet() {
 
 write_default "$SOURCE_POLICY_FILE" enabled
 write_default "$AUX_POLICY_FILE" enabled
-write_default "$FREQ_POLICY_FILE" enabled
+write_default "$FREQ_POLICY_FILE" disabled
 write_default "$FREQ_PERCENT_FILE" 78
 write_default "$FREQ_TIMEOUT_FILE" 1500
 write_default "$APP_FALLBACK_MS_FILE" 2000

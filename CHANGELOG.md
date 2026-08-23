@@ -8,6 +8,12 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 4.2
+
+- 将转场小核限频改为默认关闭，WebUI 仍保留开关、比例与超时参数，供高负载或功耗实验手动使用。
+- Settings 轻载场景完成两组交叉 A/B。限频开启后，Launcher Full jank 合计从 4 增至 8，SurfaceFlinger Full jank 从 11 增至 24，Launcher 最大帧均值从 26.08 ms 增至 37.46 ms。
+- 保留 4.1 验证有效的 FenceWait 中核放置。轻载掉帧来自来源应用收尾与 Buffer 交接被限频拖慢，而不是 Launcher 主线程误入小核。
+
 ## 4.1
 
 - 增加转场期小核簇频率上限。目标 cpufreq policy 由设备 `cpu_capacity` 和 cpuset 动态推导，默认限制到原上限的 78%，结束事件或 1500 ms 安全超时后恢复。

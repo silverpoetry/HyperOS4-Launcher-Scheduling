@@ -4,7 +4,7 @@
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
 
-模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用被限制到小核簇后，模块可在 Launcher 转场期间按比例降低该簇的 `scaling_max_freq`；动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
+模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用被限制到小核簇后，可选策略能在 Launcher 转场期间按比例降低该簇的 `scaling_max_freq`；该策略默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
 
 ## 管理界面
 
@@ -64,7 +64,9 @@ IplrVkFenceWait                 → 去掉 prime 的 performance 集合，不提
 
 提升持续时间默认 1 ms，之后恢复基础亲和及 0/1024 uclamp；该值和四类 `uclamp.min` 均可在 WebUI 调整。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
 
-小核限频只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy。默认比例为 78%，并向下选择驱动公开的最近可用频点。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
+小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认比例为 78%，并向下选择驱动公开的最近可用频点。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
+
+Settings 轻载场景按“关闭、开启、开启、关闭”完成两组交叉 A/B。限频后 Launcher Full jank 合计从 4 增至 8，SurfaceFlinger Full jank 从 11 增至 24，Launcher 最大帧均值从 26.08 ms 增至 37.46 ms。轻载来源应用没有足够的性能核争用可供限频缓解，压低其收尾、Buffer 交接和快照工作只会增加等待；完整数据见 [轻载小核限频 A/B](docs/FREQUENCY-LIMIT-LIGHT-LOAD-AB.md)。
 
 Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移到 CPU3-6 后，线程运行时间下降 83.0%，runnable 等待下降 64.0%，Launcher Full jank 从 30 降到 14。由于它在 Vulkan fence 链上承担实际工作，默认不再与被限频的来源应用共享小核；完整数据见 [FenceWait 与小核限频 A/B](docs/FENCEWAIT-FREQUENCY-AB.md)。
 
@@ -106,8 +108,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v4.1.zip
-../output/HyperOS4-Launcher-Scheduling-v4.1.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v4.2.zip
+../output/HyperOS4-Launcher-Scheduling-v4.2.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。

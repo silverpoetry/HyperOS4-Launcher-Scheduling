@@ -14,9 +14,9 @@
   let pollTimer = 0;
 
   const mock = {
-    version: "4.1", author: "github: silverpoetry", policy: "enabled",
+    version: "4.2", author: "github: silverpoetry", policy: "enabled",
     source_policy: "enabled", aux_policy: "enabled", thread_policy: "enabled",
-    frequency_policy_state: "enabled", frequency_percent: "78",
+    frequency_policy_state: "disabled", frequency_percent: "78",
     frequency_timeout_ms: "1500", app_fallback_ms: "2000",
     launcher_placement: "2", fence_placement: "2", boost_duration_ms: "1", uclamp_raster: "928",
     uclamp_ui: "768", uclamp_rust: "512", uclamp_resmgr: "384",
