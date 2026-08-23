@@ -1,0 +1,164 @@
+#!/system/bin/sh
+
+emit() {
+  local key="$1"
+  shift
+  printf '%s=%s\n' "$key" "$*"
+}
+
+state_value() {
+  local default="${2:-enabled}"
+  read_first_line "$1"
+  case "$READ_VALUE" in enabled|disabled) ;; *) READ_VALUE="$default" ;; esac
+  printf '%s' "$READ_VALUE"
+}
+
+number_value() {
+  read_first_line "$1"
+  case "$READ_VALUE" in ''|*[!0-9]*) READ_VALUE="$2" ;; esac
+  printf '%s' "$READ_VALUE"
+}
+
+module_version() {
+  local line
+  [ -r "$MODDIR/module.prop" ] || return 0
+  while IFS= read -r line; do
+    case "$line" in version=*) printf '%s' "${line#version=}"; return 0 ;; esac
+  done <"$MODDIR/module.prop"
+}
+
+read_allowed_list() {
+  local key value rest
+  [ -r "$1" ] || return 0
+  while read -r key value rest; do
+    [ "$key" = Cpus_allowed_list: ] && { printf '%s' "$value"; return 0; }
+  done <"$1"
+}
+
+print_frequency_status() {
+  local active policy related current maximum original applied
+  active=0; policy=""; related=""; current=""; maximum=""; original=""; applied=""
+  if [ -r "$FREQ_STATE_FILE" ]; then
+    active=1
+    read -r policy original applied <"$FREQ_STATE_FILE"
+    [ -r "$policy/related_cpus" ] && IFS= read -r related <"$policy/related_cpus"
+    [ -r "$policy/scaling_max_freq" ] && IFS= read -r current <"$policy/scaling_max_freq"
+    [ -r "$policy/cpuinfo_max_freq" ] && IFS= read -r maximum <"$policy/cpuinfo_max_freq"
+  elif [ -r "$FREQ_INFO_FILE" ]; then
+    read -r policy related current maximum <"$FREQ_INFO_FILE"
+    [ -r "$policy/scaling_max_freq" ] && IFS= read -r current <"$policy/scaling_max_freq"
+  fi
+  emit frequency_active "$active"
+  emit frequency_policy_name "${policy##*/}"
+  emit frequency_cpus "$related"
+  emit frequency_current_khz "$current"
+  emit frequency_max_khz "$maximum"
+  emit frequency_original_khz "$original"
+  emit frequency_applied_khz "$applied"
+}
+
+print_status() {
+  local mode daemon_pid daemon_alive launcher_pid topology
+  local all_mask perf_mask mid_mask little_mask
+  local source_pid source_uid source_name pending_pid pending_uid pending_name
+
+  read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
+  read_first_line "$PID_FILE"; daemon_pid="$READ_VALUE"
+  daemon_alive=0; [ -n "$daemon_pid" ] && [ -d "/proc/$daemon_pid" ] && daemon_alive=1
+  read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
+  [ -d "/proc/$launcher_pid" ] || launcher_pid=""
+  read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
+  read -r all_mask perf_mask mid_mask little_mask <<EOF
+$topology
+EOF
+  [ -n "$all_mask" ] || all_mask=-
+  [ -n "$perf_mask" ] || perf_mask=-
+  [ -n "$mid_mask" ] || mid_mask=-
+  [ -n "$little_mask" ] || little_mask=-
+  source_pid=""; source_uid=""; source_name=""
+  [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
+  pending_pid=""; pending_uid=""; pending_name=""
+  [ -r "$PENDING_SOURCE_FILE" ] && read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
+
+  emit version "$(module_version)"
+  emit author 'github: silverpoetry'
+  emit master_policy "$(state_value "$ENABLE_FILE")"
+  emit source_policy "$(state_value "$SOURCE_POLICY_FILE")"
+  emit auxiliary_policy "$(state_value "$AUX_POLICY_FILE")"
+  emit launcher_policy "$(state_value "$THREAD_POLICY_STATE_FILE")"
+  emit frequency_policy "$(state_value "$FREQ_POLICY_FILE" disabled)"
+  emit frequency_percent "$(number_value "$FREQ_PERCENT_FILE" 78)"
+  emit frequency_timeout_ms "$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
+  emit app_fallback_ms "$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
+  emit launcher_placement "$(number_value "$THREAD_PLACEMENT_FILE" 2)"
+  emit fence_placement "$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
+  emit boost_duration_ms "$(number_value "$THREAD_BOOST_MS_FILE" 1)"
+  emit uclamp_raster "$(number_value "$THREAD_RASTER_UCLAMP_FILE" 928)"
+  emit uclamp_ui "$(number_value "$THREAD_UI_UCLAMP_FILE" 768)"
+  emit uclamp_rust "$(number_value "$THREAD_RUST_UCLAMP_FILE" 512)"
+  emit uclamp_resmgr "$(number_value "$THREAD_RESMGR_UCLAMP_FILE" 384)"
+  emit mode "$mode"
+  emit epoch "$(number_value "$EPOCH_FILE" 0)"
+  emit transition_serial "$(number_value "$SERIAL_FILE" 0)"
+  emit daemon_pid "$daemon_pid"
+  emit daemon_alive "$daemon_alive"
+  emit launcher_pid "$launcher_pid"
+  emit all_mask "$all_mask"
+  emit perf_mask "$perf_mask"
+  emit mid_mask "$mid_mask"
+  emit little_mask "$little_mask"
+  emit source_pid "$source_pid"
+  emit source_uid "$source_uid"
+  emit source_name "$source_name"
+  emit pending_pid "$pending_pid"
+  emit pending_uid "$pending_uid"
+  emit pending_name "$pending_name"
+  print_frequency_status
+}
+
+print_device_info() {
+  local source_pid source_uid source_name
+  source_pid=""; source_uid=""; source_name=""
+  [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
+  emit device "$(getprop ro.product.device)"
+  emit model "$(getprop ro.product.model)"
+  emit os "$(getprop ro.mi.os.version.name)"
+  emit android "$(getprop ro.build.version.release)"
+  emit kernel "$(uname -r 2>/dev/null)"
+  emit selinux "$(getenforce 2>/dev/null)"
+  emit watcher_pids "$(pidof launcher-logwatch 2>/dev/null)"
+  emit source_cpuset "$(read_proc_controller "$source_pid" cpuset)"
+  emit source_cpuctl "$(read_proc_controller "$source_pid" cpu)"
+  emit source_allowed "$(read_allowed_list "/proc/$source_pid/status")"
+}
+
+read_proc_controller() {
+  local pid="$1" controller="$2" hierarchy controllers path
+  [ -r "/proc/$pid/cgroup" ] || return 0
+  while IFS=: read -r hierarchy controllers path; do
+    case ",$controllers," in *",$controller,"*) printf '%s' "$path"; return 0 ;; esac
+  done <"/proc/$pid/cgroup"
+}
+
+print_launcher_threads() {
+  local launcher_pid task tid name allowed uclamp_min uclamp_max
+  launcher_pid="$(pidof com.miui.home 2>/dev/null)"; launcher_pid=${launcher_pid%% *}
+  [ -n "$launcher_pid" ] && [ -d "/proc/$launcher_pid/task" ] || return 0
+  for task in /proc/"$launcher_pid"/task/*; do
+    [ -r "$task/comm" ] || continue
+    tid=${task##*/}; IFS= read -r name <"$task/comm"
+    case "$name" in 1.raster|1.ui|rt-launcher-mai|IplrVkResMgr|IplrVkFenceWait) ;; *) continue ;; esac
+    allowed="$(read_allowed_list "$task/status")"
+    uclamp_min="$(awk '/^[[:space:]]*uclamp\.min[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    uclamp_max="$(awk '/^[[:space:]]*uclamp\.max[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    [ -n "$uclamp_min" ] || uclamp_min=-; [ -n "$uclamp_max" ] || uclamp_max=-
+    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$tid" "$allowed" "$uclamp_min" "$uclamp_max"
+  done
+}
+
+print_logs() {
+  local count="$1"
+  case "$count" in ''|*[!0-9]*) count=100 ;; esac
+  [ "$count" -le 200 ] || count=200
+  tail -n "$count" "$LOG_FILE" 2>/dev/null
+}

@@ -15,11 +15,11 @@ esac
 set_perm "$MODPATH/service.sh" 0 0 0755
 set_perm "$MODPATH/uninstall.sh" 0 0 0755
 set_perm "$MODPATH/action.sh" 0 0 0755
-set_perm "$MODPATH/thread-policy.sh" 0 0 0755
 set_perm "$MODPATH/webui.sh" 0 0 0755
 set_perm "$MODPATH/bin/launcher-logwatch" 0 0 0755
 set_perm "$MODPATH/bin/launcher-threadctl" 0 0 0755
 set_perm "$MODPATH/bin/source-affinityctl" 0 0 0755
+set_perm_recursive "$MODPATH/lib" 0 0 0755 0644
 set_perm_recursive "$MODPATH/webroot" 0 0 0755 0644
 
 rm -f "$MODPATH/disable" "$MODPATH/remove"

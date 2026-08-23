@@ -1,9 +1,10 @@
 #!/system/bin/sh
 
 MODDIR=/data/adb/modules/hyperos4_recents_source_app_yield
-. "$MODDIR/thread-policy.sh"
-
-log_state() { echo "$*"; }
+. "$MODDIR/lib/config.sh"
+. "$MODDIR/lib/runtime.sh"
+. "$MODDIR/lib/topology.sh"
+. "$MODDIR/lib/launcher-policy.sh"
 
 launcher_pid="$(pidof com.miui.home 2>/dev/null)"
 launcher_pid=${launcher_pid%% *}

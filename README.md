@@ -8,14 +8,15 @@ Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep �
 
 ## 管理界面
 
-KernelSU 管理器可直接打开模块 WebUI。界面只有状态、设置和日志三页，支持底部导航与横向滑动切换。
+KernelSU 管理器可直接打开模块 WebUI。界面按 Material 3 的标题卡片、信息卡片和底部导航组织为状态、设置和诊断三页，支持跟手横向滑动切换，并适配系统动态配色、深色模式与安全区。
 
 - 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
 - 日志页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
 - 设置页可分别控制来源应用、壁纸/MIMD、Launcher 线程和小核限频，并调整限频比例、恢复超时、UI/Rust 与 FenceWait 放置、提升持续时间、四类 `uclamp.min` 和应用返回兜底时间；
-- 所有写操作都映射到 `webui.sh` 中的固定命令和枚举参数，不提供任意 Shell 执行入口。
+- 所有写操作都映射到 `webui.sh configure` 的固定命名参数；前端和后端分别校验键、枚举及数值范围，不提供任意 Shell 执行入口；
+- 配置仅在内容发生变化时显示保存操作，保存后一次性重载服务，页面轮询不会覆盖尚未保存的表单。
 
-关闭 WebUI 后不会留下额外采样器或日志进程。界面控制的是现有模块策略，不会停用 KernelSU 模块，也不会修改系统调度器配置。
+关闭 WebUI 后不会留下额外采样器或日志进程。界面控制的是现有模块策略，不会停用 KernelSU 模块，也不会修改系统调度器配置。用户设置保存在 `/data/adb/hyperos4-launcher-scheduling`，与 KernelSU 会替换的模块程序目录分离，升级时会保留；卸载模块时一并清除。
 
 ## 生命周期
 
@@ -38,7 +39,7 @@ Launcher 活跃期间：
 上一前台应用          → per-TID background affinity + cpuset/background + cpuctl/background
 com.miui.miwallpaper → cpuset/background + cpuctl/background
 MIMD（存在时）       → cpuset/background + cpuctl/background
-小核 cpufreq policy   → 转场期临时限制 scaling_max_freq，默认取原上限的 78%
+小核 cpufreq policy   → 可选地临时限制 scaling_max_freq，默认关闭
 ```
 
 模块不会移动 Launcher、SystemUI、当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复为模块首次记录的原始 cgroup。
@@ -80,7 +81,7 @@ Shennong 实测推导为 `perf=9c (CPU2-4,7)`、`mid=1c (CPU2-4)`、`little=03 (
 
 `module-src/bin/launcher-threadctl` 从 `native/launcher_threadctl.c` 构建。它在一个进程内枚举目标 TID，并直接批量设置 affinity/uclamp。旧 shell 实现一次动画需要启动约二十个工具进程，实测约 0.8 秒；原生批处理 apply/reset 各约 10 ms。
 
-`module-src/bin/source-affinityctl` 从 `native/source_affinityctl.c` 构建。它维护来源应用的短生命周期 affinity 事务，处理 Xiaomi UID 标记、新增 TID、不同目标切换和精确恢复。Sheng 上 74 个 Settings 线程的初次事务耗时 2.812 ms；无变化重复事件约 1.017 ms。监听器通过 Android `posix_spawn()` 启动控制器；71 线程游戏现场的完整原生入口事务为 16.877 ms。
+`module-src/bin/source-affinityctl` 从 `native/source_affinityctl.c` 构建。它维护来源应用的短生命周期 affinity 事务，处理 Xiaomi UID 标记、新增 TID、不同目标切换和精确恢复。Sheng 上 74 个 Settings 线程的初次事务耗时 2.812 ms；无变化重复事件约 1.017 ms。监听器通过 Android `posix_spawn()` 启动控制器；71 线程游戏现场的完整原生入口事务为 16.877 ms。原生入口已经完整成功时，shell 状态机不再重复扫描和绑定来源应用线程；只有原生事务缺失或部分失败才进入修复路径。
 
 ## Xiaomi 标记回写与 ActivityManager
 
@@ -108,8 +109,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v4.2.zip
-../output/HyperOS4-Launcher-Scheduling-v4.2.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v5.0.zip
+../output/HyperOS4-Launcher-Scheduling-v5.0.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
@@ -140,7 +141,10 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 ## 项目结构
 
 ```text
-module-src/       KernelSU 模块源码、WebUI 和构建后的 arm64 工具
+module-src/       KernelSU 模块入口、WebUI 和构建后的 arm64 工具
+module-src/lib/   配置、拓扑、线程、进程、频率、状态机与 WebUI 后端
+module-src/webroot/css/  Material 3 设计令牌、布局、卡片、控件与诊断样式
+module-src/webroot/js/   KernelSU 桥接、数据模型、导航及三个页面控制器
 native/           launcher-logwatch、launcher-threadctl 与 source-affinityctl C 源码
 ../output/        Magisk 项目集合共用的正式 ZIP 与 SHA-256
 docs/             状态机和验证文档
@@ -149,3 +153,5 @@ test-results/     A/B 数据与实机报告
 CHANGELOG.md      版本变更记录
 VERSION           当前版本
 ```
+
+运行时分层、依赖方向和状态不变量见 [架构说明](docs/ARCHITECTURE.md)。

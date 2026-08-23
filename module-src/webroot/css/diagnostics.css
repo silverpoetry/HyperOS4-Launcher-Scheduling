@@ -1,0 +1,125 @@
+.thread-table {
+  margin: 0 -6px -4px;
+  overflow-x: auto;
+}
+
+.thread-row {
+  display: grid;
+  min-width: 570px;
+  min-height: 44px;
+  padding: 0 6px;
+  grid-template-columns: 1.45fr 0.65fr 0.8fr 0.85fr 0.85fr;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-outline-variant);
+  font: 11px var(--font-mono);
+}
+
+.thread-row:last-child {
+  border-bottom: 0;
+}
+
+.thread-header {
+  color: var(--color-on-surface-variant);
+  font-size: 10px;
+}
+
+.empty-state {
+  margin: 20px 0;
+  color: var(--color-on-surface-variant);
+  font-size: 13px;
+  text-align: center;
+}
+
+.log-card {
+  padding-bottom: 16px;
+}
+
+.log-output {
+  min-height: 300px;
+  max-height: 52vh;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border-radius: var(--radius-md);
+  background: #131116;
+  color: #ede7f0;
+  font: 10px/1.58 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.action-grid .filled-button:last-child {
+  grid-column: 1 / -1;
+}
+
+.snackbar {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  bottom: calc(var(--bottom-nav-height) + var(--bottom-inset) + 18px);
+  display: grid;
+  min-width: 210px;
+  min-height: 48px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.snackbar.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.snackbar.error {
+  background: var(--color-error);
+  color: var(--color-on-error);
+}
+
+.busy {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.busy.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.busy i {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-outline-variant);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.busy span {
+  color: var(--color-on-surface-variant);
+  font-size: 12px;
+}

@@ -1,0 +1,159 @@
+.app-root {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-background);
+}
+
+.top-bar {
+  position: relative;
+  z-index: 20;
+  height: calc(64px + var(--top-inset));
+  padding-top: var(--top-inset);
+  flex: 0 0 auto;
+  color: var(--color-on-surface);
+}
+
+.top-bar-content {
+  display: flex;
+  width: 100%;
+  max-width: calc(var(--content-width) + 40px);
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.top-bar h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.main-content {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  --page-count: 3;
+  --page-index: 0;
+  --drag-offset: 0px;
+}
+
+.swipe-track {
+  display: flex;
+  width: calc(var(--page-count) * 100%);
+  height: 100%;
+  will-change: transform;
+  transform: translateX(calc(-100vw * var(--page-index) + var(--drag-offset)));
+  transition: transform 0.4s cubic-bezier(0.2, 1, 0.2, 1);
+}
+
+.swipe-track.dragging,
+.swipe-track.no-transition {
+  transition: none;
+}
+
+.swipe-page {
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  flex: 0 0 100vw;
+  overflow: hidden;
+}
+
+.page-scroller {
+  display: flex;
+  width: 100%;
+  max-width: var(--content-width);
+  height: 100%;
+  margin: 0 auto;
+  padding: 16px 16px calc(24px + var(--bottom-nav-height) + var(--bottom-inset));
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.bottom-nav {
+  position: fixed;
+  z-index: 100;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: calc(var(--bottom-nav-height) + var(--bottom-inset));
+  padding: 2px max(8px, calc((100vw - 640px) / 2)) var(--bottom-inset);
+  align-items: center;
+  background: var(--color-surface-high);
+}
+
+.nav-tab {
+  position: relative;
+  display: flex;
+  height: 60px;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-on-surface-variant);
+}
+
+.nav-tab > span {
+  display: grid;
+  width: 32px;
+  height: 30px;
+  place-items: center;
+  border-radius: var(--radius-full);
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.nav-tab svg {
+  width: 22px;
+  height: 22px;
+}
+
+.nav-tab b {
+  font-size: 11px;
+  font-weight: 520;
+}
+
+.nav-tab.active {
+  color: var(--color-on-surface);
+}
+
+.nav-tab.active > span {
+  width: 56px;
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+}
+
+.nav-tab.active b {
+  font-weight: 680;
+}
+
+@media (min-width: 840px) {
+  .page-scroller {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}

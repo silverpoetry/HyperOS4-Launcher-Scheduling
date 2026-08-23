@@ -3,8 +3,10 @@
 set -eu
 MODDIR=/data/adb/modules/hyperos4_recents_source_app_yield
 requested="$1"
-. "$MODDIR/thread-policy.sh"
-log_state() { :; }
+. "$MODDIR/lib/config.sh"
+. "$MODDIR/lib/runtime.sh"
+. "$MODDIR/lib/topology.sh"
+. "$MODDIR/lib/launcher-policy.sh"
 
 case "$requested" in
   enabled)

@@ -5,6 +5,7 @@ $src = Join-Path $root 'module-src'
 $collectionRoot = Split-Path -Parent $root
 $dist = Join-Path $collectionRoot 'output'
 $nativeBuilder = Join-Path $root 'tools\Build-Native.ps1'
+$sourceValidator = Join-Path $root 'tools\Test-SourceLayout.ps1'
 $version = (Get-Content -LiteralPath (Join-Path $root 'VERSION') -Raw).Trim()
 $zipName = "HyperOS4-Launcher-Scheduling-v$version.zip"
 $zip = Join-Path $dist $zipName
@@ -14,6 +15,7 @@ if (-not $distFull.StartsWith("$collectionFull$([IO.Path]::DirectorySeparatorCha
     throw "Refusing to replace output outside the Magisk collection: $distFull"
 }
 
+& $sourceValidator -RepositoryRoot $root | Out-Null
 & $nativeBuilder | Out-Null
 
 New-Item -ItemType Directory -Path $dist -Force | Out-Null

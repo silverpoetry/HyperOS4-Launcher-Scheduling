@@ -1,0 +1,59 @@
+:root {
+  color-scheme: light dark;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --top-inset: var(--window-inset-top, env(safe-area-inset-top, 0px));
+  --bottom-inset: var(--window-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --bottom-nav-height: 68px;
+  --content-width: 800px;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --color-primary: var(--md-sys-color-primary, var(--primary, #6750a4));
+  --color-on-primary: var(--md-sys-color-on-primary, var(--onPrimary, #fff));
+  --color-primary-container: var(--md-sys-color-primary-container, var(--primaryContainer, #eaddff));
+  --color-on-primary-container: var(--md-sys-color-on-primary-container, var(--onPrimaryContainer, #4f378b));
+  --color-secondary-container: var(--md-sys-color-secondary-container, var(--secondaryContainer, #e8def8));
+  --color-on-secondary-container: var(--md-sys-color-on-secondary-container, var(--onSecondaryContainer, #4a4458));
+  --color-background: var(--md-sys-color-background, var(--background, #fef7ff));
+  --color-on-background: var(--md-sys-color-on-background, var(--onBackground, #1d1b20));
+  --color-surface: var(--md-sys-color-surface, var(--surface, #fef7ff));
+  --color-on-surface: var(--md-sys-color-on-surface, var(--onSurface, #1d1b20));
+  --color-on-surface-variant: var(--md-sys-color-on-surface-variant, var(--onSurfaceVariant, #49454f));
+  --color-surface-container: var(--md-sys-color-surface-container, var(--surfaceContainer, #f3edf7));
+  --color-surface-high: var(--md-sys-color-surface-container-high, var(--surfaceContainerHigh, #ece6f0));
+  --color-surface-highest: var(--md-sys-color-surface-container-highest, var(--surfaceContainerHighest, #e6e0e9));
+  --color-outline: var(--md-sys-color-outline, var(--outline, #79747e));
+  --color-outline-variant: var(--md-sys-color-outline-variant, var(--outlineVariant, #cac4d0));
+  --color-error: var(--md-sys-color-error, var(--error, #b3261e));
+  --color-on-error: var(--md-sys-color-on-error, var(--onError, #fff));
+  --color-success: #2f7d4d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: var(--md-sys-color-primary, var(--primary, #d0bcff));
+    --color-on-primary: var(--md-sys-color-on-primary, var(--onPrimary, #381e72));
+    --color-primary-container: var(--md-sys-color-primary-container, var(--primaryContainer, #4f378b));
+    --color-on-primary-container: var(--md-sys-color-on-primary-container, var(--onPrimaryContainer, #eaddff));
+    --color-secondary-container: var(--md-sys-color-secondary-container, var(--secondaryContainer, #4a4458));
+    --color-on-secondary-container: var(--md-sys-color-on-secondary-container, var(--onSecondaryContainer, #e8def8));
+    --color-background: var(--md-sys-color-background, var(--background, #141218));
+    --color-on-background: var(--md-sys-color-on-background, var(--onBackground, #e6e0e9));
+    --color-surface: var(--md-sys-color-surface, var(--surface, #141218));
+    --color-on-surface: var(--md-sys-color-on-surface, var(--onSurface, #e6e0e9));
+    --color-on-surface-variant: var(--md-sys-color-on-surface-variant, var(--onSurfaceVariant, #cac4d0));
+    --color-surface-container: var(--md-sys-color-surface-container, var(--surfaceContainer, #211f26));
+    --color-surface-high: var(--md-sys-color-surface-container-high, var(--surfaceContainerHigh, #2b2930));
+    --color-surface-highest: var(--md-sys-color-surface-container-highest, var(--surfaceContainerHighest, #36343b));
+    --color-outline: var(--md-sys-color-outline, var(--outline, #938f99));
+    --color-outline-variant: var(--md-sys-color-outline-variant, var(--outlineVariant, #49454f));
+    --color-error: var(--md-sys-color-error, var(--error, #f2b8b5));
+    --color-on-error: var(--md-sys-color-on-error, var(--onError, #601410));
+    --color-success: #83d5a5;
+  }
+}

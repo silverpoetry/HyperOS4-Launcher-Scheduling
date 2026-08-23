@@ -1,0 +1,63 @@
+export const MODULE_DIR = "/data/adb/modules/hyperos4_recents_source_app_yield";
+export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
+export const PAGE_NAMES = ["status", "settings", "diagnostics"];
+
+export const MOCK_STATUS = {
+  version: "5.0",
+  author: "github: silverpoetry",
+  master_policy: "enabled",
+  source_policy: "enabled",
+  auxiliary_policy: "enabled",
+  launcher_policy: "enabled",
+  frequency_policy: "disabled",
+  frequency_percent: "78",
+  frequency_timeout_ms: "1500",
+  app_fallback_ms: "2000",
+  launcher_placement: "2",
+  fence_placement: "2",
+  boost_duration_ms: "1",
+  uclamp_raster: "928",
+  uclamp_ui: "768",
+  uclamp_rust: "512",
+  uclamp_resmgr: "384",
+  mode: "recents",
+  daemon_pid: "1842",
+  daemon_alive: "1",
+  launcher_pid: "3021",
+  transition_serial: "42",
+  all_mask: "ff",
+  perf_mask: "f8",
+  mid_mask: "78",
+  little_mask: "7",
+  source_pid: "9174",
+  source_uid: "10341",
+  source_name: "com.tencent.jkchess",
+  source_allowed: "0-2",
+  source_cpuset: "/background",
+  source_cpuctl: "/background",
+  frequency_active: "0",
+  frequency_policy_name: "policy0",
+  frequency_cpus: "0,1,2",
+  frequency_current_khz: "2016000",
+  frequency_max_khz: "2016000",
+  model: "Xiaomi Pad 6S Pro 12.4",
+  device: "sheng",
+  os: "OS4.0",
+  android: "17",
+  kernel: "6.1.99-android14",
+  selinux: "Enforcing",
+};
+
+export const MOCK_THREADS = [
+  "1.raster\t3061\t3-7\t0\t1024",
+  "1.ui\t3060\t3-6\t0\t1024",
+  "rt-launcher-mai\t3072\t3-6\t0\t1024",
+  "IplrVkFenceWait\t3078\t3-6\t0\t1024",
+].join("\n");
+
+export const MOCK_LOG = [
+  "mode=entering reason=launcher-transition-start",
+  "source-yield pid=9174 uid=10341 name=com.tencent.jkchess",
+  "thread-boost serial=42 reason=gesture-start",
+  "mode=recents reason=overview-entered",
+].join("\n");
