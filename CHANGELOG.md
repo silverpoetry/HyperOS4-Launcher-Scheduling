@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.2
+
+- 修正原生快速退避的快照顺序：在来源应用仍属于 `top-app` 时保存真实逐线程 affinity，再由同一个原生事务写入 background cpuset/cpuctl，避免把临时 CPU0–2 错记成恢复基准。
+- 为 affinity 状态文件增加进程间排他锁，序列化原生监听器与 shell 状态机的 apply、replace 和 restore 操作。
+- 晚到的 Launcher exit-start 事件仅在已经有 pending 目标时重新安排完成兜底，避免它使先前 app-resumed 的恢复计时失效，同时不把点空白或返回桌面误判为应用恢复。
+- 修正全新安装的配置迁移返回值。没有旧配置时迁移现在正常成功，随后创建持久默认配置，服务与 KernelSU WebUI 可以完成首次启动。
+- 监听 `finish_remote_transition to_home = false` 完成边；从最近任务返回同一应用且不再发送 `activityResumed` 时，也会恢复来源应用的控制组和逐线程亲和。
+
 ## 5.1
 
 - 动态推导独立 prime CPU mask。Launcher Raster 固定使用 prime，UI/Rust 按现有放置策略使用去掉 prime 的性能核；亲和覆盖完整运行期，短时计时器只控制 uclamp。

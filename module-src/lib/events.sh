@@ -68,12 +68,13 @@ handle_launcher_event() {
       set_mode recents overview-entered
       ;;
     *SceneTransitionDetectorService*exitOverviewState*|*SceneAnimationSignalType.openingRemoteAnimationOpen*)
-      increment_file "$SERIAL_FILE" >/dev/null
+      serial="$(increment_file "$SERIAL_FILE")"
       apply_source_frequency launcher-exit-start
       trigger_launcher_thread_boost "$LAUNCHER_PID" launcher-exit-start
       set_mode leaving launcher-exit-start
+      [ -r "$PENDING_SOURCE_FILE" ] && schedule_app_fallback "$serial"
       ;;
-    *SceneAnimationSignalType.openingRemoteAnimationClose*)
+    *SceneAnimationSignalType.openingRemoteAnimationClose*|*"finish_remote_transition to_home = false"*)
       increment_file "$SERIAL_FILE" >/dev/null
       set_mode app launcher-exit-complete
       ;;

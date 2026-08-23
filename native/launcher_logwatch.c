@@ -17,9 +17,6 @@
 #define SOURCE_AFFINITYCTL "/data/adb/modules/hyperos4_recents_source_app_yield/bin/source-affinityctl"
 #define SOURCE_AFFINITY_STATE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.state"
 
-static int cpuset_background_fd = -1;
-static int cpuctl_background_fd = -1;
-
 struct yield_result {
     int pid;
     int uid;
@@ -63,6 +60,7 @@ static int is_relevant(const char *message) {
     };
     size_t i;
     if (strstr(message, "activityResumed pkg=") != NULL ||
+        strstr(message, "finish_remote_transition to_home = false") != NULL ||
         strstr(message, "onOverviewToggle is_home_and_overview_same=true") != NULL ||
         strstr(message, "IRecentsAnimationRunnerImplForRemoteBack on_animation_start called type: CloseApp") != NULL ||
         (strstr(message, "IRecentsAnimationRunnerImplForRemoteBack") != NULL &&
@@ -104,17 +102,6 @@ static int write_pid_file(const char *path, int pid) {
     return 1;
 }
 
-static int write_pid_open_fd(int fd, const char *fallback_path, int pid) {
-    char value[32];
-    int length = snprintf(value, sizeof(value), "%d\n", pid);
-    if (length <= 0 || (size_t)length >= sizeof(value)) return 0;
-    if (fd >= 0) {
-        (void)lseek(fd, 0, SEEK_SET);
-        if (write(fd, value, (size_t)length) == length) return 1;
-    }
-    return write_pid_file(fallback_path, pid);
-}
-
 static int read_source_record(int *pid, int *uid) {
     char value[128];
     char *end;
@@ -144,7 +131,7 @@ static int run_affinity_apply(int pid, int uid) {
     char uid_text[32];
     char *arguments[] = {
         (char *)SOURCE_AFFINITYCTL,
-        (char *)"apply",
+        (char *)"yield",
         pid_text,
         uid_text,
         (char *)SOURCE_AFFINITY_STATE,
@@ -183,21 +170,17 @@ static int run_affinity_apply(int pid, int uid) {
 static struct yield_result yield_source_native(void) {
     struct yield_result result = {-1, -1, 0, 0, -1, -1, -1, -1, -1, -1};
     struct timespec start;
-    struct timespec cgroup_end;
     struct timespec end;
     if (read_source_record(&result.pid, &result.uid) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result.cpuset_ok = write_pid_open_fd(cpuset_background_fd,
-                                        "/dev/cpuset/background/cgroup.procs", result.pid);
-    result.cpuctl_ok = write_pid_open_fd(cpuctl_background_fd,
-                                        "/dev/cpuctl/background/cgroup.procs", result.pid);
-    clock_gettime(CLOCK_MONOTONIC, &cgroup_end);
-    result.write_us = timespec_diff_us(&cgroup_end, &start);
-    result.cgroup_complete_monotonic_ns =
-        (int64_t)cgroup_end.tv_sec * 1000000000LL + cgroup_end.tv_nsec;
     result.affinity_status = run_affinity_apply(result.pid, result.uid);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    result.affinity_us = timespec_diff_us(&end, &cgroup_end);
+    result.affinity_us = timespec_diff_us(&end, &start);
+    result.write_us = 0;
+    result.cpuset_ok = result.affinity_status == 0;
+    result.cpuctl_ok = result.affinity_status == 0;
+    result.cgroup_complete_monotonic_ns =
+        (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     return result;
 }
@@ -233,8 +216,6 @@ int main(void) {
     /* The watcher sleeps inside logd while idle.  Foreground placement prevents
        an all-core workload from starving the one short transition-edge write. */
     move_watcher_to_foreground();
-    cpuset_background_fd = open("/dev/cpuset/background/cgroup.procs", O_WRONLY | O_CLOEXEC);
-    cpuctl_background_fd = open("/dev/cpuctl/background/cgroup.procs", O_WRONLY | O_CLOEXEC);
     list_alloc = (list_alloc_fn)dlsym(library, "android_logger_list_alloc");
     logger_open = (logger_open_fn)dlsym(library, "android_logger_open");
     list_read = (list_read_fn)dlsym(library, "android_logger_list_read");
@@ -298,8 +279,6 @@ int main(void) {
     }
 
     list_free(list);
-    if (cpuset_background_fd >= 0) close(cpuset_background_fd);
-    if (cpuctl_background_fd >= 0) close(cpuctl_background_fd);
     dlclose(library);
     return 0;
 }

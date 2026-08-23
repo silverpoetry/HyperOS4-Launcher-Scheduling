@@ -90,10 +90,36 @@ if (-not $yieldFunction.Success) {
     throw 'yield_source_native was not found'
 }
 $yieldBody = $yieldFunction.Groups['body'].Value
-$cgroupWrite = $yieldBody.IndexOf('write_pid_open_fd(cpuset_background_fd')
 $affinityApply = $yieldBody.IndexOf('run_affinity_apply(result.pid, result.uid)')
-if ($cgroupWrite -lt 0 -or $affinityApply -lt 0 -or $cgroupWrite -gt $affinityApply) {
-    throw 'Source cgroup placement must precede the per-thread affinity transaction'
+if ($affinityApply -lt 0) {
+    throw 'Native source yield must invoke the atomic affinity controller transaction'
+}
+if ($logWatcher -notmatch '\(char \*\)"yield"') {
+    throw 'Native source yield must use the snapshot-before-cgroup operation'
+}
+if ($logWatcher -notmatch 'finish_remote_transition to_home = false') {
+    throw 'Native watcher must forward same-app return completion'
+}
+
+$events = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\events.sh') -Raw
+if ($events -notmatch 'finish_remote_transition to_home = false') {
+    throw 'State machine must restore the source on same-app return completion'
+}
+
+$affinityController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c') -Raw
+$yieldState = [regex]::Match(
+    $affinityController,
+    'static int yield_state\([^)]*\) \{(?<body>[\s\S]*?)\n\}',
+    [Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $yieldState.Success) {
+    throw 'yield_state was not found in source_affinityctl'
+}
+$yieldStateBody = $yieldState.Groups['body'].Value
+$snapshotApply = $yieldStateBody.IndexOf('apply_state(pid, uid, path)')
+$backgroundMove = $yieldStateBody.IndexOf('write_pid(BACKGROUND_CPUSET_PROCS, pid)')
+if ($snapshotApply -lt 0 -or $backgroundMove -lt 0 -or $snapshotApply -gt $backgroundMove) {
+    throw 'Source affinity snapshot must precede background cgroup placement'
 }
 
 Write-Output 'source_layout=passed'

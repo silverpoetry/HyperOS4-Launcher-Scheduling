@@ -110,8 +110,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v5.1.zip
-../output/HyperOS4-Launcher-Scheduling-v5.1.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v5.2.zip
+../output/HyperOS4-Launcher-Scheduling-v5.2.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。

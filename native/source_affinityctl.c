@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -16,6 +17,8 @@
 #define MINOR_WINDOW_NODE "/sys/module/metis/parameters/minor_window_app"
 #define BACKGROUND_CPU_FILE "/dev/cpuset/background/cpus"
 #define TOP_APP_CPU_FILE "/dev/cpuset/top-app/cpus"
+#define BACKGROUND_CPUSET_PROCS "/dev/cpuset/background/cgroup.procs"
+#define BACKGROUND_CPUCTL_PROCS "/dev/cpuctl/background/cgroup.procs"
 #define MAX_TASKS 4096
 
 struct task_record {
@@ -56,6 +59,35 @@ static int write_number(const char *path, long value) {
     }
     close(fd);
     return 0;
+}
+
+static int write_pid(const char *path, pid_t pid) {
+    char buffer[64];
+    int fd;
+    int length = snprintf(buffer, sizeof(buffer), "%d\n", pid);
+    if (length <= 0 || (size_t)length >= sizeof(buffer)) return -1;
+    fd = open(path, O_WRONLY | O_CLOEXEC);
+    if (fd < 0) return -1;
+    if (write(fd, buffer, (size_t)length) != length) {
+        close(fd);
+        return -1;
+    }
+    close(fd);
+    return 0;
+}
+
+static int lock_state(const char *path) {
+    char lock_path[512];
+    int fd;
+    int length = snprintf(lock_path, sizeof(lock_path), "%s.lock", path);
+    if (length <= 0 || (size_t)length >= sizeof(lock_path)) return -1;
+    fd = open(lock_path, O_CREAT | O_RDWR | O_CLOEXEC, 0600);
+    if (fd < 0) return -1;
+    if (flock(fd, LOCK_EX) != 0) {
+        close(fd);
+        return -1;
+    }
+    return fd;
 }
 
 static long read_number(const char *path) {
@@ -417,6 +449,22 @@ static int apply_state(pid_t pid, uid_t uid, const char *path) {
     return failed == 0 ? 0 : 7;
 }
 
+static int yield_state(pid_t pid, uid_t uid, const char *path) {
+    int result = apply_state(pid, uid, path);
+    int cpuset_ok;
+    int cpuctl_ok;
+    if (result != 0) return result;
+
+    /* Capture affinity while the source still belongs to top-app.  If the
+       cgroup is moved first, sched_getaffinity() can only observe the little
+       cluster and the temporary mask is then saved as the restore baseline. */
+    cpuset_ok = write_pid(BACKGROUND_CPUSET_PROCS, pid) == 0;
+    cpuctl_ok = write_pid(BACKGROUND_CPUCTL_PROCS, pid) == 0;
+    printf("yield pid=%d uid=%u cpuset=%d cpuctl=%d\n",
+           pid, uid, cpuset_ok, cpuctl_ok);
+    return cpuset_ok && cpuctl_ok ? 0 : 10;
+}
+
 static int verify_state(pid_t pid) {
     struct task_record *records = calloc(MAX_TASKS, sizeof(*records));
     size_t count = 0;
@@ -455,25 +503,53 @@ static int state_matches(const char *path, pid_t pid, uid_t uid) {
 }
 
 int main(int argc, char **argv) {
-    if (argc >= 2 && strcmp(argv[1], "restore") == 0 && argc == 3)
-        return restore_state(argv[2], 1, 1);
-    if (argc >= 2 && strcmp(argv[1], "restore-no-minor") == 0 && argc == 3)
-        return restore_state(argv[2], 1, 0);
-    if (argc >= 2 && strcmp(argv[1], "replace") == 0 && argc == 5) {
+    const char *state_path = NULL;
+    int lock_fd;
+    int result = 1;
+
+    if (argc == 3 && strcmp(argv[1], "verify") == 0)
+        return verify_state((pid_t)atoi(argv[2]));
+    if (argc == 3 &&
+        (strcmp(argv[1], "restore") == 0 ||
+         strcmp(argv[1], "restore-no-minor") == 0)) {
+        state_path = argv[2];
+    } else if (argc == 5 &&
+               (strcmp(argv[1], "apply") == 0 ||
+                strcmp(argv[1], "replace") == 0 ||
+                strcmp(argv[1], "yield") == 0)) {
+        state_path = argv[4];
+    } else {
+        fprintf(stderr, "usage: %s apply|replace|yield PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
+        return 1;
+    }
+
+    lock_fd = lock_state(state_path);
+    if (lock_fd < 0) return 11;
+
+    if (strcmp(argv[1], "restore") == 0) {
+        result = restore_state(argv[2], 1, 1);
+    } else if (strcmp(argv[1], "restore-no-minor") == 0) {
+        result = restore_state(argv[2], 1, 0);
+    } else if (strcmp(argv[1], "replace") == 0) {
         pid_t pid = (pid_t)atoi(argv[2]);
         uid_t uid = (uid_t)strtoul(argv[3], NULL, 10);
-        if (state_matches(argv[4], pid, uid))
-            return apply_state(pid, uid, argv[4]);
-        if (access(argv[4], F_OK) == 0) {
-            int result = restore_state(argv[4], 1, 0);
-            if (result != 0) return result;
+        if (state_matches(argv[4], pid, uid)) {
+            result = apply_state(pid, uid, argv[4]);
+        } else {
+            if (access(argv[4], F_OK) == 0)
+                result = restore_state(argv[4], 1, 0);
+            else
+                result = 0;
+            if (result == 0) result = apply_state(pid, uid, argv[4]);
         }
-        return apply_state(pid, uid, argv[4]);
+    } else if (strcmp(argv[1], "yield") == 0) {
+        result = yield_state((pid_t)atoi(argv[2]),
+                             (uid_t)strtoul(argv[3], NULL, 10), argv[4]);
+    } else if (strcmp(argv[1], "apply") == 0) {
+        result = apply_state((pid_t)atoi(argv[2]),
+                             (uid_t)strtoul(argv[3], NULL, 10), argv[4]);
     }
-    if (argc >= 2 && strcmp(argv[1], "verify") == 0 && argc == 3)
-        return verify_state((pid_t)atoi(argv[2]));
-    if (argc >= 2 && strcmp(argv[1], "apply") == 0 && argc == 5)
-        return apply_state((pid_t)atoi(argv[2]), (uid_t)strtoul(argv[3], NULL, 10), argv[4]);
-    fprintf(stderr, "usage: %s apply|replace PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
-    return 1;
+
+    close(lock_fd);
+    return result;
 }

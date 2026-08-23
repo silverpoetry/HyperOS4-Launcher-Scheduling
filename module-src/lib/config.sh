@@ -55,7 +55,10 @@ migrate_config_file() {
   if [ ! -e "$current" ] && [ -r "$legacy" ]; then
     cp "$legacy" "$current" || return 1
   fi
-  [ -e "$current" ] && rm -f "$legacy"
+  if [ -e "$current" ] && [ -e "$legacy" ]; then
+    rm -f "$legacy" 2>/dev/null || true
+  fi
+  return 0
 }
 
 migrate_legacy_configuration() {
