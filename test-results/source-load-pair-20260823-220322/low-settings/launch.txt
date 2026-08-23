@@ -1,0 +1,8 @@
+Starting: Intent { act=android.settings.SETTINGS }
+Warning: Activity not started, its current task has been brought to the front
+Status: ok
+LaunchState: HOT
+Activity: com.android.settings/.Settings$WifiSettingsActivity
+TotalTime: 394
+WaitTime: 398
+Complete

@@ -1,0 +1,8 @@
+Starting: Intent { cmp=com.tencent.jkchess/.ApolloZGame }
+Warning: Activity not started, intent has been delivered to currently running top-most instance.
+Status: ok
+LaunchState: UNKNOWN (0)
+Activity: com.tencent.jkchess/.ApolloZGame
+TotalTime: 0
+WaitTime: 78
+Complete

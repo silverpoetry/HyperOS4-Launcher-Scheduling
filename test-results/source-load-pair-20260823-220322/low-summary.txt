@@ -1,0 +1,242 @@
+# Launcher raster by phase
+{'phase': 'round_1_entry', 'frames': 134, 'draw_over_8ms': 56, 'draw_p50_ms': 7.634, 'draw_p95_ms': 9.552, 'draw_max_ms': 16.012, 'encode_v0_p95_ms': 4.739, 'encode_v0_max_ms': 10.75}
+{'phase': 'round_1_return', 'frames': 92, 'draw_over_8ms': 6, 'draw_p50_ms': 3.42, 'draw_p95_ms': 8.208, 'draw_max_ms': 20.688, 'encode_v0_p95_ms': 6.897, 'encode_v0_max_ms': 19.906}
+{'phase': 'round_2_entry', 'frames': 133, 'draw_over_8ms': 8, 'draw_p50_ms': 3.704, 'draw_p95_ms': 8.211, 'draw_max_ms': 15.071, 'encode_v0_p95_ms': 4.947, 'encode_v0_max_ms': 7.842}
+{'phase': 'round_2_return', 'frames': 92, 'draw_over_8ms': 5, 'draw_p50_ms': 3.081, 'draw_p95_ms': 7.948, 'draw_max_ms': 9.63, 'encode_v0_p95_ms': 6.852, 'encode_v0_max_ms': 8.121}
+{'phase': 'round_3_entry', 'frames': 133, 'draw_over_8ms': 5, 'draw_p50_ms': 3.679, 'draw_p95_ms': 7.802, 'draw_max_ms': 13.923, 'encode_v0_p95_ms': 5.229, 'encode_v0_max_ms': 7.546}
+{'phase': 'round_3_return', 'frames': 95, 'draw_over_8ms': 3, 'draw_p50_ms': 3.178, 'draw_p95_ms': 7.712, 'draw_max_ms': 15.563, 'encode_v0_p95_ms': 6.268, 'encode_v0_max_ms': 14.148}
+{'phase': 'round_4_entry', 'frames': 133, 'draw_over_8ms': 44, 'draw_p50_ms': 6.644, 'draw_p95_ms': 9.488, 'draw_max_ms': 15.542, 'encode_v0_p95_ms': 4.534, 'encode_v0_max_ms': 8.549}
+{'phase': 'round_4_return', 'frames': 89, 'draw_over_8ms': 5, 'draw_p50_ms': 3.062, 'draw_p95_ms': 8.021, 'draw_max_ms': 13.622, 'encode_v0_p95_ms': 6.986, 'encode_v0_max_ms': 12.538}
+
+# Three longest Launcher raster frames per phase
+{'phase': 'round_1_entry', 'token': 3412869, 'draw_ms': 16.012, 'encode_v0_ms': 3.997, 'encode_v1_ms': 0.204, 'paint_ms': 0.1, 'present_ms': 0.748, 'running_ms': 7.298, 'runnable_ms': 0.301, 'sleep_ms': 8.414, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039', 'TX - VRI-Floating Dock#133']}
+{'phase': 'round_1_entry', 'token': 3410415, 'draw_ms': 13.472, 'encode_v0_ms': 10.75, 'encode_v1_ms': 1.031, 'paint_ms': 0.098, 'present_ms': 0.726, 'running_ms': 11.198, 'runnable_ms': 2.274, 'sleep_ms': 0, 'layers': ['TX - VRI-Floating Dock#133', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.414, 'dur_ms': 2.218}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 10.494, 'dur_ms': 0.211}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 4.894, 'dur_ms': 0.106}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 9.418, 'dur_ms': 0.1}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 10.6, 'dur_ms': 0.084}
+{'phase': 'round_1_entry', 'token': 3411674, 'draw_ms': 11.165, 'encode_v0_ms': 3.104, 'encode_v1_ms': 0.0, 'paint_ms': 0.105, 'present_ms': 7.545, 'running_ms': 3.973, 'runnable_ms': 0.04, 'sleep_ms': 7.152, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039', 'TX - Surface(name=Task=1#35)/@0xef7ed4d_transition-leash#1040', 'TX - Surface(name=Task=135#309)/@0x106bd13_transition-leash#1041']}
+{'phase': 'round_1_return', 'token': 3414176, 'draw_ms': 20.688, 'encode_v0_ms': 19.906, 'encode_v1_ms': 0.0, 'paint_ms': 0.054, 'present_ms': 0.371, 'running_ms': 3.475, 'runnable_ms': 16.547, 'sleep_ms': 0.665, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039', 'TX - Surface(name=Task=135#309)/@0xed52d99_transition-leash#1055']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.361, 'dur_ms': 17.576}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 19.332, 'dur_ms': 0.252}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 19.335, 'dur_ms': 0.246}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.717, 'dur_ms': 0.234}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.719, 'dur_ms': 0.23}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 19.662, 'dur_ms': 0.197}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.522, 'dur_ms': 0.16}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 19.781, 'dur_ms': 0.057}
+{'phase': 'round_1_return', 'token': 3412901, 'draw_ms': 15.812, 'encode_v0_ms': 14.679, 'encode_v1_ms': 0.0, 'paint_ms': 0.129, 'present_ms': 0.461, 'running_ms': 6.004, 'runnable_ms': 4.801, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039']}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 3.618, 'dur_ms': 10.987}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 3.798, 'dur_ms': 10.79}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.241, 'dur_ms': 0.266}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.379, 'dur_ms': 0.245}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.381, 'dur_ms': 0.241}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.602, 'dur_ms': 0.098}
+{'phase': 'round_1_return', 'token': 3413480, 'draw_ms': 10.888, 'encode_v0_ms': 9.884, 'encode_v1_ms': 0.0, 'paint_ms': 0.096, 'present_ms': 0.502, 'running_ms': 6.233, 'runnable_ms': 4.655, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1039', 'TX - Surface(name=Task=135#309)/@0xed52d99_transition-leash#1055']}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.393, 'dur_ms': 2.434}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.07, 'dur_ms': 0.801}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 4.073, 'dur_ms': 0.797}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.52, 'dur_ms': 0.287}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.642, 'dur_ms': 0.279}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.644, 'dur_ms': 0.276}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.515, 'dur_ms': 0.215}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.987, 'dur_ms': 0.205}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.358, 'dur_ms': 0.151}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.919, 'dur_ms': 0.147}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.947, 'dur_ms': 0.142}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.526, 'dur_ms': 0.089}
+{'phase': 'round_2_entry', 'token': 3417602, 'draw_ms': 15.071, 'encode_v0_ms': 4.947, 'encode_v1_ms': 0.173, 'paint_ms': 0.082, 'present_ms': 1.349, 'running_ms': 9.114, 'runnable_ms': 2.063, 'sleep_ms': 3.893, 'layers': ['TX - Surface(name=Task=135#309)/@0x101664_transition-leash#1070', 'TX - VRI-Floating Dock#133', 'TX - Surface(name=Task=1#35)/@0x90cc7f6_transition-leash#1069', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072']}
+{'phase': 'round_2_entry', 'token': 3417508, 'draw_ms': 11.868, 'encode_v0_ms': 7.842, 'encode_v1_ms': 0.539, 'paint_ms': 0.175, 'present_ms': 0.791, 'running_ms': 9.646, 'runnable_ms': 0.362, 'sleep_ms': 0, 'layers': ['TX - VRI-Floating Dock#133', 'TX - Surface(name=Task=1#35)/@0x90cc7f6_transition-leash#1069', 'TX - Surface(name=Task=135#309)/@0x101664_transition-leash#1070', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072']}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 6.472, 'dur_ms': 1.308}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 6.779, 'dur_ms': 0.982}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.778, 'dur_ms': 0.722}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.779, 'dur_ms': 0.717}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.025, 'dur_ms': 0.222}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.578, 'dur_ms': 0.181}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.58, 'dur_ms': 0.177}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.642, 'dur_ms': 0.101}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.77, 'dur_ms': 0.083}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.771, 'dur_ms': 0.08}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.856, 'dur_ms': 0.069}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.374, 'dur_ms': 0.061}
+{'phase': 'round_2_entry', 'token': 3416042, 'draw_ms': 11.356, 'encode_v0_ms': 5.844, 'encode_v1_ms': 3.298, 'paint_ms': 0.082, 'present_ms': 1.821, 'running_ms': 8.472, 'runnable_ms': 2.884, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072', 'TX - VRI-Floating Dock#133']}
+{'phase': 'round_2_return', 'token': 3419096, 'draw_ms': 9.63, 'encode_v0_ms': 8.121, 'encode_v1_ms': 0.156, 'paint_ms': 0.092, 'present_ms': 0.739, 'running_ms': 8.128, 'runnable_ms': 1.453, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072', 'TX - VRI-Floating Dock#133', 'TX - Surface(name=Task=135#309)/@0x93d1ac7_transition-leash#1083']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.82, 'dur_ms': 0.808}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.254, 'dur_ms': 0.569}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.666, 'dur_ms': 0.396}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.645, 'dur_ms': 0.363}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.426, 'dur_ms': 0.348}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.672, 'dur_ms': 0.259}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.674, 'dur_ms': 0.255}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.69, 'dur_ms': 0.223}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.693, 'dur_ms': 0.219}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.557, 'dur_ms': 0.099}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 7.955, 'dur_ms': 0.079}
+{'phase': 'round_2_return', 'token': 3419286, 'draw_ms': 8.939, 'encode_v0_ms': 6.994, 'encode_v1_ms': 0.0, 'paint_ms': 0.101, 'present_ms': 1.44, 'running_ms': 6.072, 'runnable_ms': 2.867, 'sleep_ms': 0, 'layers': ['TX - Surface(name=Task=135#309)/@0x93d1ac7_transition-leash#1083', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.77, 'dur_ms': 0.879}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 3.775, 'dur_ms': 0.872}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.811, 'dur_ms': 0.665}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.812, 'dur_ms': 0.662}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 6.603, 'dur_ms': 0.337}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.974, 'dur_ms': 0.203}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.59, 'dur_ms': 0.171}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.068, 'dur_ms': 0.165}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.273, 'dur_ms': 0.155}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.701, 'dur_ms': 0.136}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.651, 'dur_ms': 0.107}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.654, 'dur_ms': 0.102}
+{'phase': 'round_2_return', 'token': 3419366, 'draw_ms': 8.679, 'encode_v0_ms': 7.843, 'encode_v1_ms': 0.0, 'paint_ms': 0.09, 'present_ms': 0.363, 'running_ms': 5.101, 'runnable_ms': 3.577, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1072', 'TX - Surface(name=Task=135#309)/@0x93d1ac7_transition-leash#1083']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.647, 'dur_ms': 2.859}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.649, 'dur_ms': 2.855}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.762, 'dur_ms': 1.27}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 3.764, 'dur_ms': 1.266}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.842, 'dur_ms': 0.449}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.497, 'dur_ms': 0.295}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.803, 'dur_ms': 0.219}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 5.805, 'dur_ms': 0.214}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.298, 'dur_ms': 0.184}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.525, 'dur_ms': 0.094}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 7.696, 'dur_ms': 0.074}
+{'phase': 'round_3_entry', 'token': 3423540, 'draw_ms': 13.923, 'encode_v0_ms': 6.152, 'encode_v1_ms': 0.275, 'paint_ms': 0.085, 'present_ms': 0.746, 'running_ms': 9.708, 'runnable_ms': 1.398, 'sleep_ms': 2.817, 'layers': ['TX - VRI-Floating Dock#133', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099', 'TX - Surface(name=Task=1#35)/@0xba830aa_transition-leash#1100', 'TX - Surface(name=Task=135#309)/@0x8b25038_transition-leash#1101']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.571, 'dur_ms': 0.825}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.783, 'dur_ms': 0.481}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.784, 'dur_ms': 0.478}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 5.607, 'dur_ms': 0.478}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.709, 'dur_ms': 0.425}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.147, 'dur_ms': 0.218}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.372, 'dur_ms': 0.188}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.374, 'dur_ms': 0.184}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 5.988, 'dur_ms': 0.07}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.624, 'dur_ms': 0.066}
+{'phase': 'round_3_entry', 'token': 3422145, 'draw_ms': 9.781, 'encode_v0_ms': 7.546, 'encode_v1_ms': 0.878, 'paint_ms': 0.093, 'present_ms': 0.832, 'running_ms': 9.163, 'runnable_ms': 0.618, 'sleep_ms': 0, 'layers': ['TX - VRI-Floating Dock#133', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099', 'TX - Surface(name=Task=1#35)/@0xba830aa_transition-leash#1100', 'TX - Surface(name=Task=135#309)/@0x8b25038_transition-leash#1101']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.315, 'dur_ms': 1.614}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 3.317, 'dur_ms': 1.609}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.146, 'dur_ms': 1.232}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 6.733, 'dur_ms': 0.753}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.004, 'dur_ms': 0.526}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.006, 'dur_ms': 0.522}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 7.287, 'dur_ms': 0.18}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.403, 'dur_ms': 0.141}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.405, 'dur_ms': 0.137}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.694, 'dur_ms': 0.108}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.696, 'dur_ms': 0.104}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 1.891, 'dur_ms': 0.081}
+{'phase': 'round_3_entry', 'token': 3423234, 'draw_ms': 8.943, 'encode_v0_ms': 6.785, 'encode_v1_ms': 0.857, 'paint_ms': 0.106, 'present_ms': 0.771, 'running_ms': 7.141, 'runnable_ms': 1.801, 'sleep_ms': 0, 'layers': ['TX - VRI-Floating Dock#133', 'TX - Surface(name=Task=135#309)/@0x8b25038_transition-leash#1101', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099', 'TX - Surface(name=Task=1#35)/@0xba830aa_transition-leash#1100']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.569, 'dur_ms': 1.63}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.321, 'dur_ms': 0.84}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.501, 'dur_ms': 0.618}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 4.503, 'dur_ms': 0.614}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.602, 'dur_ms': 0.382}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.605, 'dur_ms': 0.377}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.129, 'dur_ms': 0.33}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 6.408, 'dur_ms': 0.33}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.788, 'dur_ms': 0.085}
+{'phase': 'round_3_return', 'token': 3424789, 'draw_ms': 15.563, 'encode_v0_ms': 14.148, 'encode_v1_ms': 0.0, 'paint_ms': 0.14, 'present_ms': 0.45, 'running_ms': 6.838, 'runnable_ms': 3.942, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099']}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 3.275, 'dur_ms': 10.799}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 3.442, 'dur_ms': 10.552}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.496, 'dur_ms': 0.295}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.661, 'dur_ms': 0.238}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.664, 'dur_ms': 0.233}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.823, 'dur_ms': 0.117}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.688, 'dur_ms': 0.057}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.689, 'dur_ms': 0.054}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.456, 'dur_ms': 0.053}
+{'phase': 'round_3_return', 'token': 3425367, 'draw_ms': 8.813, 'encode_v0_ms': 7.934, 'encode_v1_ms': 0.0, 'paint_ms': 0.098, 'present_ms': 0.398, 'running_ms': 7.085, 'runnable_ms': 0.98, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099', 'TX - Surface(name=Task=135#309)/@0x312ca61_transition-leash#1115']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.332, 'dur_ms': 0.807}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.486, 'dur_ms': 0.798}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.488, 'dur_ms': 0.794}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.143, 'dur_ms': 0.608}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.445, 'dur_ms': 0.432}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.563, 'dur_ms': 0.387}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.903, 'dur_ms': 0.246}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.247, 'dur_ms': 0.242}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.248, 'dur_ms': 0.239}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.087, 'dur_ms': 0.181}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.344, 'dur_ms': 0.097}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 1.125, 'dur_ms': 0.096}
+{'phase': 'round_3_return', 'token': 3425345, 'draw_ms': 8.599, 'encode_v0_ms': 7.559, 'encode_v1_ms': 0.0, 'paint_ms': 0.127, 'present_ms': 0.372, 'running_ms': 6.268, 'runnable_ms': 2.33, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1099', 'TX - Surface(name=Task=135#309)/@0x312ca61_transition-leash#1115']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.869, 'dur_ms': 2.621}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.87, 'dur_ms': 2.617}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.117, 'dur_ms': 0.491}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.948, 'dur_ms': 0.486}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.822, 'dur_ms': 0.392}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 4.824, 'dur_ms': 0.387}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.169, 'dur_ms': 0.339}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.26, 'dur_ms': 0.127}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.715, 'dur_ms': 0.121}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 5.771, 'dur_ms': 0.091}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 7.409, 'dur_ms': 0.074}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.781, 'dur_ms': 0.06}
+{'phase': 'round_4_entry', 'token': 3429345, 'draw_ms': 15.542, 'encode_v0_ms': 8.038, 'encode_v1_ms': 0.201, 'paint_ms': 0.108, 'present_ms': 1.176, 'running_ms': 9.778, 'runnable_ms': 2.527, 'sleep_ms': 3.237, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129', 'TX - VRI-Floating Dock#133', 'TX - Surface(name=Task=1#35)/@0x6e9bd5d_transition-leash#1130', 'TX - Surface(name=Task=135#309)/@0x47eb3a3_transition-leash#1131']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.227, 'dur_ms': 0.486}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 3.231, 'dur_ms': 0.48}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.696, 'dur_ms': 0.471}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.16, 'dur_ms': 0.418}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 7.627, 'dur_ms': 0.363}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.191, 'dur_ms': 0.309}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 4.828, 'dur_ms': 0.193}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 4.831, 'dur_ms': 0.188}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 7.235, 'dur_ms': 0.179}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 7.237, 'dur_ms': 0.176}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.888, 'dur_ms': 0.096}
+{'phase': 'round_4_entry', 'token': 3429659, 'draw_ms': 11.748, 'encode_v0_ms': 3.053, 'encode_v1_ms': 0.0, 'paint_ms': 0.072, 'present_ms': 8.284, 'running_ms': 3.059, 'runnable_ms': 0.093, 'sleep_ms': 8.031, 'layers': ['TX - Surface(name=Task=135#309)/@0x47eb3a3_transition-leash#1131', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129', 'TX - Surface(name=Task=1#35)/@0x6e9bd5d_transition-leash#1130']}
+{'phase': 'round_4_entry', 'token': 3427882, 'draw_ms': 11.473, 'encode_v0_ms': 8.549, 'encode_v1_ms': 0.931, 'paint_ms': 0.102, 'present_ms': 0.941, 'running_ms': 8.93, 'runnable_ms': 2.523, 'sleep_ms': 0, 'layers': ['TX - VRI-Floating Dock#133', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.175, 'dur_ms': 1.354}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 8.304, 'dur_ms': 0.201}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 5.74, 'dur_ms': 0.104}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 7.703, 'dur_ms': 0.1}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 8.219, 'dur_ms': 0.072}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 8.222, 'dur_ms': 0.068}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 8.426, 'dur_ms': 0.057}
+{'phase': 'round_4_return', 'token': 3430603, 'draw_ms': 13.622, 'encode_v0_ms': 12.538, 'encode_v1_ms': 0.0, 'paint_ms': 0.117, 'present_ms': 0.442, 'running_ms': 6.246, 'runnable_ms': 2.528, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129']}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 2.789, 'dur_ms': 9.677}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 2.955, 'dur_ms': 9.453}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.361, 'dur_ms': 0.297}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 1.517, 'dur_ms': 0.236}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 1.52, 'dur_ms': 0.231}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.695, 'dur_ms': 0.116}
+{'phase': 'round_4_return', 'token': 3431108, 'draw_ms': 12.245, 'encode_v0_ms': 9.153, 'encode_v1_ms': 0.0, 'paint_ms': 0.098, 'present_ms': 2.591, 'running_ms': 5.935, 'runnable_ms': 6.31, 'sleep_ms': 0, 'layers': ['TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129', 'TX - Surface(name=Task=135#309)/@0xd624e30_transition-leash#1143']}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 1.101, 'dur_ms': 2.805}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.991, 'dur_ms': 1.904}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 3.994, 'dur_ms': 1.899}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 7.591, 'dur_ms': 0.449}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 8.693, 'dur_ms': 0.408}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.344, 'dur_ms': 0.277}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.144, 'dur_ms': 0.272}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.879, 'dur_ms': 0.208}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 6.882, 'dur_ms': 0.203}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 9.011, 'dur_ms': 0.069}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 8.394, 'dur_ms': 0.068}
+{'phase': 'round_4_return', 'token': 3431137, 'draw_ms': 11.571, 'encode_v0_ms': 9.559, 'encode_v1_ms': 0.0, 'paint_ms': 0.83, 'present_ms': 0.426, 'running_ms': 7.213, 'runnable_ms': 4.358, 'sleep_ms': 0, 'layers': ['TX - Surface(name=Task=135#309)/@0xd624e30_transition-leash#1143', 'TX - VRI-com.miui.home/com.miui.home.launcher.Launcher#1129']}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 6.67, 'dur_ms': 2.079}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 0.959, 'dur_ms': 0.636}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 0.96, 'dur_ms': 0.633}
+   {'name': 'CommandQueueVK::Submit', 'depth': 2, 'offset_ms': 9.122, 'dur_ms': 0.377}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.044, 'dur_ms': 0.36}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.922, 'dur_ms': 0.235}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.655, 'dur_ms': 0.194}
+   {'name': 'Canvas::DrawHyperMaterial', 'depth': 3, 'offset_ms': 2.657, 'dur_ms': 0.189}
+   {'name': 'CollectNewGlyphs', 'depth': 2, 'offset_ms': 0.809, 'dur_ms': 0.118}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 3.181, 'dur_ms': 0.104}
+   {'name': 'Canvas::saveLayer', 'depth': 2, 'offset_ms': 2.888, 'dur_ms': 0.098}
+   {'name': 'QueueSubmit', 'depth': 3, 'offset_ms': 9.409, 'dur_ms': 0.069}
+
+# Task snapshot persistence
+{'phase': 'round_1_entry', 'wall_ms': 170.801, 'running_ms': 123.553, 'runnable_ms': 47.154, 'blocked_ms': 0.094, 'cpu_runtime_ms': {3: 70.259, 4: 31.286, 5: 6.729, 6: 15.218, 7: 0.062}}
+{'phase': 'round_1_entry', 'wall_ms': 112.412, 'running_ms': 105.168, 'runnable_ms': 3.485, 'blocked_ms': 3.759, 'cpu_runtime_ms': {3: 7.514, 4: 4.732, 5: 7.694, 6: 16.795, 7: 68.433}}
+{'phase': 'round_2_entry', 'wall_ms': 163.593, 'running_ms': 122.839, 'runnable_ms': 36.374, 'blocked_ms': 4.38, 'cpu_runtime_ms': {3: 49.694, 4: 44.536, 5: 13.861, 6: 14.607, 7: 0.141}}
+{'phase': 'round_2_entry', 'wall_ms': 106.246, 'running_ms': 98.445, 'runnable_ms': 4.432, 'blocked_ms': 3.369, 'cpu_runtime_ms': {6: 0.536, 7: 97.909}}
+{'phase': 'round_3_entry', 'wall_ms': 154.079, 'running_ms': 118.007, 'runnable_ms': 33.09, 'blocked_ms': 2.982, 'cpu_runtime_ms': {3: 45.226, 4: 31.691, 5: 11.6, 6: 29.489}}
+{'phase': 'round_3_entry', 'wall_ms': 132.473, 'running_ms': 124.969, 'runnable_ms': 3.721, 'blocked_ms': 3.782, 'cpu_runtime_ms': {3: 1.569, 5: 39.054, 6: 83.714, 7: 0.632}}
+{'phase': 'round_4_entry', 'wall_ms': 113.323, 'running_ms': 92.34, 'runnable_ms': 20.954, 'blocked_ms': 0.029, 'cpu_runtime_ms': {3: 15.795, 5: 15.825, 7: 60.72}}
+{'phase': 'round_4_entry', 'wall_ms': 129.678, 'running_ms': 118.584, 'runnable_ms': 7.852, 'blocked_ms': 3.241, 'cpu_runtime_ms': {3: 95.991, 4: 0.795, 6: 18.378, 7: 3.421}}
+
+# Long Launcher main callbacks
+{'phase': 'round_1_entry', 'wall_ms': 43.471, 'running_ms': 1.994, 'runnable_ms': 2.853, 'sleep_ms': 38.623}
+{'phase': 'round_1_entry', 'wall_ms': 38.229, 'running_ms': 3.429, 'runnable_ms': 3.867, 'sleep_ms': 30.933}
+{'phase': 'round_2_return', 'wall_ms': 24.657, 'running_ms': 1.073, 'runnable_ms': 3.369, 'sleep_ms': 20.214}
+{'phase': 'round_3_entry', 'wall_ms': 26.574, 'running_ms': 3.995, 'runnable_ms': 2.031, 'sleep_ms': 20.547}
+{'phase': 'round_3_return', 'wall_ms': 25.614, 'running_ms': 0.931, 'runnable_ms': 5.168, 'sleep_ms': 19.515}
+{'phase': 'round_4_entry', 'wall_ms': 24.505, 'running_ms': 2.524, 'runnable_ms': 0.993, 'sleep_ms': 20.989}
+{'phase': 'round_4_entry', 'wall_ms': 43.677, 'running_ms': 4.099, 'runnable_ms': 1.439, 'sleep_ms': 38.139}

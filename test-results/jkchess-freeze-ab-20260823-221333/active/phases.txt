@@ -1,0 +1,22 @@
+phase=stress_start uptime=5732.55
+phase=round_1_before_gesture uptime=5732.55
+device=/dev/input/event6 duration_ms=480 raw_x=1625-12191 raw_y=10362,15239,20116
+phase=round_1_after_gesture uptime=5733.11
+phase=round_1_after_resume uptime=5734.04
+phase=round_1_after_tap uptime=5734.57
+phase=round_2_before_gesture uptime=5736.09
+device=/dev/input/event6 duration_ms=480 raw_x=1625-12191 raw_y=10362,15239,20116
+phase=round_2_after_gesture uptime=5736.66
+phase=round_2_after_resume uptime=5737.59
+phase=round_2_after_tap uptime=5738.11
+phase=round_3_before_gesture uptime=5739.63
+device=/dev/input/event6 duration_ms=480 raw_x=1625-12191 raw_y=10362,15239,20116
+phase=round_3_after_gesture uptime=5740.18
+phase=round_3_after_resume uptime=5741.12
+phase=round_3_after_tap uptime=5741.62
+phase=round_4_before_gesture uptime=5743.14
+device=/dev/input/event6 duration_ms=480 raw_x=1625-12191 raw_y=10362,15239,20116
+phase=round_4_after_gesture uptime=5743.69
+phase=round_4_after_resume uptime=5744.63
+phase=round_4_after_tap uptime=5745.13
+phase=stress_complete uptime=5746.64

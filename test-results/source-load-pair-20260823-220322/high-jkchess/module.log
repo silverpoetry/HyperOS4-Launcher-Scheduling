@@ -1,0 +1,831 @@
+=== HyperOS 4 Launcher Scheduling v4.0 ===
+Sun Aug 23 20:38:35 CST 2026
+2026-08-23 20:38:52 mono=44.66 mode=home reason=initial-resumed-activity
+2026-08-23 20:38:53 mono=45.12 thread-topology all=ff perf=ff mid=7f little=7
+2026-08-23 20:38:53 mono=45.70 monitor launcher_pid=5818
+2026-08-23 20:39:11 mono=64.01 app-cached role=pending-source pid=12398 uid=10341 name=tencent.jkchess
+apply pid=12398 uid=10341 tasks=48 applied=48 failed=0 target=7 minor_before=0 minor_after=0 collect_us=2365 save_us=259 bind_us=733 total_us=3357
+2026-08-23 20:39:11 mono=64.04 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:39:11 mono=64.04 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:39:11 mono=64.06 thread-topology all=ff perf=f8 mid=78 little=7
+2026-08-23 20:39:11 mono=64.08 thread-boost serial=1 reason=app-resumed
+2026-08-23 20:39:12 mono=64.20 mode=leaving reason=app-resumed
+reassert pid=12398 uid=10341 tasks=61 added=13 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=811 save_us=187 bind_us=11 total_us=1009
+2026-08-23 20:39:12 mono=64.27 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:39:12 mono=64.27 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:39:12 mono=64.29 thread-boost serial=2 reason=app-resumed
+2026-08-23 20:39:13 mono=65.31 thread-boost-reset serial=2
+2026-08-23 20:39:14 mono=66.69 target-top-app pid=12398 reason=resume-timeout from_cpuset=/background from_cpuctl=/background
+restore pid=12398 uid=10341 restored=59 skipped=2 restore_minor=1 minor=10341
+2026-08-23 20:39:14 mono=66.71 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 20:39:14 mono=66.71 mode=app reason=resume-timeout
+active pid=12398 uid=10341 tasks=71 target=7 minor=0 total_us=1516
+2026-08-23 20:39:31 mono=83.80 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:39:31 mono=83.82 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:39:31 mono=83.82 native-yield 12398 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=16877 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=675 nativeYieldUs=2228 nativeCompleteNs=83781851686
+2026-08-23 20:39:31 mono=83.89 thread-boost serial=3 reason=gesture-start
+active pid=12398 uid=10341 tasks=71 target=7 minor=0 total_us=1342
+2026-08-23 20:39:31 mono=83.92 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:39:31 mono=83.93 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:39:32 mono=84.10 mode=entering reason=launcher-transition-start
+2026-08-23 20:39:32 mono=84.20 thread-boost serial=4 reason=launcher-resumed
+active pid=12398 uid=10341 tasks=71 target=7 minor=0 total_us=879
+2026-08-23 20:39:32 mono=84.21 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:39:32 mono=84.22 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:39:32 mono=84.30 mode=home reason=launcher-resumed
+2026-08-23 20:39:33 mono=85.22 thread-boost-reset serial=4
+2026-08-23 20:39:59 mono=111.49 app-cached role=pending-source pid=12398 uid=10341 name=tencent.jkchess
+active pid=12398 uid=10341 tasks=64 target=7 minor=0 total_us=1486
+2026-08-23 20:39:59 mono=111.50 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:39:59 mono=111.51 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:39:59 mono=111.56 thread-boost serial=5 reason=app-resumed
+2026-08-23 20:39:59 mono=111.71 mode=leaving reason=app-resumed
+reassert pid=12398 uid=10341 tasks=65 added=1 escaped=15 applied=15 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=2568 save_us=503 bind_us=136 total_us=3207
+2026-08-23 20:39:59 mono=111.80 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:39:59 mono=111.80 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:39:59 mono=111.86 thread-boost serial=6 reason=app-resumed
+2026-08-23 20:40:00 mono=112.89 thread-boost-reset serial=6
+2026-08-23 20:40:02 mono=114.70 target-top-app pid=12398 reason=resume-timeout from_cpuset=/background from_cpuctl=/background
+restore pid=12398 uid=10341 restored=65 skipped=7 restore_minor=1 minor=10341
+2026-08-23 20:40:02 mono=114.75 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 20:40:02 mono=114.76 mode=app reason=resume-timeout
+active pid=12398 uid=10341 tasks=93 target=7 minor=0 total_us=1069
+2026-08-23 20:58:35 mono=1227.90 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:35 mono=1227.91 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:35 mono=1227.93 native-yield 12398 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=29785 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=1107 nativeYieldUs=1283 nativeCompleteNs=176428578629
+2026-08-23 20:58:36 mono=1228.16 thread-boost serial=7 reason=gesture-start
+active pid=12398 uid=10341 tasks=93 target=7 minor=0 total_us=3964
+2026-08-23 20:58:36 mono=1228.20 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:36 mono=1228.20 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:36 mono=1228.43 mode=entering reason=launcher-transition-start
+2026-08-23 20:58:37 mono=1229.19 thread-boost-reset serial=7
+active pid=12398 uid=10341 tasks=114 target=7 minor=0 total_us=1632
+2026-08-23 20:58:39 mono=1231.22 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:39 mono=1231.23 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:39 mono=1231.23 native-yield 12398 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=26782 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=3559 nativeYieldUs=142 nativeCompleteNs=179750356128
+2026-08-23 20:58:39 mono=1231.26 thread-boost serial=8 reason=gesture-start
+active pid=12398 uid=10341 tasks=114 target=7 minor=0 total_us=1804
+2026-08-23 20:58:39 mono=1231.29 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:39 mono=1231.31 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:39 mono=1232.04 thread-boost serial=9 reason=launcher-resumed
+reassert pid=12398 uid=10341 tasks=113 added=0 escaped=20 applied=20 failed=0 target=7 minor_before=0 minor_after=0 collect_us=2173 save_us=27 bind_us=1442 total_us=3642
+2026-08-23 20:58:40 mono=1232.17 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:40 mono=1232.21 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:40 mono=1232.58 mode=home reason=launcher-resumed
+2026-08-23 20:58:40 mono=1232.63 thread-boost serial=10 reason=overview-entered
+active pid=12398 uid=10341 tasks=113 target=7 minor=0 total_us=1943
+2026-08-23 20:58:40 mono=1232.67 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:40 mono=1232.67 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:40 mono=1232.86 mode=recents reason=overview-entered
+2026-08-23 20:58:41 mono=1233.26 thread-boost serial=11 reason=launcher-exit-start
+reassert pid=12398 uid=10341 tasks=114 added=1 escaped=8 applied=8 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1090 save_us=145 bind_us=55 total_us=1290
+2026-08-23 20:58:41 mono=1233.35 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:41 mono=1233.40 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:41 mono=1233.92 mode=leaving reason=launcher-exit-start
+2026-08-23 20:58:41 mono=1234.00 app-cached role=pending-source pid=12398 uid=10341 name=tencent.jkchess
+reassert pid=12398 uid=10341 tasks=112 added=0 escaped=36 applied=36 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=8524 save_us=72 bind_us=340 total_us=8936
+2026-08-23 20:58:41 mono=1234.03 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:58:41 mono=1234.04 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:58:41 mono=1234.08 thread-boost serial=12 reason=app-resumed
+2026-08-23 20:58:42 mono=1234.30 thread-boost serial=13 reason=launcher-exit-start
+2026-08-23 20:58:42 mono=1234.52 target-top-app pid=12398 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=12398 uid=10341 restored=112 skipped=3 restore_minor=1 minor=10341
+2026-08-23 20:58:42 mono=1234.54 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 20:58:42 mono=1234.54 mode=app reason=launcher-exit-complete
+active pid=12398 uid=10341 tasks=112 target=7 minor=0 total_us=5966
+2026-08-23 20:58:42 mono=1234.68 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:42 mono=1234.68 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:42 mono=1234.69 native-yield 12398 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=24574 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=9416 nativeYieldUs=9704 nativeCompleteNs=183207025606
+2026-08-23 20:58:42 mono=1234.74 thread-boost serial=14 reason=gesture-start
+active pid=12398 uid=10341 tasks=112 target=7 minor=0 total_us=4359
+2026-08-23 20:58:42 mono=1234.84 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:42 mono=1234.86 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:42 mono=1235.05 mode=entering reason=launcher-transition-start
+2026-08-23 20:58:43 mono=1235.14 thread-boost serial=15 reason=launcher-resumed
+active pid=12398 uid=10341 tasks=112 target=7 minor=0 total_us=1741
+2026-08-23 20:58:43 mono=1235.18 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:43 mono=1235.18 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:43 mono=1235.35 mode=home reason=launcher-resumed
+2026-08-23 20:58:43 mono=1235.39 thread-boost serial=16 reason=overview-entered
+active pid=12398 uid=10341 tasks=112 target=7 minor=0 total_us=3567
+2026-08-23 20:58:43 mono=1235.41 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:43 mono=1235.41 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:43 mono=1235.54 mode=recents reason=overview-entered
+2026-08-23 20:58:44 mono=1236.42 thread-boost-reset serial=16
+2026-08-23 20:58:44 mono=1236.55 thread-boost serial=17 reason=launcher-exit-start
+reassert pid=12398 uid=10341 tasks=115 added=4 escaped=10 applied=10 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1684 save_us=140 bind_us=34 total_us=1858
+2026-08-23 20:58:44 mono=1236.65 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:44 mono=1236.66 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:44 mono=1236.82 mode=leaving reason=launcher-exit-start
+2026-08-23 20:58:44 mono=1236.86 app-cached role=pending-source pid=12398 uid=10341 name=tencent.jkchess
+reassert pid=12398 uid=10341 tasks=114 added=1 escaped=14 applied=14 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=1930 save_us=212 bind_us=64 total_us=2206
+2026-08-23 20:58:44 mono=1236.87 source-affinity-applied pid=12398 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 20:58:44 mono=1236.88 target-yield pid=12398 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 20:58:44 mono=1236.92 thread-boost serial=18 reason=app-resumed
+2026-08-23 20:58:45 mono=1237.11 thread-boost serial=19 reason=launcher-exit-start
+2026-08-23 20:58:45 mono=1237.38 target-top-app pid=12398 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=12398 uid=10341 restored=114 skipped=3 restore_minor=1 minor=10341
+2026-08-23 20:58:45 mono=1237.40 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 20:58:45 mono=1237.41 mode=app reason=launcher-exit-complete
+active pid=12398 uid=10341 tasks=126 target=7 minor=0 total_us=2668
+2026-08-23 20:58:46 mono=1238.14 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:46 mono=1238.15 thread-boost-reset serial=19
+2026-08-23 20:58:46 mono=1238.15 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:46 mono=1238.16 native-yield 12398 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=16245 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=7803 nativeYieldUs=1414 nativeCompleteNs=186661286698
+2026-08-23 20:58:46 mono=1238.24 thread-boost serial=20 reason=gesture-start
+active pid=12398 uid=10341 tasks=126 target=7 minor=0 total_us=1224
+2026-08-23 20:58:46 mono=1238.31 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:46 mono=1238.32 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:46 mono=1238.56 mode=entering reason=launcher-transition-start
+2026-08-23 20:58:46 mono=1238.68 thread-boost serial=21 reason=launcher-resumed
+active pid=12398 uid=10341 tasks=126 target=7 minor=0 total_us=1521
+2026-08-23 20:58:46 mono=1238.72 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:46 mono=1238.73 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:46 mono=1238.90 mode=home reason=launcher-resumed
+2026-08-23 20:58:46 mono=1238.96 thread-boost serial=22 reason=overview-entered
+active pid=12398 uid=10341 tasks=126 target=7 minor=0 total_us=1506
+2026-08-23 20:58:46 mono=1238.99 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:46 mono=1238.99 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:47 mono=1239.11 mode=recents reason=overview-entered
+2026-08-23 20:58:47 mono=1240.01 thread-boost serial=23 reason=launcher-exit-start
+active pid=12398 uid=10341 tasks=125 target=7 minor=0 total_us=1983
+2026-08-23 20:58:47 mono=1240.06 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:47 mono=1240.07 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:48 mono=1240.26 mode=leaving reason=launcher-exit-start
+2026-08-23 20:58:48 mono=1240.30 thread-boost serial=24 reason=launcher-exit-start
+reassert pid=12398 uid=10341 tasks=125 added=0 escaped=10 applied=10 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=3317 save_us=26 bind_us=217 total_us=3560
+2026-08-23 20:58:48 mono=1240.31 source-affinity-applied pid=12398 uid=10341 reason=source-yield operation=apply
+2026-08-23 20:58:48 mono=1240.31 source-yield pid=12398 uid=10341 name=tencent.jkchess
+2026-08-23 20:58:48 mono=1240.88 target-top-app pid=12398 reason=app-completion from_cpuset=/background from_cpuctl=/background
+restore pid=12398 uid=10341 restored=125 skipped=1 restore_minor=1 minor=10341
+2026-08-23 20:58:48 mono=1240.91 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 20:58:48 mono=1240.92 mode=app reason=launcher-exit-complete
+2026-08-23 20:58:49 mono=1241.33 thread-boost-reset serial=24
+2026-08-23 21:00:54 mono=1366.20 thread-boost serial=25 reason=launcher-resumed
+2026-08-23 21:00:54 mono=1366.63 mode=home reason=launcher-resumed
+2026-08-23 21:00:54 mono=1366.71 thread-boost serial=26 reason=overview-toggle
+2026-08-23 21:00:54 mono=1366.93 mode=entering reason=launcher-transition-start
+2026-08-23 21:00:54 mono=1367.03 thread-boost serial=27 reason=launcher-exit-start
+2026-08-23 21:00:55 mono=1367.42 mode=leaving reason=launcher-exit-start
+2026-08-23 21:00:55 mono=1367.58 mode=app reason=launcher-exit-complete
+2026-08-23 21:00:55 mono=1367.63 app-cached role=source pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:00:55 mono=1368.06 thread-boost-reset serial=27
+active pid=17408 uid=1000 tasks=81 target=7 minor=0 total_us=733
+2026-08-23 21:01:00 mono=1372.50 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:00 mono=1372.52 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:00 mono=1372.53 native-yield 17408 nativeYieldUid=1000 nativeAffinityStatus=0 nativeAffinityUs=19803 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=8370 nativeYieldUs=952 nativeCompleteNs=321031613835
+2026-08-23 21:01:00 mono=1372.61 thread-boost serial=28 reason=gesture-start
+active pid=17408 uid=1000 tasks=81 target=7 minor=0 total_us=1314
+2026-08-23 21:01:00 mono=1372.64 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:00 mono=1372.64 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:00 mono=1372.76 mode=entering reason=launcher-transition-start
+2026-08-23 21:01:00 mono=1372.79 thread-boost serial=29 reason=launcher-resumed
+active pid=17408 uid=1000 tasks=81 target=7 minor=0 total_us=703
+2026-08-23 21:01:00 mono=1372.80 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:00 mono=1372.80 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:00 mono=1372.92 mode=home reason=launcher-resumed
+2026-08-23 21:01:00 mono=1372.98 thread-boost serial=30 reason=overview-entered
+active pid=17408 uid=1000 tasks=81 target=7 minor=0 total_us=2254
+2026-08-23 21:01:00 mono=1373.00 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:00 mono=1373.01 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:01 mono=1373.15 mode=recents reason=overview-entered
+2026-08-23 21:01:01 mono=1374.02 thread-boost-reset serial=30
+2026-08-23 21:01:02 mono=1374.38 thread-boost serial=31 reason=launcher-exit-start
+active pid=17408 uid=1000 tasks=81 target=7 minor=0 total_us=1004
+2026-08-23 21:01:02 mono=1374.42 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:02 mono=1374.44 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:02 mono=1374.63 mode=leaving reason=launcher-exit-start
+2026-08-23 21:01:02 mono=1374.68 app-cached role=pending-source pid=17408 uid=1000 name=ndroid.settings
+reassert pid=17408 uid=1000 tasks=83 added=2 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=733 save_us=133 bind_us=5 total_us=871
+2026-08-23 21:01:02 mono=1374.69 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:02 mono=1374.69 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:02 mono=1374.72 thread-boost serial=32 reason=app-resumed
+2026-08-23 21:01:02 mono=1374.90 thread-boost serial=33 reason=launcher-exit-start
+reassert pid=17408 uid=1000 tasks=84 added=1 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1049 save_us=135 bind_us=6 total_us=1190
+2026-08-23 21:01:03 mono=1375.12 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:03 mono=1375.13 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:03 mono=1375.22 thread-boost serial=34 reason=app-resumed
+2026-08-23 21:01:03 mono=1375.53 target-top-app pid=17408 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=17408 uid=1000 restored=84 skipped=0 restore_minor=1 minor=0
+2026-08-23 21:01:03 mono=1375.56 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=1000
+2026-08-23 21:01:03 mono=1375.56 mode=app reason=launcher-exit-complete
+active pid=17408 uid=1000 tasks=84 target=7 minor=0 total_us=1462
+2026-08-23 21:01:03 mono=1375.98 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:03 mono=1375.99 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:03 mono=1376.00 native-yield 17408 nativeYieldUid=1000 nativeAffinityStatus=0 nativeAffinityUs=13629 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=246 nativeYieldUs=365 nativeCompleteNs=324487332271
+2026-08-23 21:01:03 mono=1376.07 thread-boost serial=35 reason=gesture-start
+active pid=17408 uid=1000 tasks=84 target=7 minor=0 total_us=1062
+2026-08-23 21:01:04 mono=1376.11 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:04 mono=1376.11 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:04 mono=1376.23 mode=entering reason=launcher-transition-start
+2026-08-23 21:01:04 mono=1376.27 thread-boost serial=36 reason=launcher-resumed
+active pid=17408 uid=1000 tasks=84 target=7 minor=0 total_us=1061
+2026-08-23 21:01:04 mono=1376.28 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:04 mono=1376.28 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:04 mono=1376.42 mode=home reason=launcher-resumed
+2026-08-23 21:01:04 mono=1376.49 thread-boost serial=37 reason=overview-entered
+active pid=17408 uid=1000 tasks=84 target=7 minor=0 total_us=2000
+2026-08-23 21:01:04 mono=1376.51 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:04 mono=1376.52 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:04 mono=1376.64 mode=recents reason=overview-entered
+2026-08-23 21:01:05 mono=1377.51 thread-boost-reset serial=37
+2026-08-23 21:01:05 mono=1377.87 thread-boost serial=38 reason=launcher-exit-start
+active pid=17408 uid=1000 tasks=73 target=7 minor=0 total_us=800
+2026-08-23 21:01:05 mono=1377.89 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:05 mono=1377.90 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:06 mono=1378.10 mode=leaving reason=launcher-exit-start
+2026-08-23 21:01:06 mono=1378.16 app-cached role=pending-source pid=17408 uid=1000 name=ndroid.settings
+reassert pid=17408 uid=1000 tasks=75 added=2 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=4248 save_us=188 bind_us=10 total_us=4446
+2026-08-23 21:01:06 mono=1378.18 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:06 mono=1378.19 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:06 mono=1378.22 thread-boost serial=39 reason=app-resumed
+2026-08-23 21:01:06 mono=1378.36 thread-boost serial=40 reason=launcher-exit-start
+active pid=17408 uid=1000 tasks=74 target=7 minor=0 total_us=684
+2026-08-23 21:01:06 mono=1378.59 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:06 mono=1378.60 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:06 mono=1378.65 thread-boost serial=41 reason=app-resumed
+2026-08-23 21:01:06 mono=1379.00 target-top-app pid=17408 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=17408 uid=1000 restored=74 skipped=12 restore_minor=1 minor=0
+2026-08-23 21:01:06 mono=1379.02 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=1000
+2026-08-23 21:01:06 mono=1379.03 mode=app reason=launcher-exit-complete
+active pid=17408 uid=1000 tasks=74 target=7 minor=0 total_us=1192
+2026-08-23 21:01:07 mono=1379.47 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:07 mono=1379.48 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:07 mono=1379.48 native-yield 17408 nativeYieldUid=1000 nativeAffinityStatus=0 nativeAffinityUs=10720 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=4835 nativeYieldUs=5634 nativeCompleteNs=327990528624
+2026-08-23 21:01:07 mono=1379.54 thread-boost serial=42 reason=gesture-start
+reassert pid=17408 uid=1000 tasks=75 added=1 escaped=1 applied=1 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1035 save_us=235 bind_us=17 total_us=1287
+2026-08-23 21:01:07 mono=1379.58 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:07 mono=1379.59 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:07 mono=1379.70 mode=entering reason=launcher-transition-start
+2026-08-23 21:01:07 mono=1379.74 thread-boost serial=43 reason=launcher-resumed
+active pid=17408 uid=1000 tasks=75 target=7 minor=0 total_us=4573
+2026-08-23 21:01:07 mono=1379.76 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:07 mono=1379.76 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:07 mono=1379.87 mode=home reason=launcher-resumed
+2026-08-23 21:01:07 mono=1379.94 thread-boost serial=44 reason=overview-entered
+active pid=17408 uid=1000 tasks=75 target=7 minor=0 total_us=897
+2026-08-23 21:01:07 mono=1379.96 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:07 mono=1379.97 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:08 mono=1380.10 mode=recents reason=overview-entered
+2026-08-23 21:01:08 mono=1380.97 thread-boost-reset serial=44
+2026-08-23 21:01:09 mono=1381.35 thread-boost serial=45 reason=launcher-exit-start
+reassert pid=17408 uid=1000 tasks=75 added=1 escaped=1 applied=1 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1080 save_us=183 bind_us=14 total_us=1277
+2026-08-23 21:01:09 mono=1381.38 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:09 mono=1381.39 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:09 mono=1381.62 mode=leaving reason=launcher-exit-start
+2026-08-23 21:01:09 mono=1381.66 app-cached role=pending-source pid=17408 uid=1000 name=ndroid.settings
+reassert pid=17408 uid=1000 tasks=76 added=1 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=925 save_us=179 bind_us=9 total_us=1113
+2026-08-23 21:01:09 mono=1381.68 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:09 mono=1381.68 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:09 mono=1381.70 thread-boost serial=46 reason=app-resumed
+2026-08-23 21:01:09 mono=1381.83 thread-boost serial=47 reason=launcher-exit-start
+reassert pid=17408 uid=1000 tasks=77 added=1 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=997 save_us=191 bind_us=8 total_us=1196
+2026-08-23 21:01:09 mono=1382.00 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:09 mono=1382.00 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:09 mono=1382.05 thread-boost serial=48 reason=app-resumed
+2026-08-23 21:01:10 mono=1382.35 target-top-app pid=17408 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=17408 uid=1000 restored=77 skipped=1 restore_minor=1 minor=0
+2026-08-23 21:01:10 mono=1382.37 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=1000
+2026-08-23 21:01:10 mono=1382.37 mode=app reason=launcher-exit-complete
+active pid=17408 uid=1000 tasks=77 target=7 minor=0 total_us=682
+2026-08-23 21:01:10 mono=1382.93 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:10 mono=1382.94 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:10 mono=1382.95 native-yield 17408 nativeYieldUid=1000 nativeAffinityStatus=0 nativeAffinityUs=9040 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=4696 nativeYieldUs=432 nativeCompleteNs=331464709508
+2026-08-23 21:01:10 mono=1383.03 thread-boost serial=49 reason=gesture-start
+active pid=17408 uid=1000 tasks=77 target=7 minor=0 total_us=1253
+2026-08-23 21:01:10 mono=1383.06 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:10 mono=1383.07 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:11 mono=1383.17 mode=entering reason=launcher-transition-start
+2026-08-23 21:01:11 mono=1383.21 thread-boost serial=50 reason=launcher-resumed
+active pid=17408 uid=1000 tasks=77 target=7 minor=0 total_us=678
+2026-08-23 21:01:11 mono=1383.22 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:11 mono=1383.22 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:11 mono=1383.29 mode=home reason=launcher-resumed
+2026-08-23 21:01:11 mono=1383.39 thread-boost serial=51 reason=overview-entered
+active pid=17408 uid=1000 tasks=77 target=7 minor=0 total_us=1927
+2026-08-23 21:01:11 mono=1383.42 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:11 mono=1383.43 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:11 mono=1383.57 mode=recents reason=overview-entered
+2026-08-23 21:01:12 mono=1384.44 thread-boost-reset serial=51
+2026-08-23 21:01:12 mono=1384.82 thread-boost serial=52 reason=launcher-exit-start
+active pid=17408 uid=1000 tasks=76 target=7 minor=0 total_us=1690
+2026-08-23 21:01:12 mono=1384.85 source-affinity-applied pid=17408 uid=1000 reason=source-yield operation=apply
+2026-08-23 21:01:12 mono=1384.86 source-yield pid=17408 uid=1000 name=ndroid.settings
+2026-08-23 21:01:12 mono=1385.04 mode=leaving reason=launcher-exit-start
+2026-08-23 21:01:13 mono=1385.11 app-cached role=pending-source pid=17408 uid=1000 name=ndroid.settings
+reassert pid=17408 uid=1000 tasks=78 added=2 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=751 save_us=127 bind_us=6 total_us=884
+2026-08-23 21:01:13 mono=1385.12 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:13 mono=1385.12 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:13 mono=1385.15 thread-boost serial=53 reason=app-resumed
+2026-08-23 21:01:13 mono=1385.31 thread-boost serial=54 reason=launcher-exit-start
+active pid=17408 uid=1000 tasks=77 target=7 minor=0 total_us=954
+2026-08-23 21:01:13 mono=1385.50 source-affinity-applied pid=17408 uid=1000 reason=launcher-exit-animation operation=replace
+2026-08-23 21:01:13 mono=1385.51 target-yield pid=17408 uid=1000 name=ndroid.settings reason=launcher-exit-animation
+2026-08-23 21:01:13 mono=1385.56 thread-boost serial=55 reason=app-resumed
+2026-08-23 21:01:13 mono=1385.84 target-top-app pid=17408 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=17408 uid=1000 restored=77 skipped=2 restore_minor=1 minor=0
+2026-08-23 21:01:13 mono=1385.86 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=1000
+2026-08-23 21:01:13 mono=1385.87 mode=app reason=launcher-exit-complete
+2026-08-23 21:01:14 mono=1386.59 thread-boost-reset serial=55
+2026-08-23 21:04:12 mono=1564.92 app-cached role=source pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:15 mono=1567.30 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:15 mono=1567.30 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=127 nativeAffinityUs=2725 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=1043 nativeYieldUs=604 nativeCompleteNs=515845718344
+2026-08-23 21:04:15 mono=1567.44 thread-boost serial=56 reason=gesture-start
+2026-08-23 21:04:15 mono=1567.51 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:15 mono=1567.87 mode=entering reason=launcher-transition-start
+2026-08-23 21:04:15 mono=1568.03 thread-boost serial=57 reason=launcher-resumed
+2026-08-23 21:04:15 mono=1568.05 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:16 mono=1568.26 mode=home reason=launcher-resumed
+2026-08-23 21:04:16 mono=1568.32 thread-boost serial=58 reason=overview-entered
+2026-08-23 21:04:16 mono=1568.37 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:16 mono=1568.53 mode=recents reason=overview-entered
+2026-08-23 21:04:17 mono=1569.27 thread-boost serial=59 reason=launcher-exit-start
+2026-08-23 21:04:17 mono=1569.28 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:17 mono=1569.62 mode=leaving reason=launcher-exit-start
+2026-08-23 21:04:17 mono=1569.72 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:17 mono=1569.73 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:04:17 mono=1569.83 thread-boost serial=60 reason=app-resumed
+2026-08-23 21:04:18 mono=1570.13 thread-boost serial=61 reason=launcher-exit-start
+2026-08-23 21:04:18 mono=1570.39 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+2026-08-23 21:04:18 mono=1570.40 mode=app reason=launcher-exit-complete
+2026-08-23 21:04:18 mono=1570.80 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:18 mono=1570.80 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=127 nativeAffinityUs=8404 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=8905 nativeYieldUs=5903 nativeCompleteNs=519335521936
+2026-08-23 21:04:18 mono=1570.93 thread-boost serial=62 reason=gesture-start
+2026-08-23 21:04:18 mono=1571.01 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:19 mono=1571.22 mode=entering reason=launcher-transition-start
+2026-08-23 21:04:19 mono=1571.34 thread-boost serial=63 reason=launcher-resumed
+2026-08-23 21:04:19 mono=1571.36 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:19 mono=1571.54 mode=home reason=launcher-resumed
+2026-08-23 21:04:19 mono=1571.60 thread-boost serial=64 reason=overview-entered
+2026-08-23 21:04:19 mono=1571.61 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:19 mono=1571.72 mode=recents reason=overview-entered
+2026-08-23 21:04:20 mono=1572.62 thread-boost-reset serial=64
+2026-08-23 21:04:20 mono=1572.68 thread-boost serial=65 reason=launcher-exit-start
+2026-08-23 21:04:20 mono=1572.72 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:20 mono=1572.99 mode=leaving reason=launcher-exit-start
+2026-08-23 21:04:20 mono=1573.02 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:20 mono=1573.03 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:04:20 mono=1573.05 thread-boost serial=66 reason=app-resumed
+2026-08-23 21:04:21 mono=1573.34 thread-boost serial=67 reason=launcher-exit-start
+2026-08-23 21:04:21 mono=1573.64 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+2026-08-23 21:04:21 mono=1573.65 mode=app reason=launcher-exit-complete
+2026-08-23 21:04:22 mono=1574.33 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:22 mono=1574.35 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=127 nativeAffinityUs=25947 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=9726 nativeYieldUs=10309 nativeCompleteNs=522851083914
+2026-08-23 21:04:22 mono=1574.39 thread-boost-reset serial=67
+2026-08-23 21:04:22 mono=1574.46 thread-boost serial=68 reason=gesture-start
+2026-08-23 21:04:22 mono=1574.53 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:22 mono=1574.73 mode=entering reason=launcher-transition-start
+2026-08-23 21:04:22 mono=1574.84 thread-boost serial=69 reason=launcher-resumed
+2026-08-23 21:04:22 mono=1574.91 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:23 mono=1575.12 mode=home reason=launcher-resumed
+2026-08-23 21:04:23 mono=1575.18 thread-boost serial=70 reason=overview-entered
+2026-08-23 21:04:23 mono=1575.19 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:23 mono=1575.29 mode=recents reason=overview-entered
+2026-08-23 21:04:24 mono=1576.21 thread-boost-reset serial=70
+2026-08-23 21:04:24 mono=1576.25 thread-boost serial=71 reason=launcher-exit-start
+2026-08-23 21:04:24 mono=1576.28 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:24 mono=1576.53 mode=leaving reason=launcher-exit-start
+2026-08-23 21:04:24 mono=1576.58 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:24 mono=1576.58 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:04:24 mono=1576.65 thread-boost serial=72 reason=app-resumed
+2026-08-23 21:04:24 mono=1577.01 thread-boost serial=73 reason=launcher-exit-start
+2026-08-23 21:04:25 mono=1577.39 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+2026-08-23 21:04:25 mono=1577.40 mode=app reason=launcher-exit-complete
+2026-08-23 21:04:25 mono=1577.79 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:25 mono=1577.80 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=127 nativeAffinityUs=6551 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=9511 nativeYieldUs=10609 nativeCompleteNs=526336613496
+2026-08-23 21:04:25 mono=1577.92 thread-boost serial=74 reason=gesture-start
+2026-08-23 21:04:25 mono=1577.95 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:26 mono=1578.37 mode=entering reason=launcher-transition-start
+2026-08-23 21:04:26 mono=1578.53 thread-boost serial=75 reason=launcher-resumed
+2026-08-23 21:04:26 mono=1578.55 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:26 mono=1578.71 mode=home reason=launcher-resumed
+2026-08-23 21:04:26 mono=1578.77 thread-boost serial=76 reason=overview-entered
+2026-08-23 21:04:26 mono=1578.78 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:26 mono=1578.93 mode=recents reason=overview-entered
+2026-08-23 21:04:27 mono=1579.73 thread-boost serial=77 reason=launcher-exit-start
+2026-08-23 21:04:27 mono=1579.76 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:27 mono=1579.93 mode=leaving reason=launcher-exit-start
+2026-08-23 21:04:27 mono=1579.96 thread-boost serial=78 reason=launcher-exit-start
+2026-08-23 21:04:27 mono=1579.96 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:28 mono=1580.53 target-top-app pid=20149 reason=app-completion from_cpuset=/background from_cpuctl=/background
+2026-08-23 21:04:28 mono=1580.54 mode=app reason=launcher-exit-complete
+2026-08-23 21:04:28 mono=1580.98 thread-boost-reset serial=78
+active pid=20149 uid=10341 tasks=174 target=7 minor=0 total_us=1604
+2026-08-23 21:04:57 mono=1609.65 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:04:57 mono=1609.69 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:57 mono=1609.75 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=56970 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=12316 nativeYieldUs=3652 nativeCompleteNs=558143952911
+2026-08-23 21:04:57 mono=1609.93 thread-boost serial=79 reason=gesture-start
+active pid=20149 uid=10341 tasks=173 target=7 minor=0 total_us=1759
+2026-08-23 21:04:57 mono=1610.00 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:04:57 mono=1610.00 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:58 mono=1610.21 mode=entering reason=launcher-transition-start
+2026-08-23 21:04:58 mono=1610.30 thread-boost serial=80 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=171 target=7 minor=0 total_us=2808
+2026-08-23 21:04:58 mono=1610.34 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:04:58 mono=1610.34 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:58 mono=1610.47 mode=home reason=launcher-resumed
+2026-08-23 21:04:58 mono=1610.52 thread-boost serial=81 reason=overview-entered
+active pid=20149 uid=10341 tasks=171 target=7 minor=0 total_us=5611
+2026-08-23 21:04:58 mono=1610.54 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:04:58 mono=1610.54 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:58 mono=1610.69 mode=recents reason=overview-entered
+2026-08-23 21:04:59 mono=1611.48 thread-boost serial=82 reason=launcher-exit-start
+active pid=20149 uid=10341 tasks=171 target=7 minor=0 total_us=6715
+2026-08-23 21:04:59 mono=1611.52 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:04:59 mono=1611.52 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:04:59 mono=1611.80 mode=leaving reason=launcher-exit-start
+2026-08-23 21:04:59 mono=1611.84 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=173 added=2 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=2230 save_us=201 bind_us=7 total_us=2438
+2026-08-23 21:04:59 mono=1611.85 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:04:59 mono=1611.86 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:04:59 mono=1612.08 thread-boost serial=83 reason=app-resumed
+2026-08-23 21:05:00 mono=1612.33 thread-boost serial=84 reason=launcher-exit-start
+2026-08-23 21:05:00 mono=1612.77 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=173 skipped=3 restore_minor=1 minor=10341
+2026-08-23 21:05:00 mono=1612.80 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:05:00 mono=1612.80 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=174 target=7 minor=0 total_us=10744
+2026-08-23 21:05:01 mono=1613.17 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:01 mono=1613.20 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:01 mono=1613.20 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=51441 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=15098 nativeYieldUs=2544 nativeCompleteNs=561658479003
+2026-08-23 21:05:01 mono=1613.34 thread-boost serial=85 reason=gesture-start
+active pid=20149 uid=10341 tasks=174 target=7 minor=0 total_us=9559
+2026-08-23 21:05:01 mono=1613.41 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:01 mono=1613.42 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:01 mono=1613.59 mode=entering reason=launcher-transition-start
+2026-08-23 21:05:01 mono=1613.67 thread-boost serial=86 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=172 target=7 minor=0 total_us=8471
+2026-08-23 21:05:01 mono=1613.70 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:01 mono=1613.72 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:01 mono=1613.83 mode=home reason=launcher-resumed
+2026-08-23 21:05:01 mono=1613.88 thread-boost serial=87 reason=overview-entered
+active pid=20149 uid=10341 tasks=172 target=7 minor=0 total_us=2470
+2026-08-23 21:05:01 mono=1613.90 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:01 mono=1613.91 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:01 mono=1614.00 mode=recents reason=overview-entered
+2026-08-23 21:05:02 mono=1614.92 thread-boost-reset serial=87
+2026-08-23 21:05:02 mono=1614.96 thread-boost serial=88 reason=launcher-exit-start
+active pid=20149 uid=10341 tasks=172 target=7 minor=0 total_us=2731
+2026-08-23 21:05:02 mono=1614.98 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:02 mono=1615.01 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:03 mono=1615.26 mode=leaving reason=launcher-exit-start
+2026-08-23 21:05:03 mono=1615.34 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=175 added=3 escaped=0 applied=0 failed=0 target=7 minor_before=0 minor_after=0 collect_us=1848 save_us=194 bind_us=8 total_us=2050
+2026-08-23 21:05:03 mono=1615.35 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:05:03 mono=1615.36 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:05:03 mono=1615.40 thread-boost serial=89 reason=app-resumed
+2026-08-23 21:05:03 mono=1615.88 thread-boost serial=90 reason=launcher-exit-start
+2026-08-23 21:05:04 mono=1616.26 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=175 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:05:04 mono=1616.29 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:05:04 mono=1616.29 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=175 target=7 minor=0 total_us=3396
+2026-08-23 21:05:04 mono=1616.62 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:04 mono=1616.63 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:04 mono=1616.64 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=43414 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=10078 nativeYieldUs=15394 nativeCompleteNs=565144333689
+2026-08-23 21:05:04 mono=1616.74 thread-boost serial=91 reason=gesture-start
+active pid=20149 uid=10341 tasks=175 target=7 minor=0 total_us=9901
+2026-08-23 21:05:04 mono=1616.82 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:04 mono=1616.84 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:04 mono=1617.07 mode=entering reason=launcher-transition-start
+2026-08-23 21:05:05 mono=1617.19 thread-boost serial=92 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=173 target=7 minor=0 total_us=2782
+2026-08-23 21:05:05 mono=1617.22 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:05 mono=1617.23 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:05 mono=1617.35 mode=home reason=launcher-resumed
+2026-08-23 21:05:05 mono=1617.40 thread-boost serial=93 reason=overview-entered
+active pid=20149 uid=10341 tasks=173 target=7 minor=0 total_us=2457
+2026-08-23 21:05:05 mono=1617.41 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:05 mono=1617.42 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:05 mono=1617.51 mode=recents reason=overview-entered
+2026-08-23 21:05:06 mono=1618.46 thread-boost serial=94 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=175 added=2 escaped=9 applied=9 failed=0 target=7 minor_before=0 minor_after=0 collect_us=3754 save_us=648 bind_us=91 total_us=4493
+2026-08-23 21:05:06 mono=1618.53 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:06 mono=1618.56 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:06 mono=1618.79 mode=leaving reason=launcher-exit-start
+2026-08-23 21:05:06 mono=1618.88 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=176 added=1 escaped=44 applied=44 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=4958 save_us=307 bind_us=374 total_us=5639
+2026-08-23 21:05:06 mono=1618.90 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:05:06 mono=1618.90 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:05:06 mono=1619.00 thread-boost serial=95 reason=app-resumed
+2026-08-23 21:05:07 mono=1619.20 thread-boost serial=96 reason=launcher-exit-start
+2026-08-23 21:05:07 mono=1619.44 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=176 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:05:07 mono=1619.47 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:05:07 mono=1619.48 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=176 target=7 minor=0 total_us=5305
+2026-08-23 21:05:08 mono=1620.09 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:08 mono=1620.12 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:08 mono=1620.13 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=47342 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=15402 nativeYieldUs=996 nativeCompleteNs=568603525407
+2026-08-23 21:05:08 mono=1620.30 thread-boost serial=97 reason=gesture-start
+active pid=20149 uid=10341 tasks=176 target=7 minor=0 total_us=1801
+2026-08-23 21:05:08 mono=1620.38 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:08 mono=1620.39 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:08 mono=1620.60 mode=entering reason=launcher-transition-start
+2026-08-23 21:05:08 mono=1620.72 thread-boost serial=98 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=174 target=7 minor=0 total_us=3096
+2026-08-23 21:05:08 mono=1620.74 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:08 mono=1620.75 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:08 mono=1620.85 mode=home reason=launcher-resumed
+2026-08-23 21:05:08 mono=1620.90 thread-boost serial=99 reason=overview-entered
+active pid=20149 uid=10341 tasks=174 target=7 minor=0 total_us=3806
+2026-08-23 21:05:08 mono=1620.92 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:08 mono=1620.92 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:08 mono=1621.02 mode=recents reason=overview-entered
+2026-08-23 21:05:09 mono=1621.94 thread-boost serial=100 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=174 added=0 escaped=8 applied=8 failed=0 target=7 minor_before=0 minor_after=0 collect_us=14604 save_us=35 bind_us=39 total_us=14678
+2026-08-23 21:05:09 mono=1622.00 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:05:09 mono=1622.03 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:05:10 mono=1622.31 mode=leaving reason=launcher-exit-start
+2026-08-23 21:05:10 mono=1622.40 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=176 added=2 escaped=29 applied=29 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=3658 save_us=280 bind_us=138 total_us=4077
+2026-08-23 21:05:10 mono=1622.43 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:05:10 mono=1622.43 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:05:10 mono=1622.47 thread-boost serial=101 reason=app-resumed
+2026-08-23 21:05:10 mono=1622.68 thread-boost serial=102 reason=launcher-exit-start
+2026-08-23 21:05:10 mono=1622.92 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=176 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:05:10 mono=1622.94 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:05:10 mono=1622.94 mode=app reason=launcher-exit-complete
+2026-08-23 21:05:11 mono=1623.70 thread-boost-reset serial=102
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=3967
+2026-08-23 21:18:26 mono=2418.16 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:26 mono=2418.20 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:26 mono=2418.24 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=44499 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=34071 nativeYieldUs=1144 nativeCompleteNs=1366642267915
+2026-08-23 21:18:26 mono=2418.60 thread-boost serial=103 reason=gesture-start
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=15197
+2026-08-23 21:18:26 mono=2418.69 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:26 mono=2418.71 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:26 mono=2418.97 mode=entering reason=launcher-transition-start
+2026-08-23 21:18:26 mono=2419.07 thread-boost serial=104 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2287
+2026-08-23 21:18:26 mono=2419.09 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:27 mono=2419.10 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:27 mono=2419.25 mode=home reason=launcher-resumed
+2026-08-23 21:18:27 mono=2419.30 thread-boost serial=105 reason=overview-entered
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2590
+2026-08-23 21:18:27 mono=2419.31 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:27 mono=2419.31 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:27 mono=2419.41 mode=recents reason=overview-entered
+2026-08-23 21:18:27 mono=2419.95 thread-boost serial=106 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=156 added=1 escaped=9 applied=9 failed=0 target=7 minor_before=0 minor_after=0 collect_us=8958 save_us=316 bind_us=183 total_us=9457
+2026-08-23 21:18:27 mono=2420.02 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:27 mono=2420.04 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:28 mono=2420.33 mode=leaving reason=launcher-exit-start
+2026-08-23 21:18:28 mono=2420.42 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=157 added=1 escaped=39 applied=39 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=2026 save_us=189 bind_us=316 total_us=2531
+2026-08-23 21:18:28 mono=2420.50 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:18:28 mono=2420.51 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:18:28 mono=2420.57 thread-boost serial=107 reason=app-resumed
+2026-08-23 21:18:28 mono=2420.81 thread-boost serial=108 reason=launcher-exit-start
+2026-08-23 21:18:28 mono=2421.04 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=157 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:18:28 mono=2421.06 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:18:28 mono=2421.06 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=3214
+2026-08-23 21:18:29 mono=2421.56 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:29 mono=2421.58 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:29 mono=2421.58 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=38297 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=4937 nativeYieldUs=3851 nativeCompleteNs=1370070814112
+2026-08-23 21:18:29 mono=2421.72 thread-boost serial=109 reason=gesture-start
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=4995
+2026-08-23 21:18:29 mono=2421.78 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:29 mono=2421.79 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:29 mono=2421.99 mode=entering reason=launcher-transition-start
+2026-08-23 21:18:30 mono=2422.11 thread-boost serial=110 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=4497
+2026-08-23 21:18:30 mono=2422.17 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:30 mono=2422.18 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:30 mono=2422.29 mode=home reason=launcher-resumed
+2026-08-23 21:18:30 mono=2422.33 thread-boost serial=111 reason=overview-entered
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2520
+2026-08-23 21:18:30 mono=2422.35 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:30 mono=2422.36 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:30 mono=2422.46 mode=recents reason=overview-entered
+2026-08-23 21:18:31 mono=2423.36 thread-boost-reset serial=111
+2026-08-23 21:18:31 mono=2423.42 thread-boost serial=112 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=156 added=1 escaped=9 applied=9 failed=0 target=7 minor_before=0 minor_after=0 collect_us=16741 save_us=291 bind_us=427 total_us=17459
+2026-08-23 21:18:31 mono=2423.48 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:31 mono=2423.50 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:31 mono=2423.76 mode=leaving reason=launcher-exit-start
+2026-08-23 21:18:31 mono=2423.83 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=157 added=1 escaped=27 applied=27 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=6900 save_us=284 bind_us=365 total_us=7549
+2026-08-23 21:18:31 mono=2423.86 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:18:31 mono=2423.87 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:18:31 mono=2423.93 thread-boost serial=113 reason=app-resumed
+2026-08-23 21:18:32 mono=2424.10 thread-boost serial=114 reason=launcher-exit-start
+2026-08-23 21:18:32 mono=2424.37 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=157 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:18:32 mono=2424.39 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:18:32 mono=2424.41 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=1745
+2026-08-23 21:18:33 mono=2425.09 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:33 mono=2425.11 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:33 mono=2425.13 thread-boost-reset serial=114
+2026-08-23 21:18:33 mono=2425.12 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=44218 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=3819 nativeYieldUs=1793 nativeCompleteNs=1373565099371
+2026-08-23 21:18:33 mono=2425.31 thread-boost serial=115 reason=gesture-start
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=1570
+2026-08-23 21:18:33 mono=2425.34 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:33 mono=2425.35 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:33 mono=2425.51 mode=entering reason=launcher-transition-start
+2026-08-23 21:18:33 mono=2425.65 thread-boost serial=116 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2424
+2026-08-23 21:18:33 mono=2425.68 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:33 mono=2425.68 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:33 mono=2425.80 mode=home reason=launcher-resumed
+2026-08-23 21:18:33 mono=2425.84 thread-boost serial=117 reason=overview-entered
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2646
+2026-08-23 21:18:33 mono=2425.85 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:33 mono=2425.86 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:33 mono=2425.96 mode=recents reason=overview-entered
+2026-08-23 21:18:34 mono=2426.86 thread-boost-reset serial=117
+2026-08-23 21:18:34 mono=2426.98 thread-boost serial=118 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=157 added=2 escaped=11 applied=11 failed=0 target=7 minor_before=0 minor_after=0 collect_us=12865 save_us=813 bind_us=112 total_us=13790
+2026-08-23 21:18:35 mono=2427.13 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:35 mono=2427.14 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:35 mono=2427.24 mode=leaving reason=launcher-exit-start
+2026-08-23 21:18:35 mono=2427.30 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=157 added=0 escaped=39 applied=39 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=3458 save_us=35 bind_us=443 total_us=3936
+2026-08-23 21:18:35 mono=2427.32 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:18:35 mono=2427.33 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:18:35 mono=2427.39 thread-boost serial=119 reason=app-resumed
+2026-08-23 21:18:35 mono=2427.58 thread-boost serial=120 reason=launcher-exit-start
+2026-08-23 21:18:35 mono=2427.83 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=157 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:18:35 mono=2427.85 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:18:35 mono=2427.86 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=3602
+2026-08-23 21:18:36 mono=2428.54 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:36 mono=2428.61 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:36 mono=2428.63 thread-boost-reset serial=120
+2026-08-23 21:18:36 mono=2428.63 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=19011 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=10394 nativeYieldUs=6323 nativeCompleteNs=1377058156453
+2026-08-23 21:18:36 mono=2428.87 thread-boost serial=121 reason=gesture-start
+active pid=20149 uid=10341 tasks=157 target=7 minor=0 total_us=2642
+2026-08-23 21:18:36 mono=2428.94 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:36 mono=2428.95 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:37 mono=2429.10 mode=entering reason=launcher-transition-start
+2026-08-23 21:18:37 mono=2429.19 thread-boost serial=122 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=2540
+2026-08-23 21:18:37 mono=2429.21 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:37 mono=2429.22 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:37 mono=2429.33 mode=home reason=launcher-resumed
+2026-08-23 21:18:37 mono=2429.38 thread-boost serial=123 reason=overview-entered
+active pid=20149 uid=10341 tasks=155 target=7 minor=0 total_us=6052
+2026-08-23 21:18:37 mono=2429.40 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:37 mono=2429.40 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:37 mono=2429.50 mode=recents reason=overview-entered
+2026-08-23 21:18:38 mono=2430.43 thread-boost serial=124 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=157 added=2 escaped=10 applied=10 failed=0 target=7 minor_before=0 minor_after=0 collect_us=9071 save_us=322 bind_us=73 total_us=9466
+2026-08-23 21:18:38 mono=2430.53 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 21:18:38 mono=2430.60 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 21:18:38 mono=2430.89 mode=leaving reason=launcher-exit-start
+2026-08-23 21:18:38 mono=2430.99 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=157 added=0 escaped=44 applied=44 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=3313 save_us=48 bind_us=737 total_us=4098
+2026-08-23 21:18:38 mono=2431.01 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 21:18:38 mono=2431.02 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 21:18:38 mono=2431.09 thread-boost serial=125 reason=app-resumed
+2026-08-23 21:18:39 mono=2431.28 thread-boost serial=126 reason=launcher-exit-start
+2026-08-23 21:18:39 mono=2431.51 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=157 skipped=2 restore_minor=1 minor=10341
+2026-08-23 21:18:39 mono=2431.53 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 21:18:39 mono=2431.54 mode=app reason=launcher-exit-complete
+2026-08-23 21:18:40 mono=2432.30 thread-boost-reset serial=126
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=4409
+2026-08-23 22:03:31 mono=5124.00 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:31 mono=5124.03 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:31 mono=5124.05 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=30682 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=18055 nativeYieldUs=71605 nativeCompleteNs=4072415351414
+2026-08-23 22:03:32 mono=5124.47 thread-boost serial=127 reason=gesture-start
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=11036
+2026-08-23 22:03:32 mono=5124.64 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:32 mono=5124.66 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:32 mono=5124.88 mode=entering reason=launcher-transition-start
+2026-08-23 22:03:32 mono=5124.95 thread-boost serial=128 reason=overview-entered
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=2423
+2026-08-23 22:03:32 mono=5124.98 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:32 mono=5124.98 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:32 mono=5125.06 mode=recents reason=overview-entered
+2026-08-23 22:03:33 mono=5125.68 thread-boost serial=129 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=157 added=1 escaped=9 applied=9 failed=0 target=7 minor_before=0 minor_after=0 collect_us=5337 save_us=185 bind_us=96 total_us=5618
+2026-08-23 22:03:33 mono=5125.73 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:33 mono=5125.74 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:33 mono=5126.01 mode=leaving reason=launcher-exit-start
+2026-08-23 22:03:34 mono=5126.11 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=158 added=1 escaped=45 applied=45 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=2006 save_us=215 bind_us=348 total_us=2569
+2026-08-23 22:03:34 mono=5126.15 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 22:03:34 mono=5126.17 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 22:03:34 mono=5126.28 thread-boost serial=130 reason=app-resumed
+2026-08-23 22:03:34 mono=5126.49 thread-boost serial=131 reason=launcher-exit-start
+2026-08-23 22:03:34 mono=5126.72 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=158 skipped=2 restore_minor=1 minor=10341
+2026-08-23 22:03:34 mono=5126.74 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 22:03:34 mono=5126.75 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=12692
+2026-08-23 22:03:35 mono=5127.42 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:35 mono=5127.44 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:35 mono=5127.46 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=44883 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=11244 nativeYieldUs=26448 nativeCompleteNs=4075879838861
+2026-08-23 22:03:35 mono=5127.57 thread-boost serial=132 reason=gesture-start
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=7059
+2026-08-23 22:03:35 mono=5127.61 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:35 mono=5127.62 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:35 mono=5127.79 mode=entering reason=launcher-transition-start
+2026-08-23 22:03:35 mono=5127.87 thread-boost serial=133 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=4040
+2026-08-23 22:03:35 mono=5127.89 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:35 mono=5127.90 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:35 mono=5128.01 mode=home reason=launcher-resumed
+2026-08-23 22:03:35 mono=5128.05 thread-boost serial=134 reason=overview-entered
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=3780
+2026-08-23 22:03:35 mono=5128.06 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:35 mono=5128.06 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:36 mono=5128.15 mode=recents reason=overview-entered
+2026-08-23 22:03:36 mono=5129.06 thread-boost-reset serial=134
+2026-08-23 22:03:37 mono=5129.23 thread-boost serial=135 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=157 added=1 escaped=9 applied=9 failed=0 target=7 minor_before=0 minor_after=0 collect_us=4752 save_us=174 bind_us=86 total_us=5012
+2026-08-23 22:03:37 mono=5129.32 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:37 mono=5129.37 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:37 mono=5129.53 mode=leaving reason=launcher-exit-start
+2026-08-23 22:03:37 mono=5129.66 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=158 added=1 escaped=45 applied=45 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=2809 save_us=256 bind_us=334 total_us=3399
+2026-08-23 22:03:37 mono=5129.68 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 22:03:37 mono=5129.68 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 22:03:37 mono=5129.75 thread-boost serial=136 reason=app-resumed
+2026-08-23 22:03:37 mono=5129.95 thread-boost serial=137 reason=launcher-exit-start
+2026-08-23 22:03:38 mono=5130.20 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=158 skipped=2 restore_minor=1 minor=10341
+2026-08-23 22:03:38 mono=5130.22 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 22:03:38 mono=5130.22 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=1473
+2026-08-23 22:03:38 mono=5130.89 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:38 mono=5130.90 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:38 mono=5130.92 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=78413 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=11058 nativeYieldUs=31449 nativeCompleteNs=4079409148495
+2026-08-23 22:03:38 mono=5130.96 thread-boost-reset serial=137
+2026-08-23 22:03:38 mono=5131.05 thread-boost serial=138 reason=gesture-start
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=2133
+2026-08-23 22:03:39 mono=5131.11 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:39 mono=5131.11 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:39 mono=5131.29 mode=entering reason=launcher-transition-start
+2026-08-23 22:03:39 mono=5131.37 thread-boost serial=139 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=3047
+2026-08-23 22:03:39 mono=5131.41 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:39 mono=5131.42 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:39 mono=5131.55 mode=home reason=launcher-resumed
+2026-08-23 22:03:39 mono=5131.61 thread-boost serial=140 reason=overview-entered
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=2400
+2026-08-23 22:03:39 mono=5131.63 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:39 mono=5131.63 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:39 mono=5131.74 mode=recents reason=overview-entered
+2026-08-23 22:03:40 mono=5132.64 thread-boost-reset serial=140
+2026-08-23 22:03:40 mono=5132.92 thread-boost serial=141 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=158 added=2 escaped=11 applied=11 failed=0 target=7 minor_before=0 minor_after=0 collect_us=2745 save_us=219 bind_us=354 total_us=3318
+2026-08-23 22:03:40 mono=5132.96 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:40 mono=5132.97 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:40 mono=5133.09 mode=leaving reason=launcher-exit-start
+2026-08-23 22:03:41 mono=5133.14 thread-boost serial=142 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=158 added=0 escaped=41 applied=41 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=3249 save_us=38 bind_us=216 total_us=3503
+2026-08-23 22:03:41 mono=5133.16 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:41 mono=5133.17 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:41 mono=5133.40 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=5990
+2026-08-23 22:03:41 mono=5133.43 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 22:03:41 mono=5133.44 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 22:03:41 mono=5133.47 thread-boost serial=143 reason=app-resumed
+2026-08-23 22:03:41 mono=5133.70 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=158 skipped=2 restore_minor=1 minor=10341
+2026-08-23 22:03:41 mono=5133.71 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 22:03:41 mono=5133.72 mode=app reason=launcher-exit-complete
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=9351
+2026-08-23 22:03:42 mono=5134.44 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:42 mono=5134.47 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:42 mono=5134.50 native-yield 20149 nativeYieldUid=10341 nativeAffinityStatus=0 nativeAffinityUs=98847 nativeYieldCpuset=1 nativeYieldCpuctl=1 nativeDeliveryUs=12249 nativeYieldUs=3820 nativeCompleteNs=4082933694848
+2026-08-23 22:03:42 mono=5134.51 thread-boost-reset serial=143
+2026-08-23 22:03:42 mono=5134.60 thread-boost serial=144 reason=gesture-start
+active pid=20149 uid=10341 tasks=158 target=7 minor=0 total_us=14649
+2026-08-23 22:03:42 mono=5134.68 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:42 mono=5134.69 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:42 mono=5134.93 mode=entering reason=launcher-transition-start
+2026-08-23 22:03:42 mono=5135.00 thread-boost serial=145 reason=launcher-resumed
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=1989
+2026-08-23 22:03:42 mono=5135.02 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:42 mono=5135.02 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:43 mono=5135.12 mode=home reason=launcher-resumed
+2026-08-23 22:03:43 mono=5135.17 thread-boost serial=146 reason=overview-entered
+active pid=20149 uid=10341 tasks=156 target=7 minor=0 total_us=3762
+2026-08-23 22:03:43 mono=5135.18 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:43 mono=5135.19 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:43 mono=5135.28 mode=recents reason=overview-entered
+2026-08-23 22:03:44 mono=5136.19 thread-boost-reset serial=146
+2026-08-23 22:03:44 mono=5136.25 thread-boost serial=147 reason=launcher-exit-start
+reassert pid=20149 uid=10341 tasks=156 added=0 escaped=8 applied=8 failed=0 target=7 minor_before=0 minor_after=0 collect_us=8980 save_us=70 bind_us=102 total_us=9152
+2026-08-23 22:03:44 mono=5136.31 source-affinity-applied pid=20149 uid=10341 reason=source-yield operation=apply
+2026-08-23 22:03:44 mono=5136.33 source-yield pid=20149 uid=10341 name=tencent.jkchess
+2026-08-23 22:03:44 mono=5136.65 mode=leaving reason=launcher-exit-start
+2026-08-23 22:03:44 mono=5136.74 app-cached role=pending-source pid=20149 uid=10341 name=tencent.jkchess
+reassert pid=20149 uid=10341 tasks=158 added=2 escaped=44 applied=44 failed=0 target=7 minor_before=10341 minor_after=0 collect_us=22667 save_us=980 bind_us=2956 total_us=26603
+2026-08-23 22:03:44 mono=5136.82 source-affinity-applied pid=20149 uid=10341 reason=launcher-exit-animation operation=replace
+2026-08-23 22:03:44 mono=5136.83 target-yield pid=20149 uid=10341 name=tencent.jkchess reason=launcher-exit-animation
+2026-08-23 22:03:44 mono=5136.87 thread-boost serial=148 reason=app-resumed
+2026-08-23 22:03:44 mono=5137.03 thread-boost serial=149 reason=launcher-exit-start
+2026-08-23 22:03:45 mono=5137.26 target-top-app pid=20149 reason=launcher-exit-complete from_cpuset=/background from_cpuctl=/background
+restore pid=20149 uid=10341 restored=158 skipped=2 restore_minor=1 minor=10341
+2026-08-23 22:03:45 mono=5137.28 source-affinity-restored reason=stable-app-commit operation=restore resumed_uid=10341
+2026-08-23 22:03:45 mono=5137.28 mode=app reason=launcher-exit-complete
+2026-08-23 22:03:45 mono=5138.04 thread-boost-reset serial=149

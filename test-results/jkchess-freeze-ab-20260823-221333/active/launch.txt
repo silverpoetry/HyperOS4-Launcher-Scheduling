@@ -1,0 +1,7 @@
+Starting: Intent { cmp=com.tencent.jkchess/.ApolloZGame }
+Status: ok
+LaunchState: COLD
+Activity: com.tencent.jkchess/.ApolloZGame
+TotalTime: 528
+WaitTime: 719
+Complete

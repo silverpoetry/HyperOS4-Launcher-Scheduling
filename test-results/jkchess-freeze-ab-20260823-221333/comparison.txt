@@ -1,0 +1,125 @@
+gpu tracks high [{'id': 2964, 'name': 'EarlyGpuFrames', 'type': 'atrace_counter'}, {'id': 49, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 2883, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 2956, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 3241, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 3495, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 55, 'name': 'PrevGpuFrameMissed 4630947038039379843', 'type': 'atrace_counter'}, {'id': 2960, 'name': 'Vsync-EarlyGpu', 'type': 'atrace_counter'}, {'id': 16, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 17, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 18, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 19, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 21, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 22, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 23, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 63, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3024, 'name': 'gpufreq', 'type': 'gpu_frequency'}]
+gpu tracks low  [{'id': 2968, 'name': 'EarlyGpuFrames', 'type': 'atrace_counter'}, {'id': 86, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 2932, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 3051, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 3103, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 3515, 'name': 'GPU completion', 'type': 'atrace_counter'}, {'id': 95, 'name': 'PrevGpuFrameMissed 4630947038039379843', 'type': 'atrace_counter'}, {'id': 2964, 'name': 'Vsync-EarlyGpu', 'type': 'atrace_counter'}, {'id': 88, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 89, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 90, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 2781, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3180, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3181, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3182, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3183, 'name': 'cpufreq', 'type': 'cpu_frequency'}, {'id': 3054, 'name': 'gpufreq', 'type': 'gpu_frequency'}]
+
+# entry
+launcher_draw high {'count': 536, 'over_8_33': 67, 'p50_ms': 4.068, 'p95_ms': 10.872, 'max_ms': 63.298, 'encode0_p95_ms': 7.465, 'encode0_max_ms': 12.253, 'encode1_p95_ms': 2.082}
+launcher_draw low  {'count': 560, 'over_8_33': 59, 'p50_ms': 4.137, 'p95_ms': 9.163, 'max_ms': 15.747, 'encode0_p95_ms': 6.492, 'encode0_max_ms': 11.593, 'encode1_p95_ms': 2.04}
+process runtime delta high-low ms
+  /system/bin/surfaceflinger: high=3543.721 low=3734.166 delta=-190.445
+  com.android.systemui: high=677.702 low=612.289 delta=+65.413
+  com.miui.home: high=5862.691 low=5748.762 delta=+113.929
+  com.tencent.jkchess: high=5285.917 low=504.101 delta=+4781.816
+  com.tencent.jkchess:xg_vip_service: high=11.629 low=4.228 delta=+7.401
+  system_server: high=7359.487 low=7649.568 delta=-290.081
+source cpu high [{'cpu': 0, 'run_ms': 2735.104}, {'cpu': 1, 'run_ms': 1554.35}, {'cpu': 2, 'run_ms': 762.046}, {'cpu': 3, 'run_ms': 66.637}, {'cpu': 4, 'run_ms': 49.174}, {'cpu': 5, 'run_ms': 34.449}, {'cpu': 6, 'run_ms': 33.37}, {'cpu': 7, 'run_ms': 62.416}]
+source cpu low  [{'cpu': 0, 'run_ms': 53.288}, {'cpu': 1, 'run_ms': 51.023}, {'cpu': 2, 'run_ms': 96.873}, {'cpu': 3, 'run_ms': 17.286}, {'cpu': 4, 'run_ms': 22.151}, {'cpu': 5, 'run_ms': 20.969}, {'cpu': 6, 'run_ms': 131.85}, {'cpu': 7, 'run_ms': 114.889}]
+total cpu high [{'cpu': 0, 'run_ms': 5430.0}, {'cpu': 1, 'run_ms': 5430.0}, {'cpu': 2, 'run_ms': 5430.0}, {'cpu': 3, 'run_ms': 5430.0}, {'cpu': 4, 'run_ms': 5430.0}, {'cpu': 5, 'run_ms': 5430.0}, {'cpu': 6, 'run_ms': 5430.0}, {'cpu': 7, 'run_ms': 5430.0}]
+total cpu low  [{'cpu': 0, 'run_ms': 5790.0}, {'cpu': 1, 'run_ms': 5790.0}, {'cpu': 2, 'run_ms': 5790.0}, {'cpu': 3, 'run_ms': 5790.0}, {'cpu': 4, 'run_ms': 5790.0}, {'cpu': 5, 'run_ms': 5790.0}, {'cpu': 6, 'run_ms': 5790.0}, {'cpu': 7, 'run_ms': 5790.0}]
+system_server top positive runtime deltas high-low ms
+  binder:2858_6: high=155.776 low=0.959 delta=+154.817
+  binder:2858_1F: high=144.979 low=0.524 delta=+144.455
+  binder:2858_11: high=162.231 low=34.600 delta=+127.631
+  binder:2858_3: high=109.697 low=8.103 delta=+101.594
+  binder:2858_1E: high=236.379 low=160.956 delta=+75.423
+  binder:2858_5: high=153.748 low=80.992 delta=+72.756
+  binder:2858_1: high=72.899 low=5.374 delta=+67.525
+  binder:2858_17: high=198.221 low=140.518 delta=+57.703
+  binder:2858_B: high=254.154 low=201.337 delta=+52.817
+  binder:2858_A: high=121.094 low=72.447 delta=+48.647
+  binder:2858_10: high=131.818 low=87.093 delta=+44.725
+  binder:2858_14: high=91.615 low=48.713 delta=+42.902
+  binder:2858_D: high=128.744 low=89.803 delta=+38.941
+  binder:2858_1A: high=93.707 low=58.723 delta=+34.984
+  binder:2858_18: high=174.969 low=140.632 delta=+34.337
+  binder:2858_1B: high=56.601 low=24.802 delta=+31.799
+  binder:2858_19: high=53.827 low=34.171 delta=+19.656
+  binder:2858_12: high=96.096 low=77.547 delta=+18.549
+  ConnectivitySer: high=31.804 low=18.413 delta=+13.391
+  TaskSnapshotPer: high=981.777 low=968.875 delta=+12.902
+source top threads high [{'thread': 'UnityMain', 'run_ms': 3353.221}, {'thread': 'Thread-103', 'run_ms': 415.068}, {'thread': 'tencent.jkchess', 'run_ms': 335.502}, {'thread': 'UnityChoreograp', 'run_ms': 305.063}, {'thread': 'AudioTrack', 'run_ms': 143.018}, {'thread': 'NDK MediaCodec_', 'run_ms': 135.017}, {'thread': 'UnityGfxDeviceW', 'run_ms': 83.94}, {'thread': 'LogWriteThread', 'run_ms': 76.788}, {'thread': 'FMOD mixer thre', 'run_ms': 70.066}, {'thread': 'Job.Worker 1', 'run_ms': 64.851}, {'thread': 'Thread-15', 'run_ms': 55.159}, {'thread': 'HwBinder:7326_1', 'run_ms': 49.872}, {'thread': 'Job.Worker 0', 'run_ms': 38.738}, {'thread': 'NativeThread', 'run_ms': 36.51}, {'thread': 'Thread-14', 'run_ms': 28.936}, {'thread': 'FMOD stream thr', 'run_ms': 17.303}, {'thread': 'UnityPreload', 'run_ms': 15.364}, {'thread': 'binder:7326_7', 'run_ms': 12.678}, {'thread': 'binder:7326_8', 'run_ms': 6.545}, {'thread': 'binder:7326_4', 'run_ms': 6.202}]
+source top threads low  [{'thread': 'UnityMain', 'run_ms': 375.234}, {'thread': 'AudioTrack', 'run_ms': 24.3}, {'thread': 'UnityChoreograp', 'run_ms': 10.379}, {'thread': 'UnityGfxDeviceW', 'run_ms': 7.806}, {'thread': 'NDK MediaCodec_', 'run_ms': 7.082}, {'thread': 'tencent.jkchess', 'run_ms': 6.327}, {'thread': 'Job.Worker 1', 'run_ms': 5.519}, {'thread': 'Jit thread pool', 'run_ms': 3.897}, {'thread': 'Job.Worker 0', 'run_ms': 3.762}, {'thread': 'Signal Catcher', 'run_ms': 3.709}, {'thread': 'ConscryptStatsL', 'run_ms': 3.356}, {'thread': 'FMOD mixer thre', 'run_ms': 3.319}, {'thread': 'binder:7326_1', 'run_ms': 2.691}, {'thread': 'LogWriteThread', 'run_ms': 2.608}, {'thread': 'Thread-68', 'run_ms': 2.437}, {'thread': 'Thread-204', 'run_ms': 2.127}, {'thread': 'Thread-15', 'run_ms': 1.992}, {'thread': 'ReferenceQueueD', 'run_ms': 1.918}, {'thread': 'FinalizerWatchd', 'run_ms': 1.78}, {'thread': 'GThreadManager', 'run_ms': 1.725}]
+source work high [{'name': 'queueBuffer', 'count': 74, 'wall_ms': 143.371, 'max_ms': 18.006}, {'name': 'eglSwapBuffers', 'count': 25, 'wall_ms': 83.767, 'max_ms': 18.387}, {'name': 'waiting for GPU completion', 'count': 9, 'wall_ms': 10.144, 'max_ms': 2.238}]
+source work low  [{'name': 'waiting for GPU completion', 'count': 6, 'wall_ms': 10.509, 'max_ms': 1.983}, {'name': 'queueBuffer', 'count': 14, 'wall_ms': 5.868, 'max_ms': 0.558}, {'name': 'eglSwapBuffers', 'count': 6, 'wall_ms': 4.067, 'max_ms': 0.771}]
+source frames high {'count': 0, 'dropped': None}
+source frames low  {'count': 0, 'dropped': None}
+key thread Running/Runnable high vs low
+  ('/system/bin/surfaceflinger', 'surfaceflinger'): running 1450.625/1568.720 runnable 96.957/105.828
+  ('com.miui.home', '1.raster'): running 2044.946/1991.815 runnable 520.197/370.582
+  ('com.miui.home', '1.ui'): running 1529.689/1449.149 runnable 625.824/459.609
+  ('com.miui.home', 'com.miui.home'): running 261.725/283.706 runnable 298.873/268.900
+  ('system_server', 'TaskSnapshotPer'): running 981.777/968.875 runnable 619.666/332.351
+  ('system_server', 'android.anim'): running 294.852/324.586 runnable 174.712/155.342
+  ('system_server', 'android.display'): running 146.208/147.170 runnable 133.629/81.144
+Full/Partial jank high
+  {'process': '/system/bin/surfaceflinger', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger GPU Deadline Missed', 'gpu_composition': 1, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'App Deadline Missed, SurfaceFlinger Stuffing', 'gpu_composition': 0, 'count': 6}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger GPU Deadline Missed, App Deadline Missed', 'gpu_composition': 0, 'count': 2}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'App Deadline Missed, App Resynced Jitter', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'App Resynced Jitter, Non Animating', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger Scheduling, App Resynced Jitter', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Partial', 'jank_type': 'App Resynced Jitter, Non Animating', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.miui.home', 'jank_severity_type': 'Full', 'jank_type': 'App Deadline Missed, SurfaceFlinger Stuffing', 'gpu_composition': 0, 'count': 5}
+  {'process': 'com.miui.home', 'jank_severity_type': 'Full', 'jank_type': 'App Deadline Missed, Non Animating', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.miui.home', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger GPU Deadline Missed', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.miui.home', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger GPU Deadline Missed, App Deadline Missed', 'gpu_composition': 0, 'count': 1}
+Full/Partial jank low
+  {'process': '/system/bin/surfaceflinger', 'jank_severity_type': 'Full', 'jank_type': 'Display HAL', 'gpu_composition': 1, 'count': 2}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger Scheduling', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger Scheduling, App Resynced Jitter', 'gpu_composition': 0, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Partial', 'jank_type': 'App Resynced Jitter, Buffer Stuffing', 'gpu_composition': 0, 'count': 1}
+
+# return
+launcher_draw high {'count': 363, 'over_8_33': 34, 'p50_ms': 3.841, 'p95_ms': 8.898, 'max_ms': 16.297, 'encode0_p95_ms': 7.647, 'encode0_max_ms': 14.751, 'encode1_p95_ms': 0.335}
+launcher_draw low  {'count': 366, 'over_8_33': 21, 'p50_ms': 3.654, 'p95_ms': 8.747, 'max_ms': 14.206, 'encode0_p95_ms': 7.409, 'encode0_max_ms': 13.25, 'encode1_p95_ms': 0.278}
+process runtime delta high-low ms
+  /system/bin/surfaceflinger: high=2478.070 low=2401.928 delta=+76.142
+  com.android.systemui: high=538.595 low=549.208 delta=-10.613
+  com.miui.home: high=3480.995 low=3498.365 delta=-17.370
+  com.tencent.jkchess: high=3721.069 low=3746.746 delta=-25.677
+  com.tencent.jkchess:xg_vip_service: high=4.372 low=2.459 delta=+1.913
+  system_server: high=2939.975 low=3142.688 delta=-202.713
+source cpu high [{'cpu': 0, 'run_ms': 1395.333}, {'cpu': 1, 'run_ms': 1101.354}, {'cpu': 2, 'run_ms': 800.577}, {'cpu': 3, 'run_ms': 55.369}, {'cpu': 4, 'run_ms': 71.782}, {'cpu': 5, 'run_ms': 86.311}, {'cpu': 6, 'run_ms': 91.092}, {'cpu': 7, 'run_ms': 123.623}]
+source cpu low  [{'cpu': 0, 'run_ms': 1319.041}, {'cpu': 1, 'run_ms': 1133.19}, {'cpu': 2, 'run_ms': 1052.38}, {'cpu': 3, 'run_ms': 80.284}, {'cpu': 4, 'run_ms': 54.367}, {'cpu': 5, 'run_ms': 38.982}, {'cpu': 6, 'run_ms': 41.713}, {'cpu': 7, 'run_ms': 29.247}]
+total cpu high [{'cpu': 0, 'run_ms': 3200.0}, {'cpu': 1, 'run_ms': 3200.0}, {'cpu': 2, 'run_ms': 3200.0}, {'cpu': 3, 'run_ms': 3200.0}, {'cpu': 4, 'run_ms': 3200.0}, {'cpu': 5, 'run_ms': 3200.0}, {'cpu': 6, 'run_ms': 3200.0}, {'cpu': 7, 'run_ms': 3200.0}]
+total cpu low  [{'cpu': 0, 'run_ms': 3200.0}, {'cpu': 1, 'run_ms': 3200.0}, {'cpu': 2, 'run_ms': 3200.0}, {'cpu': 3, 'run_ms': 3200.0}, {'cpu': 4, 'run_ms': 3200.0}, {'cpu': 5, 'run_ms': 3200.0}, {'cpu': 6, 'run_ms': 3200.0}, {'cpu': 7, 'run_ms': 3200.0}]
+system_server top positive runtime deltas high-low ms
+  binder:2858_11: high=129.597 low=10.262 delta=+119.335
+  binder:2858_F: high=122.257 low=13.986 delta=+108.271
+  binder:2858_5: high=59.464 low=0.000 delta=+59.464
+  binder:2858_D: high=94.370 low=52.334 delta=+42.036
+  binder:2858_1B: high=40.229 low=0.000 delta=+40.229
+  binder:2858_1C: high=31.304 low=0.062 delta=+31.242
+  binder:2858_1F: high=28.257 low=0.000 delta=+28.257
+  binder:2858_B: high=55.081 low=27.484 delta=+27.597
+  binder:2858_3: high=27.061 low=0.000 delta=+27.061
+  binder:2858_19: high=25.877 low=0.042 delta=+25.835
+  binder:2858_A: high=33.988 low=8.165 delta=+25.823
+  binder:2858_6: high=19.700 low=0.000 delta=+19.700
+  binder:2858_14: high=22.465 low=4.330 delta=+18.135
+  Jit thread pool: high=39.768 low=23.562 delta=+16.206
+  binder:2858_20: high=56.490 low=41.939 delta=+14.551
+  binder:2858_16: high=48.641 low=35.903 delta=+12.738
+  android.io: high=33.171 low=23.290 delta=+9.881
+  binder:2858_1E: high=34.647 low=25.349 delta=+9.298
+  android.display: high=94.191 low=84.921 delta=+9.270
+  android.anim.lf: high=290.163 low=281.155 delta=+9.008
+source top threads high [{'thread': 'UnityMain', 'run_ms': 1534.889}, {'thread': 'Thread-103', 'run_ms': 536.015}, {'thread': 'tencent.jkchess', 'run_ms': 315.349}, {'thread': 'UnityChoreograp', 'run_ms': 222.231}, {'thread': 'NDK MediaCodec_', 'run_ms': 178.751}, {'thread': 'HeapTaskDaemon', 'run_ms': 104.773}, {'thread': 'UnityGfxDeviceW', 'run_ms': 90.993}, {'thread': 'InsetsAnimation', 'run_ms': 90.135}, {'thread': 'AudioTrack', 'run_ms': 90.112}, {'thread': 'Job.Worker 0', 'run_ms': 88.083}, {'thread': 'HwBinder:7326_1', 'run_ms': 62.98}, {'thread': 'LogWriteThread', 'run_ms': 56.672}, {'thread': 'FMOD mixer thre', 'run_ms': 51.906}, {'thread': 'Thread-101', 'run_ms': 51.533}, {'thread': 'Thread-15', 'run_ms': 40.509}, {'thread': 'Job.Worker 1', 'run_ms': 37.225}, {'thread': 'NativeThread', 'run_ms': 31.028}, {'thread': 'UnityPreload', 'run_ms': 22.07}, {'thread': 'binder:7326_4', 'run_ms': 19.562}, {'thread': 'CodecLooper', 'run_ms': 14.592}]
+source top threads low  [{'thread': 'UnityMain', 'run_ms': 2084.332}, {'thread': 'tencent.jkchess', 'run_ms': 340.807}, {'thread': 'UnityChoreograp', 'run_ms': 197.874}, {'thread': 'NDK MediaCodec_', 'run_ms': 173.35}, {'thread': 'AudioTrack', 'run_ms': 164.156}, {'thread': 'Job.Worker 0', 'run_ms': 127.548}, {'thread': 'InsetsAnimation', 'run_ms': 101.15}, {'thread': 'HwBinder:7326_1', 'run_ms': 91.633}, {'thread': 'LogWriteThread', 'run_ms': 58.424}, {'thread': 'FMOD mixer thre', 'run_ms': 49.658}, {'thread': 'NativeThread', 'run_ms': 48.773}, {'thread': 'Thread-15', 'run_ms': 48.426}, {'thread': 'UnityGfxDeviceW', 'run_ms': 41.772}, {'thread': 'Thread-14', 'run_ms': 39.603}, {'thread': 'CodecLooper', 'run_ms': 22.795}, {'thread': 'GThreadManager', 'run_ms': 22.6}, {'thread': 'Thread-204', 'run_ms': 14.979}, {'thread': 'Thread-178', 'run_ms': 14.946}, {'thread': 'FMOD stream thr', 'run_ms': 14.588}, {'thread': 'Background Job.', 'run_ms': 13.684}]
+source work high [{'name': 'queueBuffer', 'count': 88, 'wall_ms': 113.328, 'max_ms': 14.024}, {'name': 'eglSwapBuffers', 'count': 33, 'wall_ms': 79.656, 'max_ms': 14.315}, {'name': 'waiting for GPU completion', 'count': 18, 'wall_ms': 32.334, 'max_ms': 6.881}]
+source work low  [{'name': 'queueBuffer', 'count': 24, 'wall_ms': 87.208, 'max_ms': 16.171}, {'name': 'eglSwapBuffers', 'count': 9, 'wall_ms': 46.127, 'max_ms': 16.53}, {'name': 'waiting for GPU completion', 'count': 4, 'wall_ms': 11.158, 'max_ms': 5.254}]
+source frames high {'count': 0, 'dropped': None}
+source frames low  {'count': 0, 'dropped': None}
+key thread Running/Runnable high vs low
+  ('/system/bin/surfaceflinger', 'surfaceflinger'): running 1004.806/986.494 runnable 72.654/74.047
+  ('com.miui.home', '1.raster'): running 1363.393/1372.255 runnable 312.097/278.719
+  ('com.miui.home', '1.ui'): running 1230.237/1218.210 runnable 278.292/321.526
+  ('com.miui.home', 'com.miui.home'): running 31.112/29.932 runnable 44.080/36.267
+  ('system_server', 'TaskSnapshotPer'): running 2.387/3.026 runnable 4.179/2.895
+  ('system_server', 'android.anim'): running 202.675/210.988 runnable 70.252/81.964
+  ('system_server', 'android.display'): running 94.191/84.921 runnable 73.540/76.251
+Full/Partial jank high
+  {'process': '/system/bin/surfaceflinger', 'jank_severity_type': 'Full', 'jank_type': 'Display HAL', 'gpu_composition': 1, 'count': 2}
+  {'process': '/system/bin/surfaceflinger', 'jank_severity_type': 'Full', 'jank_type': 'SurfaceFlinger GPU Deadline Missed', 'gpu_composition': 1, 'count': 1}
+  {'process': 'com.android.systemui', 'jank_severity_type': 'Full', 'jank_type': 'App Resynced Jitter, Non Animating', 'gpu_composition': 0, 'count': 1}
+Full/Partial jank low
+  {'process': '/system/bin/surfaceflinger', 'jank_severity_type': 'Full', 'jank_type': 'Display HAL', 'gpu_composition': 1, 'count': 2}

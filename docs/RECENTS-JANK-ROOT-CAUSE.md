@@ -14,12 +14,14 @@ test-results/sheng-jkchess-recents-warm-20260823-211819
 
 ## 结论
 
-卡顿不是某个游戏对应了特殊的卡片实现，也不是 Floating Dock 本身承担了主要绘制。主要问题由两部分叠加形成：
+卡顿不是某个游戏对应了特殊的卡片实现，也不是 Floating Dock 本身承担了主要绘制。现象应分为基础负载和高负载源应用带来的增量：
 
-1. Launcher 主最近任务 Surface 的 Flutter/Impeller Vulkan 命令编码经常超过 8.33 ms；
-2. `system_server` 同时进行高分辨率任务快照持久化，占用性能核并增加 Launcher Raster 线程的 Runnable 等待。
+1. Launcher 主最近任务 Surface 的 Flutter/Impeller Vulkan 命令编码和任务快照构成所有应用共有的基础负载；
+2. 高负载源应用缩成卡片后仍继续运行主循环、产帧并提交图形缓冲，才是高载相对轻载增加卡顿的主要原因。
 
 SurfaceFlinger、WindowManager 动画、状态栏和安全中心 Dock 在同一转场中并行工作，部分帧因此继续出现 CPU、GPU 或 Display HAL deadline miss。FrameTimeline 将某些失败帧标在 Floating Dock、StatusBar 或 DockAssistant 上，只说明该 Surface 的呈现错过了时限，不能据此认定它是主要计算来源。
+
+同应用 Active/Frozen A/B 的差分证据见 `HIGH-LOAD-SOURCE-RECENTS-JANK.md`。该测试确认任务快照实际计算量在两组间接近；高载时增加的主要是源应用 CPU/GPU 提交，以及 Launcher 和快照线程的 Runnable 排队。
 
 ## Launcher 实际绘制内容
 
@@ -96,7 +98,7 @@ DockAssistant draw      墙钟 10.35 ms
 
 快照持久化占用超大核后，Launcher Raster 只能继续在中核执行并排队。这能解释模块已经让源应用退到 CPU 0–2，转场仍不能稳定达到无负载状态。
 
-任务卡片当前显示依赖内存中的快照；`StoreWriteQueueItem` 是后续持久化工作，不需要与当前转场争抢性能核。这是下一步最适合单独 A/B 的系统线程。
+任务卡片当前显示依赖内存中的快照；`StoreWriteQueueItem` 是后续持久化工作，会构成基础 CPU 负载。后续 Active/Frozen A/B 显示，两组的快照实际 Running 分别为 981.78 ms 和 968.88 ms，计算量接近；高载组主要多出 287.32 ms Runnable 排队。因此它不是高载相对轻载增加卡顿的首要差分来源。
 
 ## Launcher 主线程的长 Callback
 
@@ -110,16 +112,14 @@ Launcher 主线程出现过 117–121 ms 的 `CALLBACK_ANIMATION`，但逐状态
 
 记录中有一帧受到采集进程 `traced_probes` 明显干扰，因此不能用单个 GPU miss 推导常驻策略。Launcher `V:0 Encode` 和 TaskSnapshotPersister 的结果在四轮中重复出现，不依赖该异常帧。
 
-## 下一步最小 A/B
+## 后续最小 A/B
 
 按风险和因果关系排序：
 
-1. 将 `TaskSnapshotPersister` 长期限制到后台 CPU 0–2，保留任务快照抓取和持久化功能，只让异步持久化不再占用 Launcher 使用的 CPU 3–7；
-2. 转场期间让 Launcher `1.raster` 独占或优先使用动态识别出的超大核，而不是仅允许在 CPU 3–7 之间由调度器选择；
-3. 重新执行同一套四轮测试，检查 Raster Runnable、`V:0 Encode` P95 和 Full/Partial jank；
-4. 若 CPU 隔离后 `V:0 Encode` 仍稳定超过 8.33 ms，再只对最近任务主 Surface 的 HyperMaterial/saveLayer 做单变量 A/B。
-
-不应优先关闭 Floating Dock、状态栏或全局玻璃材质。这些对象有自己的少量工作，但现有记录不能支持它们是主要瓶颈。
+1. 在卡片开始移动后短暂抑制源应用产帧，并在转场完成后立即恢复；
+2. 重新执行同一套四轮测试，检查源应用 BufferQueue 提交、Launcher Raster Runnable 和 P95；
+3. 若仍有基础卡顿，再分别测试 TaskSnapshotPersister 的 CPU 放置和最近任务主 Surface 的 HyperMaterial/saveLayer；
+4. 不全局关闭 Floating Dock、状态栏或玻璃材质。
 
 ## 复现分析
 
