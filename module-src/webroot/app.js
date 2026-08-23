@@ -61,7 +61,7 @@
       return { errno: 0, stdout: "1.ui\t3060\t2-7\t384\n1.raster\t3061\t4-7\t512\nIplrVkResMgr\t3091\t2-6\t256\nIplrVkFenceWait\t3092\t0-3\t0", stderr: "" };
     }
     if (command.startsWith(`${WEBUI} logs`)) {
-      return { errno: 0, stdout: "20:41:18 mode=entering source=com.android.settings pid=9174\n20:41:18 source-app -> background\n20:41:18 mode=recents launcher-threads boosted\n20:41:19 mode=leaving source-app restored", stderr: "" };
+      return { errno: 0, stdout: "20:41:18 mode=entering source=com.android.settings pid=9174\n20:41:18 source-affinity apply constrained=74/74\n20:41:18 source-app -> background\n20:41:18 mode=recents launcher-threads boosted\n20:41:19 mode=leaving source-affinity restored", stderr: "" };
     }
     if (command === `${WEBUI} diagnostics`) {
       return { errno: 0, stdout: `[status]\n${serializeMockStatus()}\n\n[threads]\n1.ui\t3060\t2-7\t384\n1.raster\t3061\t4-7\t512\n\n[recent log]\n20:41:18 mode=recents`, stderr: "" };

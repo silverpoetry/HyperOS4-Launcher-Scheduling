@@ -1,9 +1,12 @@
 #include <dlfcn.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -11,16 +14,21 @@
 #define ANDROID_LOG_RDONLY 1
 #define LOG_BUFFER_SIZE 65536
 #define SOURCE_APP_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/source-app"
+#define SOURCE_AFFINITYCTL "/data/adb/modules/hyperos4_recents_source_app_yield/bin/source-affinityctl"
+#define SOURCE_AFFINITY_STATE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.state"
 
 static int cpuset_background_fd = -1;
 static int cpuctl_background_fd = -1;
 
 struct yield_result {
     int pid;
+    int uid;
     int cpuset_ok;
     int cpuctl_ok;
+    int affinity_status;
     int64_t delivery_us;
     int64_t write_us;
+    int64_t affinity_us;
     int64_t complete_monotonic_ns;
 };
 
@@ -106,10 +114,12 @@ static int write_pid_open_fd(int fd, const char *fallback_path, int pid) {
     return write_pid_file(fallback_path, pid);
 }
 
-static int read_source_pid(void) {
+static int read_source_record(int *pid, int *uid) {
     char value[128];
     char *end;
-    long parsed;
+    char *uid_start;
+    long parsed_pid;
+    long parsed_uid;
     int fd = open(SOURCE_APP_FILE, O_RDONLY | O_CLOEXEC);
     ssize_t length;
     if (fd < 0) return -1;
@@ -117,24 +127,74 @@ static int read_source_pid(void) {
     close(fd);
     if (length <= 0) return -1;
     value[length] = '\0';
-    parsed = strtol(value, &end, 10);
-    if (end == value || parsed <= 1 || parsed > INT32_MAX) return -1;
-    return (int)parsed;
+    parsed_pid = strtol(value, &end, 10);
+    if (end == value || parsed_pid <= 1 || parsed_pid > INT32_MAX) return -1;
+    while (*end == ' ' || *end == '\t') end++;
+    uid_start = end;
+    parsed_uid = strtol(uid_start, &end, 10);
+    if (end == uid_start || parsed_uid < 1000 || parsed_uid > INT32_MAX) return -1;
+    *pid = (int)parsed_pid;
+    *uid = (int)parsed_uid;
+    return 0;
+}
+
+static int run_affinity_apply(int pid, int uid) {
+    char pid_text[32];
+    char uid_text[32];
+    char *arguments[] = {
+        (char *)SOURCE_AFFINITYCTL,
+        (char *)"apply",
+        pid_text,
+        uid_text,
+        (char *)SOURCE_AFFINITY_STATE,
+        NULL,
+    };
+    posix_spawn_file_actions_t actions;
+    pid_t child;
+    int status;
+    int null_fd;
+    int spawn_result;
+    extern char **environ;
+    snprintf(pid_text, sizeof(pid_text), "%d", pid);
+    snprintf(uid_text, sizeof(uid_text), "%d", uid);
+    null_fd = open("/dev/null", O_WRONLY | O_CLOEXEC);
+    if (null_fd < 0) return -1;
+    if (posix_spawn_file_actions_init(&actions) != 0) {
+        close(null_fd);
+        return -1;
+    }
+    posix_spawn_file_actions_adddup2(&actions, null_fd, STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, null_fd, STDERR_FILENO);
+    posix_spawn_file_actions_addclose(&actions, null_fd);
+    spawn_result = posix_spawn(&child, SOURCE_AFFINITYCTL, &actions,
+                               NULL, arguments, environ);
+    posix_spawn_file_actions_destroy(&actions);
+    close(null_fd);
+    if (spawn_result != 0) return -1;
+    do {
+        if (waitpid(child, &status, 0) >= 0) break;
+        if (errno != EINTR) return -1;
+    } while (errno == EINTR);
+    if (!WIFEXITED(status)) return -1;
+    return WEXITSTATUS(status);
 }
 
 static struct yield_result yield_source_native(void) {
-    struct yield_result result = {-1, 0, 0, -1, -1, -1};
+    struct yield_result result = {-1, -1, 0, 0, -1, -1, -1, -1, -1};
     struct timespec start;
+    struct timespec affinity_end;
     struct timespec end;
-    result.pid = read_source_pid();
-    if (result.pid <= 1) return result;
+    if (read_source_record(&result.pid, &result.uid) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
+    result.affinity_status = run_affinity_apply(result.pid, result.uid);
+    clock_gettime(CLOCK_MONOTONIC, &affinity_end);
+    result.affinity_us = timespec_diff_us(&affinity_end, &start);
     result.cpuset_ok = write_pid_open_fd(cpuset_background_fd,
                                         "/dev/cpuset/background/cgroup.procs", result.pid);
     result.cpuctl_ok = write_pid_open_fd(cpuctl_background_fd,
                                         "/dev/cpuctl/background/cgroup.procs", result.pid);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    result.write_us = timespec_diff_us(&end, &start);
+    result.write_us = timespec_diff_us(&end, &affinity_end);
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     return result;
 }
@@ -190,8 +250,8 @@ int main(void) {
         size_t tag_length;
         size_t message_limit;
         size_t message_length;
-        struct yield_result yield = {-1, 0, 0, -1, -1, -1};
-        char suffix[160] = "";
+        struct yield_result yield = {-1, -1, 0, 0, -1, -1, -1, -1, -1};
+        char suffix[320] = "";
         int count;
         int read_result = list_read(list, raw);
         if (read_result <= 0) break;
@@ -217,11 +277,13 @@ int main(void) {
             struct timespec emitted = {(time_t)entry->sec, (long)entry->nsec};
             yield = yield_source_native();
             clock_gettime(CLOCK_REALTIME, &observed);
-            yield.delivery_us = timespec_diff_us(&observed, &emitted) - yield.write_us;
+            yield.delivery_us = timespec_diff_us(&observed, &emitted) -
+                                yield.write_us - yield.affinity_us;
             if (yield.delivery_us < 0 || yield.delivery_us > 5000000) yield.delivery_us = -1;
             snprintf(suffix, sizeof(suffix),
-                     " nativeYieldPid=%d nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCompleteNs=%lld",
-                     yield.pid, yield.cpuset_ok, yield.cpuctl_ok,
+                     " nativeYieldPid=%d nativeYieldUid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCompleteNs=%lld",
+                     yield.pid, yield.uid, yield.affinity_status,
+                     (long long)yield.affinity_us, yield.cpuset_ok, yield.cpuctl_ok,
                      (long long)yield.delivery_us, (long long)yield.write_us,
                      (long long)yield.complete_monotonic_ns);
         }

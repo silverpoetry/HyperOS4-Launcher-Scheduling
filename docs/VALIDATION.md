@@ -1,5 +1,17 @@
 # 验证记录
 
+## v4.0 来源应用真实退避
+
+Sheng 上确认 Xiaomi `metis` 的 `minor_window_app` 是旧方案失效的根因。该节点等于来源应用 UID 时，`sched_setaffinity()` 返回成功后线程仍会被立即扩回 `0-7`；按 Joyose 小窗结束语义写入 `0` 后，同一线程可以稳定保持在 `/dev/cpuset/background/cpus` 定义的 `0-2`。
+
+v4.0 使用 `source-affinityctl` 保存并恢复每个 TID 的原始 affinity。以 160 线程的游戏为来源应用，初次设置后 160/160 位于后台 CPU 集，500 ms 后仍为 160/160；经过 Launcher 入口事件后，仍存活的 158/158 线程保持约束，恢复时精确恢复 158 个线程，2 个已经退出的线程按启动时间校验跳过。
+
+事务转移也完成了 Settings → 文件管理实测：Settings 的 72/72 线程先恢复，文件管理的 79/79 线程随后受约束，最终 79/79 精确恢复。来源 UID 标记被外部重新写入后，下一条生命周期事件会把标记清零并重新约束逃逸线程；没有 20 ms 轮询或延时抢写。
+
+Sheng 上 74 个 Settings 线程的控制器内部耗时为：首次事务 2.812 ms，无变化复核 1.017 ms，只修复 UID 标记的复核 0.904 ms。入口由原生 logd 监听器通过 `posix_spawn()` 调用控制器，再写 background cgroup。以 71 线程的游戏现场测得完整原生入口事务 16.877 ms，原 `fork()+exec()` 路径为 29.294 ms。
+
+最终安装包还完成了游戏 UID 现场测试：入口前 `minor_window_app=10341`；入口后该值为 `0`，71/71 个线程受限于 CPU `0-2`，700 ms 后仍为 71/71。应用重新打开时，Joyose 曾把标记写回 `10341` 并造成 15 个线程逃逸；同一生命周期事件将标记再次清零并重新约束 15 个线程。动画结束后恢复 65 个仍存活线程，7 个已经退出的线程按启动时间跳过，状态文件删除，标记恢复为 `10341`。
+
 ## 基础 A/B
 
 v1.1 在 Shennong 上完成源应用调度 A/B，确认 ActivityManager 会在第一次退避后约 100–110 ms 重新提升进程；120 ms 和 320 ms 的受保护重写可在关键窗口维持 background。原始数据位于 `test-results/shennong-20260822-ab/`。
@@ -78,7 +90,7 @@ SurfaceFlinger/SystemUI 仍有少量正反向离群 jank，不能从这组样本
 
 - 所有模块 Shell 脚本通过 `sh -n`；
 - `launcher-logwatch` 和 `launcher-threadctl` 均由 NDK arm64 编译并保留 C 源码；
-- ZIP 根目录包含 KernelSU 脚本和两个 arm64 工具；
+- ZIP 根目录包含 KernelSU 脚本和三个 arm64 工具；
 - 源码不包含 blur 阈值、固定 CPU 编号、频率锁或前台轮询；
 - `git diff --check` 通过；
 - 构建产物生成 SHA-256 文件。

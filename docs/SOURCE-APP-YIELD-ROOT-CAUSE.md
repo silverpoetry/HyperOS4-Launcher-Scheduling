@@ -1,62 +1,82 @@
-# 来源应用退避失效的根因与替代方案
+# 来源应用退避：根因、控制链路与验证
 
 ## 结论
 
-当前版本把来源应用写入 `cpuset/background` 和 `cpuctl/background`，但在 Sheng 的高负载游戏上，这只改变了可见的 cgroup 路径，并没有在动画关键阶段形成实际的 CPU0-2 硬限制。继续提高 `cgroup.procs` 的写入频率不能解决问题。
+仅把来源应用写入 `cpuset/background` 和 `cpuctl/background`，不能保证它实际运行在后台核。Sheng 的 Xiaomi `metis` 调度模块会依据 `minor_window_app` 对指定 UID 应用特殊策略；该 UID 命中时，普通 cgroup 和 `sched_setaffinity()` 的表面成功不等于实际限制。
 
-可用的用户态控制面是线程 nice。原生监听器在动画边沿一次性保存来源应用各 TID 的 nice，将高优先级线程临时降到 `nice=+10`，动画结束或取消时按 TID 恢复原值。该值不会被 ActivityManager、metis 或游戏在测试窗口内覆盖。
+有效顺序是：
 
-## 实际链路
+1. 读取并保存来源进程每个现有 TID 的原始 CPU affinity；
+2. 若 `/sys/module/metis/parameters/minor_window_app` 等于来源 UID，按 Joyose 的结束小窗语义写入 `0`；
+3. 对全部来源 TID 调用 `sched_setaffinity()`，目标掩码取自设备自己的 `/dev/cpuset/background/cpus`；
+4. 动画期间对新增 TID和 Xiaomi 标记回写做事件驱动补入；
+5. 动画完成、取消、服务恢复或卸载时，按 TID 启动时间校验并恢复原始掩码。
 
-1. Launcher 发出 `gestureStart`，原生 `launcher-logwatch` 立即把来源 PID 写入 background cpuset/cpuctl。
-2. 内核 `cgroup_attach_task` 记录证明写入成功；约 196 ms 后，`system_server` 的 `OomAdjuster` 又把仍然可见的来源 Activity 提到 `foreground`。这是 Android 可见进程的正常调度语义。
-3. 即使没有等到 OomAdjuster，直接把游戏 PID 写入 `background/cgroup.procs` 或逐 TID 写入 `background/tasks`，UnityMain 的 cgroup 路径会显示 `/background`，但 `Cpus_allowed_list` 和 `sched_getaffinity` 仍为 CPU0-7，至少 100 ms 不变。
-4. 调用系统 `settaskprofile TID CPUSET_SP_BACKGROUND` 结果相同：task profile 报告成功，路径进入 background，实际允许 CPU 仍为 0-7。
-5. 对该 UnityMain 调用 `sched_setaffinity(0-2)` 时，系统调用返回成功，但同一次命令读回即为 0-7。内核 syscall trace 只出现调用者 `taskset`，没有游戏或其它用户态进程发起第二次恢复调用。
-6. 内核已加载 Xiaomi `metis` 和 WALT 调度扩展，并注册 `mi_sched_setaffinity`、`mi_set_cpus_allowed_comm` 等钩子。实机行为表明，游戏的实际选核受到这一层控制，不能用普通 cgroup/affinity 写入可靠覆盖。
-7. `metis` 暴露的 `add_rebind_task_lit` 节点按单 TID写入后也没有改变实际选核：同一 UnityMain 在相邻两个 500 ms 窗口中，基线有 99 次被调度到 CPU7，写入后仍有 89 次被调度到 CPU7。
+Sheng 的后台 CPU 集是 `0-2`。模块不把这个编号写死；在其它设备上使用其本机 background cpuset。
 
-因此，当前失败同时有两层原因：ActivityManager 会根据可见状态重新分组；更深的 Xiaomi 调度层又使普通 background/affinity 写入不等于实际小核约束。
+## 调度链路
 
-## nice 验证
+来源应用从全屏进入桌面或最近任务时，系统中同时存在三层控制：
 
-对单个 UnityMain 从 `nice=-20` 临时改为 `nice=+10`：
+- ActivityManager/OomAdjuster 根据 Activity 可见状态移动 cpuset 和 cpuctl；
+- Joyose 在游戏、小窗等场景写入 Xiaomi 调度参数；
+- `metis` 和 WALT 在内核调度路径处理 UID、TID 和 affinity。
 
-- 立即生效；
-- 500 ms 后仍为 `+10`；
-- 可恢复到原来的 `-20`。
+Joyose 中的小窗命令最终映射到：
 
-原生批处理对 159 个现有线程完成保存和修改约需 1.0 ms，恢复约需 0.5 ms，不需要轮询。
+```text
+/sys/module/metis/parameters/minor_window_app#<应用 UID>
+```
 
-同一暖态游戏进程的四轮进入最近任务 A/B：
+结束命令映射到：
 
-| 指标 | v3.5 cgroup | 动画期 nice=+10 |
-|---|---:|---:|
-| 来源游戏实际 CPU 时间 | 2398.8 ms | 2137.6 ms |
-| Launcher 关键线程最长 runnable 等待 | 16.44 ms | 13.36 ms |
-| Launcher `CALLBACK_ANIMATION` >16.67 ms | 13 | 11 |
-| Full/Partial 帧时间线 jank | 1 | 1 |
+```text
+/sys/module/metis/parameters/minor_window_app#0
+```
 
-`nice=0` 只消除负 nice，但游戏仍有大量同优先级可运行线程，未产生稳定收益。`nice=+10` 能让 Launcher 在竞争时先运行，但不会减少游戏本身的工作量，也不会禁止游戏在空闲性能核上运行。
+实机上金铲铲的 UID 为 `10341`。当节点值为 `10341` 时，RenderThread 和 UnityMain 的 `Cpus_allowed_list` 为 `0-7`。直接执行 `taskset 7 <TID>` 虽返回成功，立即读回仍为 `ff`。先把该节点写为 `0`，同一次 `taskset` 后立即读回 `7`，`Cpus_allowed_list` 变为 `0-2`。
 
-## 推荐实现
+该 affinity 在随后把线程从 `top-app` 移到 `foreground` 后仍保持 `0-2`。因此 ActivityManager 的后续 cgroup 迁移不会撤销已经生效的显式 affinity；旧方案失败的关键是 Xiaomi UID 特权仍在，而不是必须持续抢写 cgroup。
 
-将退避从“高频抢写 cgroup”改成“动画边沿一次性 nice 事务”：
+## 原生 affinity 事务
 
-1. `launcher-logwatch` 收到真实卡片开始移动的事件；
-2. 读取已缓存的 source PID；
-3. 在原生进程内枚举 `/proc/PID/task`，保存 `TID -> 原始 nice`；
-4. 只对 `SCHED_OTHER` 且 nice 小于 `+10` 的线程设置 `nice=+10`；
-5. 保持到对应进入动画完成、退出动画完成或取消事件；
-6. 只对仍属于原 PID 的原 TID恢复记录值；已退出线程忽略；
-7. 恢复必须幂等，守护退出、模块关闭和开机清理都执行一次；
-8. 初版不做20ms轮询。若以后证明动画中确有新建的高负载线程，再增加一次受 epoch 保护的短延迟补扫，而不是持续抢写。
+`source-affinityctl` 使用一个短生命周期状态文件记录：
 
-原有 cgroup 写入可以保留为普通应用的辅助策略，但不再把路径变化当成实际退避成功，也应删除120/320 ms和20 ms竞争式重写。
+```text
+PID、UID、原始 minor_window_app、目标掩码、TID、TID 启动时间、原始 affinity
+```
 
-## 边界
+状态文件通过临时文件加原子重命名更新。动画关键路径不调用同步落盘；设备突然重启会重新初始化调度参数，普通进程崩溃时状态文件仍可由服务启动恢复。
 
-- 这是调度竞争优先级控制，不是减少来源应用计算量；
-- nice 对实时调度线程不生效，音频等 RT 线程仍按原策略运行；
-- 打开目标应用时应保持退避到 Launcher 的关闭动画完成，再恢复，不能在 `activityResumed` 立即恢复；
-- 若要从内核层彻底约束选核，需要修改与当前固件匹配的 metis/WALT 钩子。公开的 Sheng 内核主树没有提供这部分模块实现，不能把未知私有参数作为正式模块依赖。
+初次应用时，控制器枚举 `/proc/<PID>/task`，保存全部原始掩码，清除与来源 UID 相同的小窗标记，再统一绑定到 background CPU 集。线程创建会继承创建者 affinity；若后续事件发现新 TID，则把它加入状态。新线程已经继承后台掩码时，恢复掩码使用设备 `top-app` CPU 集，避免退出动画后永久留在小核。
+
+重复 Launcher 事件采用快路径：没有新 TID、没有线程逃逸、`minor_window_app` 也未回写时，只验证，不重复保存或绑定。若 Joyose 再次写回相同 UID，则清零该值并只重绑逃逸线程。
+
+## 生命周期
+
+- `gestureStart`、按键最近任务或关闭应用远程动画开始：原生 logd 监听器直接发起 affinity 事务，然后执行兼容性的 background cgroup 放置。
+- 桌面和最近任务稳定显示：事务保持有效，来源应用不能占用性能核。
+- 上滑取消：先把来源进程恢复到 `top-app`，再恢复原始 affinity 和原始 Xiaomi 标记。
+- 从桌面或最近任务打开同一应用：保留同一事务，吸收新增线程和 Joyose 回写；在 Launcher 退出动画完成后恢复。
+- 打开不同应用：先恢复旧来源线程但不恢复旧 UID 标记，再为新目标建立事务，避免把已经在后台的游戏重新标为小窗应用。
+- 缺少明确完成事件：两秒安全兜底恢复；控制 shell 处于 `foreground`，空闲时阻塞在 logd，不做轮询。
+- 服务重启、模块关闭或卸载：存在状态文件时执行恢复。
+
+## 实机验证
+
+Sheng 上的控制器测试结果：
+
+- 金铲铲：160 个现有线程全部由 `0-7` 限制为 `0-2`；500 ms 后仍为 160/160；进入 Launcher 动画后存活的 158 个线程仍全部受限；恢复 158 个，另外 2 个已退出 TID 按启动时间安全跳过。
+- Xiaomi 标记回写：写回游戏 UID 后出现逃逸线程；事件驱动 reassert 再次得到全部线程受限，随后原始 affinity 可完整恢复。
+- 不同应用事务转移：旧来源先以 `restore_minor=0` 恢复，新目标 79/79 个线程受限，状态头切换为新 PID/UID，最终恢复后 Xiaomi 标记保持系统当前值。
+- v4.0 控制器阶段耗时，Settings 74 个线程：初次事务 2.812 ms；无变化重复事件 1.017 ms；仅处理 Xiaomi 标记回写 0.904 ms。
+- 原生监听器使用 `posix_spawn()` 启动控制器；71 线程游戏的完整入口事务为 16.877 ms，原 `fork()+exec()` 路径为 29.294 ms。
+- 完整 Launcher 退出路径：76/76 个存活线程恢复，状态文件删除，目标回到 `cpuset/top-app` 和 `cpuctl/top-app`，相同 UID 的 `minor_window_app` 恢复。
+
+验收同时检查 `Cpus_allowed_list` 与控制器枚举结果。仅看到 cgroup 路径变化、`taskset` 返回成功或 CPU 时间小幅下降，都不能判定退避生效。
+
+## 不采用的方案
+
+线程 `nice=+10` 在同一暖态游戏进程中使来源 CPU 时间下降约 10.9%，但线程仍可运行在性能核，未实现后台核隔离，因此不作为正式退避方案。
+
+20 ms、120 ms 或 200 ms 周期性重写 cgroup 同样不解决 Xiaomi affinity 覆盖，还会制造额外唤醒和竞态。v4.0 删除了这类延迟抢写。

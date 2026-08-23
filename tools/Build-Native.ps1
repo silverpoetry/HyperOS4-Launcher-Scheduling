@@ -21,8 +21,16 @@ foreach ($sdk in $sdkCandidates) {
     if (-not (Test-Path -LiteralPath $ndkRoot)) {
         continue
     }
-    $compiler = Get-ChildItem -LiteralPath $ndkRoot -Directory |
-        Sort-Object { [version]$_.Name } -Descending |
+    $ndkDirectories = Get-ChildItem -LiteralPath $ndkRoot -Directory
+    $preferredNdk = $ndkDirectories | Where-Object Name -EQ '28.2.13676358' | Select-Object -First 1
+    $orderedNdkDirectories = @()
+    if ($preferredNdk) {
+        $orderedNdkDirectories += $preferredNdk
+    }
+    $orderedNdkDirectories += @($ndkDirectories |
+        Where-Object { -not $preferredNdk -or $_.FullName -ne $preferredNdk.FullName } |
+        Sort-Object { [version]$_.Name } -Descending)
+    $compiler = $orderedNdkDirectories |
         ForEach-Object {
             Join-Path $_.FullName 'toolchains\llvm\prebuilt\windows-x86_64\bin\aarch64-linux-android29-clang.cmd'
         } |
@@ -38,7 +46,8 @@ if (-not $compiler) {
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 foreach ($target in @(
     @{ Source = 'launcher_logwatch.c'; Output = 'launcher-logwatch'; Libraries = @('-ldl') },
-    @{ Source = 'launcher_threadctl.c'; Output = 'launcher-threadctl'; Libraries = @() }
+    @{ Source = 'launcher_threadctl.c'; Output = 'launcher-threadctl'; Libraries = @() },
+    @{ Source = 'source_affinityctl.c'; Output = 'source-affinityctl'; Libraries = @() }
 )) {
     $source = Join-Path $root (Join-Path 'native' $target.Source)
     $output = Join-Path $outputDirectory $target.Output

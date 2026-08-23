@@ -16,6 +16,8 @@ kill_tree() {
 
 daemon_pid="$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
 [ -n "$daemon_pid" ] && kill_tree "$daemon_pid"
+[ -x "$MODDIR/bin/source-affinityctl" ] && [ -r "$MODDIR/source-affinity.state" ] &&
+  "$MODDIR/bin/source-affinityctl" restore "$MODDIR/source-affinity.state" >/dev/null 2>&1
 restore_launcher_threads
 
 write_controller_group() {
@@ -69,3 +71,4 @@ rm -f "$MODDIR/pending-source-app" "$MODDIR/pending-source-app.tmp"
 rm -f "$MODDIR/active-source-groups"
 rm -f "$MODDIR/gesture.active"
 rm -f "$MODDIR/thread-policy.state"
+rm -f "$MODDIR/source-affinity.state" "$MODDIR/source-affinity.state.tmp"

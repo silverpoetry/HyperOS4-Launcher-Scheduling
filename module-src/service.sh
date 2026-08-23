@@ -12,6 +12,8 @@ PENDING_SOURCE_FILE="$MODDIR/pending-source-app"
 GESTURE_FILE="$MODDIR/gesture.active"
 WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
 MIMD_GROUP_FILE="$MODDIR/mimd-groups"
+SOURCE_AFFINITYCTL="$MODDIR/bin/source-affinityctl"
+SOURCE_AFFINITY_STATE="$MODDIR/source-affinity.state"
 
 . "$MODDIR/thread-policy.sh"
 
@@ -31,12 +33,16 @@ cleanup_stale_processes() {
 }
 
 cleanup_stale_processes
+if [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ]; then
+  "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
+fi
 restore_launcher_threads
 : >"$LOG_FILE"
 chmod 0644 "$LOG_FILE" 2>/dev/null
 exec >>"$LOG_FILE" 2>&1
 
-echo "=== HyperOS 4 Launcher Scheduling v3.5 ==="
+MODULE_VERSION="$(sed -n 's/^version=//p' "$MODDIR/module.prop" | head -n 1)"
+echo "=== HyperOS 4 Launcher Scheduling v${MODULE_VERSION:-unknown} ==="
 date 2>/dev/null || true
 echo $$ >"$PID_FILE"
 [ -f "$ENABLE_FILE" ] || echo enabled >"$ENABLE_FILE"
@@ -52,9 +58,11 @@ case "$(getprop ro.mi.os.version.name)" in
   *) echo "SKIP: HyperOS 4 is required"; exit 0 ;;
 esac
 
-# The controller and its native log watcher stay outside Launcher performance CPUs.
-echo $$ >/dev/cpuset/background/cgroup.procs 2>/dev/null
-echo $$ >/dev/cpuctl/background/cgroup.procs 2>/dev/null
+# The shell controller blocks on the native log reader while idle. Foreground
+# placement prevents high-load apps from delaying transition completion and
+# the two-second safety restore without creating any polling work.
+echo $$ >/dev/cpuset/foreground/cgroup.procs 2>/dev/null
+echo $$ >/dev/cpuctl/foreground/cgroup.procs 2>/dev/null
 
 LAUNCHER_PID=""
 WALLPAPER_PIDS=""
@@ -212,53 +220,52 @@ suppress_source() {
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
   is_protected_pid "$pid" && return 0
+  apply_source_affinity "$pid" "$uid" source-yield apply
   move_pid_to_background "$pid"
   log_state "source-yield pid=$pid uid=$uid name=$name"
 }
 
-suppress_source_snapshot() {
-  local expected_epoch="$1"
-  local expected_source="$2"
-  local pid uid name mode current_source
-  [ "$(cat "$EPOCH_FILE" 2>/dev/null)" = "$expected_epoch" ] || return 0
-  mode="$(cat "$MODE_FILE" 2>/dev/null)"
-  [ "$mode" != app ] || return 0
-  current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
-  [ "$current_source" = "$expected_source" ] || return 0
-  read -r pid uid name <<EOF
-$expected_source
-EOF
-  case "$pid" in ''|*[!0-9]*) return 0 ;; esac
-  [ -d "/proc/$pid" ] || return 0
-  is_protected_pid "$pid" && return 0
-
-  # Use the captured PID rather than re-reading SOURCE_FILE after the guards.
-  # The latter may already contain the next app if set_mode(app) committed it.
-  move_pid_to_background "$pid"
-  log_state "source-yield pid=$pid uid=$uid name=$name reason=delayed-reassert"
-
-  # Close the last preemption window: a worker can pass all checks just before
-  # the main state machine completes or protects the same PID as its target.
-  mode="$(cat "$MODE_FILE" 2>/dev/null)"
-  current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
-  if is_protected_pid "$pid" ||
-    { [ "$mode" = app ] && [ "$current_source" = "$expected_source" ]; }; then
-    write_controller_group "$pid" /dev/cpuset /top-app
-    write_controller_group "$pid" /dev/cpuctl /top-app
-    log_state "source-reassert-rolled-back pid=$pid mode=$mode"
+apply_source_affinity() {
+  local pid="$1"
+  local uid="$2"
+  local reason="$3"
+  local operation="${4:-apply}"
+  [ -x "$SOURCE_AFFINITYCTL" ] || return 0
+  if "$SOURCE_AFFINITYCTL" "$operation" "$pid" "$uid" "$SOURCE_AFFINITY_STATE"; then
+    log_state "source-affinity-applied pid=$pid uid=$uid reason=$reason operation=$operation"
+  else
+    log_state "source-affinity-apply-failed pid=$pid uid=$uid reason=$reason"
   fi
 }
 
 restore_source_after_cancel() {
   local pid uid name
-  # Invalidate all delayed source writes before restoring the source. A task
-  # that already passed its old epoch check must not win after this restore.
+  # Invalidate work from the old transition before restoring the source.
   increment_file "$EPOCH_FILE" >/dev/null
   [ -r "$SOURCE_FILE" ] || return 0
   read -r pid uid name <"$SOURCE_FILE"
   write_controller_group "$pid" /dev/cpuset /top-app
   write_controller_group "$pid" /dev/cpuctl /top-app
+  restore_source_affinity enter-canceled "$uid"
   log_state "source-restored pid=$pid reason=enter-canceled"
+}
+
+restore_source_affinity() {
+  local reason="$1"
+  local resumed_uid="$2"
+  local magic active_pid active_uid original_minor target count operation
+  [ -x "$SOURCE_AFFINITYCTL" ] || return 0
+  [ -r "$SOURCE_AFFINITY_STATE" ] || return 0
+  operation=restore
+  if [ -n "$resumed_uid" ]; then
+    read -r magic active_pid active_uid original_minor target count <"$SOURCE_AFFINITY_STATE"
+    [ "$magic" = SAF1 ] && [ "$active_uid" = "$resumed_uid" ] || operation=restore-no-minor
+  fi
+  if "$SOURCE_AFFINITYCTL" "$operation" "$SOURCE_AFFINITY_STATE"; then
+    log_state "source-affinity-restored reason=$reason operation=$operation resumed_uid=$resumed_uid"
+  else
+    log_state "source-affinity-restore-failed reason=$reason"
+  fi
 }
 
 place_resumed_record_top_app() {
@@ -286,10 +293,8 @@ restore_resumed_target() {
   [ -r "$PENDING_SOURCE_FILE" ] || return 0
   read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
 
-  # A resumed app can no longer be a yield target. This also repairs a stale
-  # background/foreground placement if a delayed source job raced
-  # ActivityManager or if the captured source group was only a gesture-time
-  # transitional group.
+  # A resumed app becomes top-app only after Launcher finishes its exit.
+  # This also repairs any transitional ActivityManager placement.
   place_resumed_record_top_app "$PENDING_SOURCE_FILE" "$reason"
 }
 
@@ -299,6 +304,7 @@ hold_resumed_target_for_animation() {
   read -r pid uid name <"$PENDING_SOURCE_FILE"
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
+  apply_source_affinity "$pid" "$uid" launcher-exit-animation replace
   move_pid_to_background "$pid"
   log_state "target-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
 }
@@ -361,12 +367,15 @@ commit_pending_source() {
 set_mode() {
   local next="$1"
   local reason="$2"
-  local current
+  local current resumed_pid resumed_uid resumed_name
   current="$(cat "$MODE_FILE" 2>/dev/null)"
 
   if [ "$current" = "$next" ]; then
     if [ "$next" = app ]; then
       place_resumed_record_top_app "$SOURCE_FILE" stable-app-reassert
+      resumed_uid=""
+      [ -r "$SOURCE_FILE" ] && read -r resumed_pid resumed_uid resumed_name <"$SOURCE_FILE"
+      restore_source_affinity stable-app-reassert "$resumed_uid"
     else
       apply_policy
     fi
@@ -388,32 +397,17 @@ set_mode() {
     fi
     commit_pending_source
     echo "$next" >"$MODE_FILE"
-    # This is deliberately last. It repairs a delayed source worker that ran
-    # between target restoration and the stable-app state commit.
+    # This is deliberately last so the committed resumed app cannot retain a
+    # transitional cgroup or affinity transaction.
     place_resumed_record_top_app "$SOURCE_FILE" stable-app-commit
+    resumed_uid=""
+    [ -r "$SOURCE_FILE" ] && read -r resumed_pid resumed_uid resumed_name <"$SOURCE_FILE"
+    restore_source_affinity stable-app-commit "$resumed_uid"
   else
     echo "$next" >"$MODE_FILE"
     apply_policy
   fi
   log_state "mode=$next reason=$reason"
-}
-
-schedule_source_reassert() {
-  local epoch="$1"
-  local source_snapshot="$2"
-  local delay mode current_source
-  [ -n "$source_snapshot" ] || return 0
-  (
-    for delay in 0.12 0.20; do
-      sleep "$delay"
-      [ "$(cat "$EPOCH_FILE" 2>/dev/null)" = "$epoch" ] || exit 0
-      mode="$(cat "$MODE_FILE" 2>/dev/null)"
-      [ "$mode" != app ] || exit 0
-      current_source="$(cat "$SOURCE_FILE" 2>/dev/null)"
-      [ "$current_source" = "$source_snapshot" ] || exit 0
-      suppress_source_snapshot "$epoch" "$source_snapshot"
-    done
-  ) &
 }
 
 schedule_app_fallback() {
@@ -427,11 +421,7 @@ schedule_app_fallback() {
 }
 
 begin_launcher_transition() {
-  local epoch source_snapshot
   set_mode entering launcher-transition-start
-  epoch="$(cat "$EPOCH_FILE" 2>/dev/null)"
-  source_snapshot="$(cat "$SOURCE_FILE" 2>/dev/null)"
-  schedule_source_reassert "$epoch" "$source_snapshot"
 }
 
 monitor_launcher() {
@@ -459,8 +449,8 @@ monitor_launcher() {
           *)
             case "$(cat "$MODE_FILE" 2>/dev/null)" in
               entering|home|recents|leaving)
-                # Cancel delayed writes from the old transition before the
-                # resumed target is held for the Launcher exit animation.
+                # Invalidate the previous transition before transferring the
+                # affinity transaction to the resumed target.
                 increment_file "$EPOCH_FILE" >/dev/null
                 cache_resume_package "$package" "$PENDING_SOURCE_FILE"
                 hold_resumed_target_for_animation

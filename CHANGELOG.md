@@ -8,6 +8,35 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 4.0
+
+- Remove the redundant second `/proc/TID/stat` pass immediately before binding. On-device controller timing for 74 Settings threads is now 2.8 ms for the initial transaction, about 1.0 ms for an unchanged duplicate event, and 0.9 ms when clearing a rewritten Xiaomi marker with no escaped thread.
+- Add stage-level timing to the native controller so collection, atomic state save, binding, and total cost remain auditable.
+- Launch the controller with Android `posix_spawn()` instead of `fork()` plus `exec()`. The complete native event-edge transaction measured 16.877 ms on Sheng with a 71-thread game source, down from 29.294 ms, before the event is handed to the shell state machine.
+
+## 3.9 (superseded test build)
+
+- Make `replace` idempotent for repeated `activityResumed` notifications from the same PID/UID; it now uses the fast reassert path instead of restoring and recreating the transaction.
+
+## 3.8 (superseded test build)
+
+- Remove synchronous `fsync` from the transition edge while retaining atomic state-file replacement; this reduces the affinity transaction from tens of milliseconds under contention to the millisecond range.
+- Make duplicate transition events a verification-only fast path unless a new TID, escaped mask, or Xiaomi minor-window rewrite is detected.
+- Transfer the active transaction from the previous source to a different resumed target during Launcher exit, and restore the old `minor_window_app` value only when that same UID actually resumes.
+
+## 3.7 (superseded test build)
+
+- Reassert the active affinity transaction when Joyose writes the source UID back to `minor_window_app` during app resume, and include newly created TIDs in the saved restore set.
+- Keep the event-driven shell controller in `foreground` while it blocks on logd so a high-load app cannot stretch the two-second exit fallback into tens of seconds.
+- Remove the obsolete 120/200 ms cgroup reassert workers; affinity now survives ActivityManager cgroup movement directly.
+
+## 3.6 (superseded test build)
+
+- Replace the ineffective source-app cgroup-only assumption with a verified per-thread affinity transaction.
+- Temporarily clear `metis/parameters/minor_window_app` only when it matches the captured source UID; this removes the Xiaomi kernel override that silently expanded affinity back to all CPUs.
+- Save each existing source TID's original affinity, constrain all of them to the device-defined background CPU mask, and restore exact masks on completion, cancellation, daemon recovery, disable, or uninstall.
+- Run the affinity transaction directly from the native Launcher event listener before the legacy cgroup placement, while keeping CPU masks topology-derived.
+
 ## 3.5
 
 - 将入口退避的关键路径下沉到原生 `launcher-logwatch`：读取到 `gestureStart`、按键最近任务或 RemoteBack 关闭应用信号后，直接读取缓存 source PID 并写入 cpuset/cpuctl，不再等待 shell 管道和状态机。
