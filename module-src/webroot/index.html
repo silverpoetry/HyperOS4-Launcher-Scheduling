@@ -10,257 +10,127 @@
     <title>Launcher Scheduling</title>
   </head>
   <body>
-    <div class="app-root" id="appRoot">
+    <div class="app-root">
       <header class="top-bar">
-        <div class="top-bar-content">
-          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-          <div class="title-block">
-            <p class="eyebrow">HYPEROS 4</p>
-            <h1 id="screenTitle">运行状态</h1>
-          </div>
-          <div class="top-actions">
-            <span class="connection-pill" id="connectionPill"><i></i><span>连接中</span></span>
-            <button class="icon-button refresh-icon" id="refreshButton" type="button" aria-label="刷新状态"></button>
-          </div>
+        <div>
+          <h1>Launcher Scheduling</h1>
+          <span id="versionText">—</span>
+        </div>
+        <div class="top-actions">
+          <span class="service-state" id="serviceState"><i></i><b>读取中</b></span>
+          <button class="icon-button" id="refreshButton" type="button" aria-label="刷新">↻</button>
         </div>
       </header>
 
-      <main class="main-content" id="swipeShell">
-        <div class="swipe-track" id="swipeTrack">
-          <section class="swipe-page" data-page="status" aria-label="运行状态">
-            <div class="page-scroller">
-              <article class="hero-card" id="heroCard">
-                <div class="hero-copy">
-                  <div class="status-badge"><i></i><span id="heroStatus">正在读取运行状态</span></div>
-                  <h2>Launcher Scheduling</h2>
-                  <p id="heroDescription">根据桌面转场阶段分配应用与 Launcher 的 CPU 资源。</p>
-                </div>
-                <div class="mode-orbit" aria-label="当前生命周期状态">
-                  <div class="orbit-ring"></div>
-                  <div class="mode-core">
-                    <span>MODE</span>
-                    <strong id="modeValue">—</strong>
-                  </div>
-                </div>
-              </article>
+      <main class="page-shell" id="swipeShell">
+        <div class="page-track" id="pageTrack">
+          <section class="page" data-page="status">
+            <div class="page-content">
+              <section class="panel status-list">
+                <div class="data-row"><span>状态</span><strong id="policyValue">—</strong></div>
+                <div class="data-row"><span>阶段</span><strong id="modeValue">—</strong></div>
+                <div class="data-row"><span>守护进程</span><strong id="daemonValue">—</strong></div>
+                <div class="data-row"><span>Launcher PID</span><strong id="launcherPidValue">—</strong></div>
+                <div class="data-row"><span>转场序号</span><strong id="serialValue">—</strong></div>
+              </section>
 
-              <div class="metric-grid">
-                <article class="metric-card">
-                  <span class="metric-label">守护进程</span>
-                  <strong id="daemonMetric">—</strong>
-                  <small id="daemonDetail">等待状态</small>
-                </article>
-                <article class="metric-card">
-                  <span class="metric-label">线程策略</span>
-                  <strong id="threadMetric">—</strong>
-                  <small id="profileDetail">均衡档</small>
-                </article>
-                <article class="metric-card">
-                  <span class="metric-label">性能 CPU</span>
-                  <strong id="perfMetric">—</strong>
-                  <small id="perfDetail">动态推导</small>
-                </article>
+              <h2>来源应用</h2>
+              <section class="panel status-list">
+                <div class="data-row"><span>进程</span><strong id="sourceValue">—</strong></div>
+                <div class="data-row"><span>PID / UID</span><strong id="sourcePidValue">—</strong></div>
+                <div class="data-row"><span>CPU</span><strong id="sourceCpuValue">—</strong></div>
+                <div class="data-row"><span>cpuset</span><strong id="sourceGroupValue">—</strong></div>
+              </section>
+
+              <h2>小核频率</h2>
+              <section class="panel status-list">
+                <div class="data-row"><span>Policy</span><strong id="freqPolicyValue">—</strong></div>
+                <div class="data-row"><span>CPU</span><strong id="freqCpuValue">—</strong></div>
+                <div class="data-row"><span>当前上限</span><strong id="freqCurrentValue">—</strong></div>
+                <div class="data-row"><span>硬件上限</span><strong id="freqMaxValue">—</strong></div>
+                <div class="data-row"><span>限频活动</span><strong id="freqActiveValue">—</strong></div>
+              </section>
+
+              <h2>CPU 集合</h2>
+              <section class="mask-grid">
+                <div><span>全部</span><strong id="allMask">—</strong><small id="allList">—</small></div>
+                <div><span>性能</span><strong id="perfMask">—</strong><small id="perfList">—</small></div>
+                <div><span>中核</span><strong id="midMask">—</strong><small id="midList">—</small></div>
+                <div><span>小核</span><strong id="littleMask">—</strong><small id="littleList">—</small></div>
+              </section>
+
+              <section class="panel status-list device-block">
+                <div class="data-row"><span>设备</span><strong id="deviceValue">—</strong></div>
+                <div class="data-row"><span>系统</span><strong id="osValue">—</strong></div>
+                <div class="data-row"><span>内核</span><strong id="kernelValue">—</strong></div>
+                <div class="data-row"><span>SELinux</span><strong id="selinuxValue">—</strong></div>
+                <div class="data-row"><span>作者</span><strong>github: silverpoetry</strong></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="page" data-page="settings">
+            <div class="page-content">
+              <h2>开关</h2>
+              <section class="panel switch-list">
+                <label><span>模块策略<small>总开关</small></span><input id="policyToggle" type="checkbox" /></label>
+                <label><span>来源应用退避<small>affinity + background cgroup</small></span><input id="sourceToggle" type="checkbox" /></label>
+                <label><span>壁纸与 MIMD<small>background cgroup</small></span><input id="auxToggle" type="checkbox" /></label>
+                <label><span>Launcher 线程<small>affinity + uclamp</small></span><input id="threadToggle" type="checkbox" /></label>
+                <label><span>小核限频<small>转场期间</small></span><input id="frequencyToggle" type="checkbox" /></label>
+              </section>
+
+              <h2>小核限频</h2>
+              <section class="panel input-grid">
+                <label><span>上限比例</span><div><input id="frequencyPercent" type="number" min="40" max="100" step="1" /><em>%</em></div></label>
+                <label><span>超时恢复</span><div><input id="frequencyTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
+              </section>
+
+              <h2>Launcher 线程</h2>
+              <section class="panel input-grid">
+                <label class="wide"><span>UI / Rust 放置</span><select id="launcherPlacement"><option value="2">中核集合</option><option value="1">性能集合</option></select></label>
+                <label class="wide"><span>FenceWait 放置</span><select id="fencePlacement"><option value="2">中核集合</option><option value="1">小核集合</option></select></label>
+                <label><span>提升持续</span><div><input id="boostDuration" type="number" min="1" max="1000" step="1" /><em>ms</em></div></label>
+                <label><span>Raster min</span><input id="uclampRaster" type="number" min="0" max="1024" step="16" /></label>
+                <label><span>UI min</span><input id="uclampUi" type="number" min="0" max="1024" step="16" /></label>
+                <label><span>Rust min</span><input id="uclampRust" type="number" min="0" max="1024" step="16" /></label>
+                <label><span>ResMgr min</span><input id="uclampResmgr" type="number" min="0" max="1024" step="16" /></label>
+              </section>
+
+              <h2>转场</h2>
+              <section class="panel input-grid">
+                <label><span>返回事件兜底</span><div><input id="appFallback" type="number" min="500" max="5000" step="100" /><em>ms</em></div></label>
+              </section>
+
+              <button class="primary-button" id="saveButton" type="button">保存并重载</button>
+            </div>
+          </section>
+
+          <section class="page" data-page="diagnostics">
+            <div class="page-content">
+              <div class="section-title"><h2>Launcher 线程</h2><button id="threadRefreshButton" type="button">刷新</button></div>
+              <section class="panel thread-table" id="threadTable"><p>—</p></section>
+
+              <div class="section-title"><h2>事件日志</h2><button id="logRefreshButton" type="button">刷新</button></div>
+              <pre class="log-output" id="logOutput">—</pre>
+              <div class="button-row">
+                <button id="copyButton" type="button">复制诊断</button>
+                <button id="clearLogButton" type="button">清空日志</button>
+                <button id="restartButton" type="button">重载服务</button>
               </div>
-
-              <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">LIFECYCLE</p><h2>转场链路</h2></div>
-                  <span class="soft-chip" id="epochChip">Epoch —</span>
-                </div>
-                <div class="lifecycle" id="lifecycle">
-                  <div class="life-step" data-mode="app"><i></i><span>应用</span></div>
-                  <b></b>
-                  <div class="life-step" data-mode="entering"><i></i><span>接管</span></div>
-                  <b></b>
-                  <div class="life-step" data-mode="home"><i></i><span>桌面</span></div>
-                  <b></b>
-                  <div class="life-step" data-mode="recents"><i></i><span>最近任务</span></div>
-                  <b></b>
-                  <div class="life-step" data-mode="leaving"><i></i><span>返回应用</span></div>
-                </div>
-              </section>
-
-              <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">SOURCE APP</p><h2>当前应用记录</h2></div>
-                </div>
-                <div class="source-card">
-                  <div class="app-avatar" id="sourceAvatar">—</div>
-                  <div class="source-main">
-                    <strong id="sourceName">暂无记录</strong>
-                    <span id="sourcePid">PID —</span>
-                  </div>
-                  <div class="source-group">
-                    <strong id="sourceAllowed">—</strong>
-                    <span id="sourceCpuset">cpuset</span>
-                  </div>
-                </div>
-              </section>
-
-              <section class="section-block device-strip">
-                <div><span>设备</span><strong id="deviceValue">—</strong></div>
-                <div><span>系统</span><strong id="osValue">—</strong></div>
-                <div><span>内核</span><strong id="kernelValue">—</strong></div>
-              </section>
-            </div>
-          </section>
-
-          <section class="swipe-page" data-page="policy" aria-label="策略管理">
-            <div class="page-scroller">
-              <section class="section-intro">
-                <p class="section-kicker">POLICY</p>
-                <h2>按转场阶段调度</h2>
-                <p>开关只控制本模块的运行策略，不会停用 KernelSU 模块或修改系统调度器。</p>
-              </section>
-
-              <article class="setting-card emphasis-card">
-                <div class="setting-icon policy-glyph" aria-hidden="true"><i></i></div>
-                <div class="setting-copy">
-                  <strong>应用退避策略</strong>
-                  <span>Launcher 接管期间，将来源应用逐线程限制到 background CPU，并退避其 cgroup、壁纸与 MIMD。</span>
-                </div>
-                <label class="switch">
-                  <input id="policyToggle" type="checkbox" role="switch" />
-                  <span></span>
-                </label>
-              </article>
-
-              <article class="setting-card">
-                <div class="setting-icon thread-glyph" aria-hidden="true"><i></i></div>
-                <div class="setting-copy">
-                  <strong>Launcher 逐线程策略</strong>
-                  <span>按 CPU 拓扑分离 UI、Raster、资源管理与 Fence 等待线程。</span>
-                </div>
-                <label class="switch">
-                  <input id="threadToggle" type="checkbox" role="switch" />
-                  <span></span>
-                </label>
-              </article>
-
-              <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">BOOST PROFILE</p><h2>动画提升强度</h2></div>
-                </div>
-                <div class="segmented-control" role="radiogroup" aria-label="动画提升强度">
-                  <button type="button" data-profile="1" role="radio" aria-checked="false">
-                    <strong>温和</strong><span>较低 uclamp</span>
-                  </button>
-                  <button type="button" data-profile="2" role="radio" aria-checked="true">
-                    <strong>均衡</strong><span>实机验证方案</span>
-                  </button>
-                </div>
-                <p class="supporting-text">强度只在 Launcher 动画窗口内生效，结束后恢复基础亲和与默认 uclamp。</p>
-              </section>
-
-              <section class="section-block topology-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">CPU TOPOLOGY</p><h2>动态核心集合</h2></div>
-                  <span class="soft-chip">不写死编号</span>
-                </div>
-                <div class="topology-grid">
-                  <div><span>全部</span><strong id="allMask">—</strong><small id="allCpuList">—</small></div>
-                  <div><span>性能</span><strong id="perfMask">—</strong><small id="perfCpuList">—</small></div>
-                  <div><span>中核</span><strong id="midMask">—</strong><small id="midCpuList">—</small></div>
-                  <div><span>小核</span><strong id="littleMask">—</strong><small id="littleCpuList">—</small></div>
-                </div>
-              </section>
-
-              <article class="notice-card">
-                <div class="notice-symbol">i</div>
-                <p>策略不锁定 CPU/GPU 频率，不替换桌面或框架文件，也不会移动 SystemUI、SurfaceFlinger 和显示 HAL。</p>
-              </article>
-
-              <button class="tonal-button full-button" id="restartButton" type="button"><span class="restart-glyph"></span>重新加载服务</button>
-            </div>
-          </section>
-
-          <section class="swipe-page" data-page="diagnostics" aria-label="诊断信息">
-            <div class="page-scroller">
-              <section class="section-intro compact-intro">
-                <p class="section-kicker">DIAGNOSTICS</p>
-                <h2>运行链路</h2>
-                <p>仅在打开本页或手动刷新时读取状态，不启动常驻性能采样。</p>
-              </section>
-
-              <section class="section-block diagnostics-list">
-                <div class="detail-row"><span>模块版本</span><strong id="versionDetail">—</strong></div>
-                <div class="detail-row"><span>SELinux</span><strong id="selinuxDetail">—</strong></div>
-                <div class="detail-row"><span>Launcher PID</span><strong id="launcherPidDetail">—</strong></div>
-                <div class="detail-row"><span>监听器 PID</span><strong id="watcherPidDetail">—</strong></div>
-                <div class="detail-row"><span>Pending 目标</span><strong id="pendingDetail">—</strong></div>
-                <div class="detail-row"><span>转场序号</span><strong id="serialDetail">—</strong></div>
-              </section>
-
-              <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">THREADS</p><h2>Launcher 关键线程</h2></div>
-                  <button class="text-button" id="threadRefreshButton" type="button">刷新</button>
-                </div>
-                <div class="thread-table" id="threadTable">
-                  <div class="empty-state">等待读取线程状态</div>
-                </div>
-              </section>
-
-              <section class="section-block log-block">
-                <div class="section-heading">
-                  <div><p class="section-kicker">EVENT LOG</p><h2>最近事件</h2></div>
-                  <button class="text-button" id="logRefreshButton" type="button">刷新</button>
-                </div>
-                <pre id="logOutput">等待读取日志…</pre>
-                <div class="button-row">
-                  <button class="tonal-button" id="copyButton" type="button">复制诊断</button>
-                  <button class="text-button danger-text" id="clearLogButton" type="button">清空日志</button>
-                </div>
-              </section>
-            </div>
-          </section>
-
-          <section class="swipe-page" data-page="about" aria-label="关于模块">
-            <div class="page-scroller">
-              <article class="about-hero">
-                <div class="large-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-                <p class="section-kicker">HYPEROS 4</p>
-                <h2>Launcher Scheduling</h2>
-                <p>在 Launcher 真正参与动画时重新分配竞争关系，动画结束后退出干预。</p>
-                <span class="version-chip" id="aboutVersion">Version —</span>
-              </article>
-
-              <section class="section-block principle-list">
-                <div><span class="principle-number">01</span><p><strong>跟随生命周期</strong>依据 Launcher 转场事件，不轮询前台应用，也不通过模糊材质猜测动画。</p></div>
-                <div><span class="principle-number">02</span><p><strong>尊重设备拓扑</strong>根据设备自己的 cpuset 与 CPU capacity 推导核心集合，不写死 Sheng 或 Shennong 编号。</p></div>
-                <div><span class="principle-number">03</span><p><strong>短时、可逆</strong>逐线程提升只覆盖动画窗口；策略关闭或模块卸载时恢复记录状态。</p></div>
-              </section>
-
-              <section class="section-block about-details">
-                <div class="detail-row"><span>模块 ID</span><strong>hyperos4_recents_source_app_yield</strong></div>
-                <div class="detail-row"><span>适用系统</span><strong>HyperOS 4</strong></div>
-                <div class="detail-row"><span>Root 框架</span><strong>KernelSU / Hybrid Mount</strong></div>
-                <div class="detail-row"><span>作者</span><strong>Codex</strong></div>
-              </section>
-
-              <p class="credits">界面结构参考 Hybrid Mount 的 Material 3 信息层级、动态色与滑动分页交互。</p>
             </div>
           </section>
         </div>
       </main>
 
-      <nav class="bottom-nav" aria-label="主要页面">
-        <button class="nav-tab active" type="button" data-index="0" aria-current="page">
-          <span class="nav-icon status-nav"><i></i></span><span>状态</span>
-        </button>
-        <button class="nav-tab" type="button" data-index="1">
-          <span class="nav-icon policy-nav"><i></i></span><span>策略</span>
-        </button>
-        <button class="nav-tab" type="button" data-index="2">
-          <span class="nav-icon diagnostics-nav">›_</span><span>诊断</span>
-        </button>
-        <button class="nav-tab" type="button" data-index="3">
-          <span class="nav-icon about-nav">i</span><span>关于</span>
-        </button>
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-index="0" type="button"><b>●</b><span>状态</span></button>
+        <button class="nav-item" data-index="1" type="button"><b>≡</b><span>设置</span></button>
+        <button class="nav-item" data-index="2" type="button"><b>&gt;_</b><span>日志</span></button>
       </nav>
 
-      <div class="snackbar" id="snackbar" role="status" aria-live="polite"><span></span></div>
-      <div class="busy-overlay" id="busyOverlay" aria-hidden="true"><div class="spinner"></div><span>正在应用设置</span></div>
+      <div class="snackbar" id="snackbar"><span></span></div>
+      <div class="busy" id="busy"><i></i><span>处理中</span></div>
     </div>
     <script src="./app.js" defer></script>
   </body>

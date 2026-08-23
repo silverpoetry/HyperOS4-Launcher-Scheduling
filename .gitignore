@@ -21,3 +21,7 @@ test-results/recents-current.png
 test-results/sheng-moonlight-recents-*/
 test-results/sheng-jkchess-recents-*/
 test-results/runtime-ab/
+test-results/fence-little-*/
+test-results/fence-mid-*/
+test-results/sheng-settings-recents-lowload-*/
+test-results/frequency-v4.1-*.txt

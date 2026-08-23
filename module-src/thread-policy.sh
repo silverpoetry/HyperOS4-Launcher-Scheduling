@@ -9,10 +9,15 @@ THREAD_SNAPSHOT_FILE="$MODDIR/launcher-thread-original"
 THREAD_LAUNCHER_PID_FILE="$MODDIR/launcher-thread-pid"
 THREAD_BOOST_SERIAL_FILE="$MODDIR/launcher-thread-boost.serial"
 THREAD_POLICY_STATE_FILE="$MODDIR/thread-policy.state"
-THREAD_BOOST_PROFILE_FILE="$MODDIR/thread-boost-profile"
+THREAD_PLACEMENT_FILE="$MODDIR/launcher-placement"
+THREAD_FENCE_PLACEMENT_FILE="$MODDIR/fence-placement"
+THREAD_BOOST_MS_FILE="$MODDIR/boost-duration-ms"
+THREAD_RASTER_UCLAMP_FILE="$MODDIR/uclamp-raster"
+THREAD_UI_UCLAMP_FILE="$MODDIR/uclamp-ui"
+THREAD_RUST_UCLAMP_FILE="$MODDIR/uclamp-rust"
+THREAD_RESMGR_UCLAMP_FILE="$MODDIR/uclamp-resmgr"
 THREAD_TOPOLOGY_FILE="$MODDIR/launcher-thread-topology"
 THREAD_TOPOLOGY_INPUT_FILE="$MODDIR/launcher-thread-topology.input"
-THREAD_BOOST_MS=1
 
 THREAD_ALL_MASK=""
 THREAD_PERF_MASK=""
@@ -46,7 +51,7 @@ cpulist_to_mask() {
   local token first last cpu mask old_ifs
   mask=0
   old_ifs="$IFS"
-  IFS=,
+  IFS=', '
   for token in $list; do
     case "$token" in
       *-*) first=${token%-*}; last=${token#*-} ;;
@@ -194,10 +199,13 @@ snapshot_launcher_thread() {
 
 reset_launcher_boost() {
   local launcher_pid="$1"
+  local fence_placement
   [ -x "$THREADCTL" ] || return 0
   derive_launcher_masks
+  read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
+  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" 0 >/dev/null 2>&1 ||
+    "$THREAD_LITTLE_MASK" 0 "$fence_placement" 0 0 0 0 >/dev/null 2>&1 ||
     thread_log "thread-boost-reset-failed launcher_pid=$launcher_pid"
 }
 
@@ -252,7 +260,7 @@ prepare_launcher_thread_policy() {
 
 apply_launcher_base_affinity() {
   local launcher_pid="$1"
-  local tid
+  local tid fence_placement
   [ -x "$TASKSET" ] && [ -x "$THREADCTL" ] || return 0
   if ! thread_policy_enabled; then
     restore_launcher_threads
@@ -266,20 +274,32 @@ apply_launcher_base_affinity() {
   for tid in $THREAD_RUST; do snapshot_launcher_thread "$launcher_pid" "$tid" rt-launcher-mai; done
   for tid in $THREAD_RESMGR; do snapshot_launcher_thread "$launcher_pid" "$tid" IplrVkResMgr; done
   for tid in $THREAD_FENCE; do snapshot_launcher_thread "$launcher_pid" "$tid" IplrVkFenceWait; done
+  read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
+  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" 0 >/dev/null 2>&1 ||
+    "$THREAD_LITTLE_MASK" 0 "$fence_placement" 0 0 0 0 >/dev/null 2>&1 ||
     thread_log "thread-affinity-batch-failed launcher_pid=$launcher_pid"
 }
 
 apply_launcher_uclamp_boost() {
   local launcher_pid="$1"
-  local profile
+  local placement fence_placement raster_min ui_min rust_min resmgr_min
   apply_launcher_base_affinity "$launcher_pid"
-  read_thread_file "$THREAD_BOOST_PROFILE_FILE"
-  profile="$THREAD_FILE_VALUE"
-  case "$profile" in 1|2) ;; *) profile=2 ;; esac
+  read_thread_file "$THREAD_PLACEMENT_FILE"; placement="$THREAD_FILE_VALUE"
+  case "$placement" in 1|2) ;; *) placement=2 ;; esac
+  read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
+  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
+  read_thread_file "$THREAD_RASTER_UCLAMP_FILE"; raster_min="$THREAD_FILE_VALUE"
+  read_thread_file "$THREAD_UI_UCLAMP_FILE"; ui_min="$THREAD_FILE_VALUE"
+  read_thread_file "$THREAD_RUST_UCLAMP_FILE"; rust_min="$THREAD_FILE_VALUE"
+  read_thread_file "$THREAD_RESMGR_UCLAMP_FILE"; resmgr_min="$THREAD_FILE_VALUE"
+  case "$raster_min" in ''|*[!0-9]*) raster_min=928 ;; esac
+  case "$ui_min" in ''|*[!0-9]*) ui_min=768 ;; esac
+  case "$rust_min" in ''|*[!0-9]*) rust_min=512 ;; esac
+  case "$resmgr_min" in ''|*[!0-9]*) resmgr_min=384 ;; esac
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" "$profile" >/dev/null 2>&1 ||
+    "$THREAD_LITTLE_MASK" "$placement" "$fence_placement" "$raster_min" "$ui_min" "$rust_min" \
+    "$resmgr_min" >/dev/null 2>&1 ||
     thread_log "thread-boost-batch-failed launcher_pid=$launcher_pid"
 }
 
@@ -296,14 +316,19 @@ increment_thread_boost_serial() {
 trigger_launcher_thread_boost() {
   local launcher_pid="$1"
   local reason="$2"
-  local serial
+  local serial boost_ms seconds millis
   thread_policy_enabled || return 0
   [ -d "/proc/$launcher_pid/task" ] || return 0
   serial="$(increment_thread_boost_serial)"
   apply_launcher_uclamp_boost "$launcher_pid"
   thread_log "thread-boost serial=$serial reason=$reason"
   (
-    sleep "$THREAD_BOOST_MS"
+    read_thread_file "$THREAD_BOOST_MS_FILE"
+    boost_ms="$THREAD_FILE_VALUE"
+    case "$boost_ms" in ''|*[!0-9]*) boost_ms=1 ;; esac
+    seconds=$((boost_ms / 1000))
+    millis=$((boost_ms % 1000))
+    sleep "$(printf '%d.%03d' "$seconds" "$millis")"
     read_thread_file "$THREAD_BOOST_SERIAL_FILE"
     [ "$THREAD_FILE_VALUE" = "$serial" ] || exit 0
     reset_launcher_boost "$launcher_pid"

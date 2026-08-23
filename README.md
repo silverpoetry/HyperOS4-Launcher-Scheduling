@@ -4,15 +4,15 @@
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
 
-模块不替换框架或桌面 APK，不写死 CPU 编号，不锁 CPU/GPU 频率，不读取 blur 半径，也不轮询前台应用。
+模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用被限制到小核簇后，模块可在 Launcher 转场期间按比例降低该簇的 `scaling_max_freq`；动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
 
 ## 管理界面
 
-KernelSU 管理器可直接打开模块 WebUI。界面包含运行状态、策略、诊断和关于四页，支持底部导航与横向滑动切换。
+KernelSU 管理器可直接打开模块 WebUI。界面只有状态、设置和日志三页，支持底部导航与横向滑动切换。
 
 - 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
-- 诊断页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
-- 策略页可启停应用退避和逐线程策略、选择提升档位、重新加载服务；
+- 日志页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
+- 设置页可分别控制来源应用、壁纸/MIMD、Launcher 线程和小核限频，并调整限频比例、恢复超时、UI/Rust 与 FenceWait 放置、提升持续时间、四类 `uclamp.min` 和应用返回兜底时间；
 - 所有写操作都映射到 `webui.sh` 中的固定命令和枚举参数，不提供任意 Shell 执行入口。
 
 关闭 WebUI 后不会留下额外采样器或日志进程。界面控制的是现有模块策略，不会停用 KernelSU 模块，也不会修改系统调度器配置。
@@ -38,6 +38,7 @@ Launcher 活跃期间：
 上一前台应用          → per-TID background affinity + cpuset/background + cpuctl/background
 com.miui.miwallpaper → cpuset/background + cpuctl/background
 MIMD（存在时）       → cpuset/background + cpuctl/background
+小核 cpufreq policy   → 转场期临时限制 scaling_max_freq，默认取原上限的 78%
 ```
 
 模块不会移动 Launcher、SystemUI、当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复为模块首次记录的原始 cgroup。
@@ -49,7 +50,7 @@ Launcher 自身采用逐线程策略：
 ```text
 1.ui / 1.raster / rt-launcher-mai → top-app 中不属于 background 的 CPU
 IplrVkResMgr                      → 上述集合去掉最高 capacity 的 prime CPU
-IplrVkFenceWait                  → 最低 cpu_capacity 的 CPU 簇
+IplrVkFenceWait                  → 去掉 prime 的 performance 集合（可切换为最低容量簇）
 ```
 
 转场事件到来后再进行一层短时分流：
@@ -58,10 +59,14 @@ IplrVkFenceWait                  → 最低 cpu_capacity 的 CPU 簇
 1.raster                         → performance 集合，uclamp minimum 928
 1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合，uclamp minimum 768/512
 IplrVkResMgr                    → 去掉 prime 的 performance 集合，uclamp minimum 384
-IplrVkFenceWait                 → 最低 cpu_capacity 的 CPU 簇，不提升 uclamp
+IplrVkFenceWait                 → 去掉 prime 的 performance 集合，不提升 uclamp
 ```
 
-一秒后恢复基础亲和及 0/1024 uclamp。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
+提升持续时间默认 1 ms，之后恢复基础亲和及 0/1024 uclamp；该值和四类 `uclamp.min` 均可在 WebUI 调整。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
+
+小核限频只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy。默认比例为 78%，并向下选择驱动公开的最近可用频点。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
+
+Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移到 CPU3-6 后，线程运行时间下降 83.0%，runnable 等待下降 64.0%，Launcher Full jank 从 30 降到 14。由于它在 Vulkan fence 链上承担实际工作，默认不再与被限频的来源应用共享小核；完整数据见 [FenceWait 与小核限频 A/B](docs/FENCEWAIT-FREQUENCY-AB.md)。
 
 Shennong 实测推导为 `perf=9c (CPU2-4,7)`、`mid=1c (CPU2-4)`、`little=03 (CPU0-1)`。原来的 Sheng 布局会自然推导为与旧版 `f8/78/07` 相同的类别关系。
 
@@ -101,8 +106,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v4.0.zip
-../output/HyperOS4-Launcher-Scheduling-v4.0.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v4.1.zip
+../output/HyperOS4-Launcher-Scheduling-v4.1.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。

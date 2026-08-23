@@ -24,10 +24,8 @@ set_perm_recursive "$MODPATH/webroot" 0 0 0755 0644
 
 rm -f "$MODPATH/disable" "$MODPATH/remove"
 
-ui_print "- Policy starts when Launcher takes over the remote transition"
-ui_print "- Policy remains active throughout Home, Recents, and Launcher exit"
-ui_print "- Source app threads are transactionally constrained to the device background CPUs"
-ui_print "- Xiaomi minor-window affinity override is suspended only for the active source UID"
-ui_print "- Launcher render threads use topology-derived affinity and short uclamp boosts"
-ui_print "- Original wallpaper and MIMD groups are restored on exit"
-ui_print "- No blur threshold, foreground polling, or broad process scan"
+ui_print "- Source-app affinity: enabled"
+ui_print "- Wallpaper and MIMD placement: enabled"
+ui_print "- Launcher thread policy: enabled"
+ui_print "- Transition little-cluster limit: 78%"
+ui_print "- Parameters are available in the KernelSU WebUI"

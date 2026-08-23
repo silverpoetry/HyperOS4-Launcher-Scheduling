@@ -106,12 +106,14 @@ static int set_uclamp(pid_t tid, uint32_t minimum, uint32_t maximum) {
     return (int)syscall(__NR_sched_setattr, tid, &attr, 0);
 }
 
-static uint32_t boost_minimum(enum thread_class thread_class, int boost_mode) {
+static uint32_t boost_minimum(enum thread_class thread_class,
+                              uint32_t raster_min, uint32_t ui_min,
+                              uint32_t rust_min, uint32_t resmgr_min) {
     switch (thread_class) {
-        case CLASS_RASTER: return boost_mode >= 2 ? 928 : 768;
-        case CLASS_UI: return boost_mode >= 2 ? 768 : 640;
-        case CLASS_RUST: return 512;
-        case CLASS_RESMGR: return 384;
+        case CLASS_RASTER: return raster_min;
+        case CLASS_UI: return ui_min;
+        case CLASS_RUST: return rust_min;
+        case CLASS_RESMGR: return resmgr_min;
         default: return 0;
     }
 }
@@ -138,24 +140,39 @@ int main(int argc, char **argv) {
     uint64_t mid_mask = 0;
     uint64_t little_mask = 0;
     int reset_only;
-    int boost_mode;
+    int placement_mode;
+    int fence_placement;
+    uint32_t raster_min = 0;
+    uint32_t ui_min = 0;
+    uint32_t rust_min = 0;
+    uint32_t resmgr_min = 0;
 
     if (argc < 3) {
-        fprintf(stderr, "usage: %s apply PID PERF MID LITTLE MODE | reset PID\n", argv[0]);
+        fprintf(stderr,
+                "usage: %s apply PID PERF MID LITTLE PLACEMENT FENCE_PLACEMENT RASTER_MIN UI_MIN RUST_MIN RESMGR_MIN | reset PID\n",
+                argv[0]);
         return 2;
     }
     reset_only = strcmp(argv[1], "reset") == 0;
     if (!reset_only && strcmp(argv[1], "apply") != 0) return 2;
     pid = (pid_t)strtol(argv[2], NULL, 10);
     if (pid <= 0) return 2;
-    boost_mode = 0;
+    placement_mode = 0;
+    fence_placement = 1;
     if (!reset_only) {
-        if (argc != 7) return 2;
+        if (argc != 12) return 2;
         perf_mask = strtoull(argv[3], NULL, 16);
         mid_mask = strtoull(argv[4], NULL, 16);
         little_mask = strtoull(argv[5], NULL, 16);
-        boost_mode = atoi(argv[6]);
-        if (boost_mode < 0 || boost_mode > 2) return 2;
+        placement_mode = atoi(argv[6]);
+        fence_placement = atoi(argv[7]);
+        raster_min = (uint32_t)strtoul(argv[8], NULL, 10);
+        ui_min = (uint32_t)strtoul(argv[9], NULL, 10);
+        rust_min = (uint32_t)strtoul(argv[10], NULL, 10);
+        resmgr_min = (uint32_t)strtoul(argv[11], NULL, 10);
+        if (placement_mode < 0 || placement_mode > 2) return 2;
+        if (fence_placement < 1 || fence_placement > 2) return 2;
+        if (raster_min > 1024 || ui_min > 1024 || rust_min > 1024 || resmgr_min > 1024) return 2;
         if (perf_mask == 0 || mid_mask == 0 || little_mask == 0) return 2;
     }
 
@@ -183,12 +200,13 @@ int main(int argc, char **argv) {
         }
 
         affinity_mask = perf_mask;
-        if (boost_mode >= 2 && (thread_class == CLASS_UI || thread_class == CLASS_RUST)) affinity_mask = mid_mask;
+        if (placement_mode >= 2 && (thread_class == CLASS_UI || thread_class == CLASS_RUST)) affinity_mask = mid_mask;
         if (thread_class == CLASS_RESMGR) affinity_mask = mid_mask;
-        if (thread_class == CLASS_FENCE) affinity_mask = little_mask;
+        if (thread_class == CLASS_FENCE) affinity_mask = fence_placement == 2 ? mid_mask : little_mask;
         if (set_affinity_mask(tid, affinity_mask) != 0) ++counts.affinity_fail;
         if (thread_class != CLASS_FENCE &&
-            set_uclamp(tid, boost_mode ? boost_minimum(thread_class, boost_mode) : 0, 1024) != 0) {
+            set_uclamp(tid, boost_minimum(thread_class, raster_min, ui_min,
+                                         rust_min, resmgr_min), 1024) != 0) {
             ++counts.clamp_fail;
         }
     }

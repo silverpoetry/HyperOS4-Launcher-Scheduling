@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=4.0
-versionCode=40
-author=Codex
-description=Launcher lifecycle scheduling with verified source-app background-core affinity, topology-derived Launcher thread separation, short animation boosts, and a Material 3 management dashboard.
+version=4.1
+versionCode=41
+author=github: silverpoetry
+description=HyperOS 4 Launcher thread scheduling, source-app CPU isolation, and transition-time background-cluster frequency control.

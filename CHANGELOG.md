@@ -8,6 +8,16 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 4.1
+
+- 增加转场期小核簇频率上限。目标 cpufreq policy 由设备 `cpu_capacity` 和 cpuset 动态推导，默认限制到原上限的 78%，结束事件或 1500 ms 安全超时后恢复。
+- 频率恢复采用所有权检查：仅在当前值仍等于模块写入值时恢复原值，不覆盖其它调度器的后续修改；服务重启、模块停用和卸载同样执行恢复。
+- WebUI 精简为状态、设置和日志三页，移除宣传文案、装饰性说明框和关于页。
+- 来源应用、壁纸/MIMD、Launcher 线程、小核限频均可独立开关；限频比例、超时、线程放置、提升持续时间、四类 uclamp 和应用返回兜底时间均可配置。
+- `launcher-threadctl` 改为显式接收放置策略和各线程的 uclamp 参数，不再依赖编译期固定档位。
+- `IplrVkFenceWait` 默认从小核移到动态 `mid` 集合，并提供独立放置参数。Sheng 在小核固定 307200 kHz 的五轮 A/B 中，FenceWait 运行时间下降 83.0%，Launcher Full jank 从 30 降到 14。
+- 模块作者标记更新为 `github: silverpoetry`。
+
 ## 4.0
 
 - Remove the redundant second `/proc/TID/stat` pass immediately before binding. On-device controller timing for 74 Settings threads is now 2.8 ms for the initial transaction, about 1.0 ms for an unchanged duplicate event, and 0.9 ms when clearing a rewritten Xiaomi marker with no escaped thread.

@@ -16,6 +16,14 @@ kill_tree() {
 
 daemon_pid="$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
 [ -n "$daemon_pid" ] && kill_tree "$daemon_pid"
+if [ -r "$MODDIR/frequency-limit.active" ]; then
+  while read -r policy original applied; do
+    [ -r "$policy/scaling_max_freq" ] || continue
+    IFS= read -r current <"$policy/scaling_max_freq"
+    [ "$current" = "$applied" ] && [ -w "$policy/scaling_max_freq" ] &&
+      echo "$original" >"$policy/scaling_max_freq" 2>/dev/null
+  done <"$MODDIR/frequency-limit.active"
+fi
 [ -x "$MODDIR/bin/source-affinityctl" ] && [ -r "$MODDIR/source-affinity.state" ] &&
   "$MODDIR/bin/source-affinityctl" restore "$MODDIR/source-affinity.state" >/dev/null 2>&1
 restore_launcher_threads
@@ -72,3 +80,5 @@ rm -f "$MODDIR/active-source-groups"
 rm -f "$MODDIR/gesture.active"
 rm -f "$MODDIR/thread-policy.state"
 rm -f "$MODDIR/source-affinity.state" "$MODDIR/source-affinity.state.tmp"
+rm -f "$MODDIR/frequency-limit.active" "$MODDIR/frequency-limit.active.tmp"
+rm -f "$MODDIR/frequency-info" "$MODDIR/frequency-info.tmp" "$MODDIR/frequency.serial"
