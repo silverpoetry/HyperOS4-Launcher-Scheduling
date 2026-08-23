@@ -6,6 +6,17 @@ Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep �
 
 模块不替换框架或桌面 APK，不写死 CPU 编号，不锁 CPU/GPU 频率，不读取 blur 半径，也不轮询前台应用。
 
+## 管理界面
+
+KernelSU 管理器可直接打开模块 WebUI。界面包含运行状态、策略、诊断和关于四页，支持底部导航与横向滑动切换。
+
+- 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
+- 诊断页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
+- 策略页可启停应用退避和逐线程策略、选择提升档位、重新加载服务；
+- 所有写操作都映射到 `webui.sh` 中的固定命令和枚举参数，不提供任意 Shell 执行入口。
+
+关闭 WebUI 后不会留下额外采样器或日志进程。界面控制的是现有模块策略，不会停用 KernelSU 模块，也不会修改系统调度器配置。
+
 ## 生命周期
 
 ```text
@@ -86,8 +97,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v3.2.zip
-../output/HyperOS4-Launcher-Scheduling-v3.2.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v3.3.zip
+../output/HyperOS4-Launcher-Scheduling-v3.3.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
@@ -118,7 +129,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 ## 项目结构
 
 ```text
-module-src/       KernelSU 模块源码和构建后的 arm64 工具
+module-src/       KernelSU 模块源码、WebUI 和构建后的 arm64 工具
 native/           launcher-logwatch 与 launcher-threadctl C 源码
 ../output/        Magisk 项目集合共用的正式 ZIP 与 SHA-256
 docs/             状态机和验证文档
