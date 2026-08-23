@@ -223,7 +223,7 @@ schedule_frequency_restore() {
 
 apply_source_frequency() {
   local reason="$1" percent policy related recorded_current recorded_maximum
-  local original target applied readback serial count
+  local original hardware_maximum target applied readback serial count
   config_enabled "$FREQ_POLICY_FILE" || return 0
   config_enabled "$SOURCE_POLICY_FILE" || return 0
   percent="$(read_bounded_number "$FREQ_PERCENT_FILE" 78 40 100)"
@@ -238,7 +238,12 @@ apply_source_frequency() {
     [ -w "$policy/scaling_max_freq" ] || continue
     IFS= read -r original <"$policy/scaling_max_freq"
     case "$original" in ''|*[!0-9]*) continue ;; esac
-    target=$((original * percent / 100))
+    hardware_maximum="$recorded_maximum"
+    case "$hardware_maximum" in
+      ''|*[!0-9]*) IFS= read -r hardware_maximum <"$policy/cpuinfo_max_freq" ;;
+    esac
+    case "$hardware_maximum" in ''|*[!0-9]*) continue ;; esac
+    target=$((hardware_maximum * percent / 100))
     applied="$(select_frequency_limit "$policy" "$target")"
     [ "$applied" -lt "$original" ] || continue
     echo "$applied" >"$policy/scaling_max_freq" 2>/dev/null || continue

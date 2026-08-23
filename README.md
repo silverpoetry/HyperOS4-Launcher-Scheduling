@@ -64,7 +64,7 @@ IplrVkFenceWait                 → 去掉 prime 的 performance 集合，不提
 
 提升持续时间默认 1 ms，之后恢复基础亲和及 0/1024 uclamp；该值和四类 `uclamp.min` 均可在 WebUI 调整。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
 
-小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认比例为 78%，并向下选择驱动公开的最近可用频点。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
+小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
 
 Settings 轻载场景按“关闭、开启、开启、关闭”完成两组交叉 A/B。限频后 Launcher Full jank 合计从 4 增至 8，SurfaceFlinger Full jank 从 11 增至 24，Launcher 最大帧均值从 26.08 ms 增至 37.46 ms。轻载来源应用没有足够的性能核争用可供限频缓解，压低其收尾、Buffer 交接和快照工作只会增加等待；完整数据见 [轻载小核限频 A/B](docs/FREQUENCY-LIMIT-LIGHT-LOAD-AB.md)。
 
