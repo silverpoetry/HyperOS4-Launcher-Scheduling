@@ -47,11 +47,44 @@ static int set_slot(int fd, int slot, int tracking_id, int x, int y, int pressur
     return 0;
 }
 
+static int scale_axis(const struct input_absinfo *axis, int percent) {
+    return axis->minimum + (axis->maximum - axis->minimum) * percent / 100;
+}
+
+static void screen_to_raw(const struct input_absinfo *x_axis,
+                          const struct input_absinfo *y_axis,
+                          int orientation, int screen_x, int screen_y,
+                          int *raw_x, int *raw_y) {
+    int x_percent = screen_x;
+    int y_percent = screen_y;
+    switch (orientation) {
+        case 1:
+            x_percent = 100 - screen_y;
+            y_percent = screen_x;
+            break;
+        case 2:
+            x_percent = 100 - screen_x;
+            y_percent = 100 - screen_y;
+            break;
+        case 3:
+            x_percent = screen_y;
+            y_percent = 100 - screen_x;
+            break;
+    }
+    *raw_x = scale_axis(x_axis, x_percent);
+    *raw_y = scale_axis(y_axis, y_percent);
+}
+
 int main(int argc, char **argv) {
     char path[64];
     int duration_ms = argc > 1 ? atoi(argv[1]) : 480;
+    int orientation = argc > 2 ? atoi(argv[2]) : 0;
     if (duration_ms < 200 || duration_ms > 1500) {
         fprintf(stderr, "duration must be between 200 and 1500 ms\n");
+        return 2;
+    }
+    if (orientation < 0 || orientation > 3) {
+        fprintf(stderr, "orientation must be between 0 and 3\n");
         return 2;
     }
     if (find_touchscreen(path, sizeof(path)) < 0) {
@@ -74,25 +107,27 @@ int main(int argc, char **argv) {
     }
 
     const int steps = 32;
-    const int start_x = x_info.minimum + (x_info.maximum - x_info.minimum) * 8 / 100;
-    const int end_x = x_info.minimum + (x_info.maximum - x_info.minimum) * 60 / 100;
-    const int y[3] = {
-        y_info.minimum + (y_info.maximum - y_info.minimum) * 34 / 100,
-        y_info.minimum + (y_info.maximum - y_info.minimum) * 50 / 100,
-        y_info.minimum + (y_info.maximum - y_info.minimum) * 66 / 100,
-    };
+    const int finger_x[3] = {34, 50, 66};
+    const int start_y = 92;
+    const int end_y = 40;
+    int raw_x;
+    int raw_y;
 
     for (int slot = 0; slot < 3; ++slot) {
-        if (set_slot(fd, slot, 1200 + slot, start_x, y[slot], 320) < 0) goto write_error;
+        screen_to_raw(&x_info, &y_info, orientation, finger_x[slot], start_y,
+                      &raw_x, &raw_y);
+        if (set_slot(fd, slot, 1200 + slot, raw_x, raw_y, 320) < 0) goto write_error;
     }
     send_event(fd, EV_KEY, BTN_TOOL_FINGER, 1);
     send_event(fd, EV_SYN, SYN_REPORT, 0);
     usleep(24000);
 
     for (int step = 1; step <= steps; ++step) {
-        int x = start_x + (end_x - start_x) * step / steps;
+        int screen_y = start_y + (end_y - start_y) * step / steps;
         for (int slot = 0; slot < 3; ++slot) {
-            if (set_slot(fd, slot, -1, x, y[slot], 320) < 0) goto write_error;
+            screen_to_raw(&x_info, &y_info, orientation, finger_x[slot], screen_y,
+                          &raw_x, &raw_y);
+            if (set_slot(fd, slot, -1, raw_x, raw_y, 320) < 0) goto write_error;
         }
         send_event(fd, EV_SYN, SYN_REPORT, 0);
         usleep((useconds_t)duration_ms * 1000 / steps);
@@ -105,8 +140,8 @@ int main(int argc, char **argv) {
     send_event(fd, EV_KEY, BTN_TOOL_FINGER, 0);
     send_event(fd, EV_SYN, SYN_REPORT, 0);
     close(fd);
-    printf("device=%s duration_ms=%d raw_x=%d-%d raw_y=%d,%d,%d\n",
-           path, duration_ms, start_x, end_x, y[0], y[1], y[2]);
+    printf("device=%s duration_ms=%d orientation=%d screen_y=%d-%d\n",
+           path, duration_ms, orientation, start_y, end_y);
     return 0;
 
 write_error:

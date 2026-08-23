@@ -29,6 +29,7 @@ struct yield_result {
     int64_t delivery_us;
     int64_t write_us;
     int64_t affinity_us;
+    int64_t cgroup_complete_monotonic_ns;
     int64_t complete_monotonic_ns;
 };
 
@@ -180,21 +181,23 @@ static int run_affinity_apply(int pid, int uid) {
 }
 
 static struct yield_result yield_source_native(void) {
-    struct yield_result result = {-1, -1, 0, 0, -1, -1, -1, -1, -1};
+    struct yield_result result = {-1, -1, 0, 0, -1, -1, -1, -1, -1, -1};
     struct timespec start;
-    struct timespec affinity_end;
+    struct timespec cgroup_end;
     struct timespec end;
     if (read_source_record(&result.pid, &result.uid) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result.affinity_status = run_affinity_apply(result.pid, result.uid);
-    clock_gettime(CLOCK_MONOTONIC, &affinity_end);
-    result.affinity_us = timespec_diff_us(&affinity_end, &start);
     result.cpuset_ok = write_pid_open_fd(cpuset_background_fd,
                                         "/dev/cpuset/background/cgroup.procs", result.pid);
     result.cpuctl_ok = write_pid_open_fd(cpuctl_background_fd,
                                         "/dev/cpuctl/background/cgroup.procs", result.pid);
+    clock_gettime(CLOCK_MONOTONIC, &cgroup_end);
+    result.write_us = timespec_diff_us(&cgroup_end, &start);
+    result.cgroup_complete_monotonic_ns =
+        (int64_t)cgroup_end.tv_sec * 1000000000LL + cgroup_end.tv_nsec;
+    result.affinity_status = run_affinity_apply(result.pid, result.uid);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    result.write_us = timespec_diff_us(&end, &affinity_end);
+    result.affinity_us = timespec_diff_us(&end, &cgroup_end);
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     return result;
 }
@@ -250,7 +253,7 @@ int main(void) {
         size_t tag_length;
         size_t message_limit;
         size_t message_length;
-        struct yield_result yield = {-1, -1, 0, 0, -1, -1, -1, -1, -1};
+        struct yield_result yield = {-1, -1, 0, 0, -1, -1, -1, -1, -1, -1};
         char suffix[320] = "";
         int count;
         int read_result = list_read(list, raw);
@@ -281,10 +284,11 @@ int main(void) {
                                 yield.write_us - yield.affinity_us;
             if (yield.delivery_us < 0 || yield.delivery_us > 5000000) yield.delivery_us = -1;
             snprintf(suffix, sizeof(suffix),
-                     " nativeYieldPid=%d nativeYieldUid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCompleteNs=%lld",
+                     " nativeYieldPid=%d nativeYieldUid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCgroupCompleteNs=%lld nativeCompleteNs=%lld",
                      yield.pid, yield.uid, yield.affinity_status,
                      (long long)yield.affinity_us, yield.cpuset_ok, yield.cpuctl_ok,
                      (long long)yield.delivery_us, (long long)yield.write_us,
+                     (long long)yield.cgroup_complete_monotonic_ns,
                      (long long)yield.complete_monotonic_ns);
         }
 

@@ -26,7 +26,7 @@ launcher-logwatch ── event line ──> events.sh ──> state-machine.sh
 
 - `config.sh`：集中声明持久配置与运行时文件路径，提供默认值和数值读取边界。
 - `runtime.sh`：日志、序号、进程树生命周期和 cgroup 读写原语。
-- `topology.sh`：从在线 CPU、cpuset 与 `cpu_capacity` 推导 all/perf/mid/little mask，并缓存输入拓扑。
+- `topology.sh`：从在线 CPU、cpuset 与 `cpu_capacity` 推导 all/perf/mid/little/prime mask，并缓存输入拓扑。
 - `launcher-policy.sh`：发现五类 Launcher 线程，保存原始 affinity，批量调用原生线程控制器并精确恢复。
 - `frequency-policy.sh`：可选小核限频的所有权事务。目标相对硬件上限计算，恢复前检查当前值仍由模块持有。
 - `process-policy.sh`：source/pending source 记录、来源 affinity 事务、top-app/background cgroup 和辅助进程恢复。
@@ -35,7 +35,7 @@ launcher-logwatch ── event line ──> events.sh ──> state-machine.sh
 
 ## 热路径
 
-`launcher-logwatch` 收到真正的 Launcher 动画起点后，先调用 `source-affinityctl`，再写来源 PID 到 background cpuset/cpuctl，最后才向 shell 输出事件。事件中带有原生事务结果：三项全部成功时，shell 只做状态记录、Launcher 策略和后续状态转移；任一项失败才重新执行来源退避作为修复。
+`launcher-logwatch` 收到真正的 Launcher 动画起点后，先把来源 PID 写入 background cpuset/cpuctl，再调用 `source-affinityctl` 完成逐 TID affinity 事务，最后才向 shell 输出事件。日志分别记录 cgroup 快路径和完整事务的完成时间。三项全部成功时，shell 只做状态记录、Launcher 策略和后续状态转移；任一项失败才重新执行来源退避作为修复。
 
 空闲时原生读取器睡眠在 logd，shell 睡眠在管道读取。WebUI 是按需命令，不存在后台 Web 服务。
 

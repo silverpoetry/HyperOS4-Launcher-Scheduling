@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=5.0
-versionCode=50
+version=5.1
+versionCode=51
 author=github: silverpoetry
 description=Event-driven HyperOS 4 Launcher scheduling with dynamic CPU topology and reversible source-app isolation.

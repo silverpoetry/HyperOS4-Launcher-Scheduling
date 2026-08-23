@@ -75,4 +75,25 @@ foreach ($match in $assetPattern.Matches($html)) {
     }
 }
 
+$threadController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\launcher_threadctl.c') -Raw
+if ($threadController -notmatch 'CLASS_RASTER\) affinity_mask = prime_mask') {
+    throw 'Launcher Raster must use the topology-derived prime mask'
+}
+
+$logWatcher = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\launcher_logwatch.c') -Raw
+$yieldFunction = [regex]::Match(
+    $logWatcher,
+    'static struct yield_result yield_source_native\(void\) \{(?<body>[\s\S]*?)\n\}',
+    [Text.RegularExpressions.RegexOptions]::Singleline
+)
+if (-not $yieldFunction.Success) {
+    throw 'yield_source_native was not found'
+}
+$yieldBody = $yieldFunction.Groups['body'].Value
+$cgroupWrite = $yieldBody.IndexOf('write_pid_open_fd(cpuset_background_fd')
+$affinityApply = $yieldBody.IndexOf('run_affinity_apply(result.pid, result.uid)')
+if ($cgroupWrite -lt 0 -or $affinityApply -lt 0 -or $cgroupWrite -gt $affinityApply) {
+    throw 'Source cgroup placement must precede the per-thread affinity transaction'
+}
+
 Write-Output 'source_layout=passed'

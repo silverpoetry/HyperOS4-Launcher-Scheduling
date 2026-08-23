@@ -25,3 +25,7 @@ test-results/fence-little-*/
 test-results/fence-mid-*/
 test-results/sheng-settings-recents-lowload-*/
 test-results/frequency-v4.1-*.txt
+test-results/validated-recents-*/
+test-results/moonlight-current.png
+test-results/moonlight-heavy-ab.txt
+test-results/recents-corrected.png

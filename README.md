@@ -49,21 +49,22 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 Launcher 自身采用逐线程策略：
 
 ```text
-1.ui / 1.raster / rt-launcher-mai → top-app 中不属于 background 的 CPU
-IplrVkResMgr                      → 上述集合去掉最高 capacity 的 prime CPU
-IplrVkFenceWait                  → 去掉 prime 的 performance 集合（可切换为最低容量簇）
+1.raster                         → 动态识别的最高 capacity prime CPU
+1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合（可切换为完整 performance 集合）
+IplrVkResMgr                    → 去掉 prime 的 performance 集合
+IplrVkFenceWait                 → 去掉 prime 的 performance 集合（可切换为最低容量簇）
 ```
 
-转场事件到来后再进行一层短时分流：
+转场事件到来后只进行短时 uclamp 提升：
 
 ```text
-1.raster                         → performance 集合，uclamp minimum 928
-1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合，uclamp minimum 768/512
-IplrVkResMgr                    → 去掉 prime 的 performance 集合，uclamp minimum 384
-IplrVkFenceWait                 → 去掉 prime 的 performance 集合，不提升 uclamp
+1.raster                → uclamp minimum 928
+1.ui / rt-launcher-mai → uclamp minimum 768/512
+IplrVkResMgr           → uclamp minimum 384
+IplrVkFenceWait        → 不提升 uclamp
 ```
 
-提升持续时间默认 1 ms，之后恢复基础亲和及 0/1024 uclamp；该值和四类 `uclamp.min` 均可在 WebUI 调整。Raster 没有固定绑定 prime：调度器可优先使用 prime，也可在 SurfaceFlinger 占用 prime 时退回其它性能核心。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。
+提升持续时间默认 1 ms，之后只恢复 0/1024 uclamp；基础 affinity 覆盖 Launcher 线程的整个运行期，不依赖提升计时器。该值和四类 `uclamp.min` 均可在 WebUI 调整。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含 Sheng 或 Shennong 的固定编号。模块不改变 SurfaceFlinger affinity。
 
 小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
 
@@ -109,8 +110,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v5.0.zip
-../output/HyperOS4-Launcher-Scheduling-v5.0.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v5.1.zip
+../output/HyperOS4-Launcher-Scheduling-v5.1.zip.sha256
 ```
 
 安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
@@ -136,7 +137,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 - 轻量 SurfaceFlinger FrameTimeline；
 - 禁用后的亲和/uclamp 恢复和重新启用。
 
-验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[来源应用 affinity 性能 A/B](docs/SOURCE-AFFINITY-PERFORMANCE-AB.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
+验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[5.1 轻载对照](docs/PRIME-RASTER-EARLY-YIELD-LIGHT-LOAD-AB.md)、[来源应用 affinity 性能 A/B](docs/SOURCE-AFFINITY-PERFORMANCE-AB.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
 
 ## 项目结构
 

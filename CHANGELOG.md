@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.1
+
+- 动态推导独立 prime CPU mask。Launcher Raster 固定使用 prime，UI/Rust 按现有放置策略使用去掉 prime 的性能核；亲和覆盖完整运行期，短时计时器只控制 uclamp。
+- 原生转场监听器先写来源应用的 background cpuset/cpuctl，再执行逐线程亲和事务，缩短首批动画帧前的应用退避路径。
+- 事件日志增加 cgroup 写入完成的单调时钟时间戳，分别记录快速退避与完整逐线程事务的完成时刻。
+
 ## Project collection move - 2026-08-22
 
 - 项目移动到 `D:\Projects\Magisk\HyperOS4-Launcher-Scheduling`。

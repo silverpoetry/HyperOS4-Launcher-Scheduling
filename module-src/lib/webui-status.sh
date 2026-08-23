@@ -59,7 +59,7 @@ print_frequency_status() {
 
 print_status() {
   local mode daemon_pid daemon_alive launcher_pid topology
-  local all_mask perf_mask mid_mask little_mask
+  local all_mask perf_mask mid_mask little_mask prime_mask
   local source_pid source_uid source_name pending_pid pending_uid pending_name
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
@@ -68,13 +68,14 @@ print_status() {
   read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
   [ -d "/proc/$launcher_pid" ] || launcher_pid=""
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
-  read -r all_mask perf_mask mid_mask little_mask <<EOF
+  read -r all_mask perf_mask mid_mask little_mask prime_mask <<EOF
 $topology
 EOF
   [ -n "$all_mask" ] || all_mask=-
   [ -n "$perf_mask" ] || perf_mask=-
   [ -n "$mid_mask" ] || mid_mask=-
   [ -n "$little_mask" ] || little_mask=-
+  [ -n "$prime_mask" ] || prime_mask=-
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
   pending_pid=""; pending_uid=""; pending_name=""
@@ -107,6 +108,7 @@ EOF
   emit perf_mask "$perf_mask"
   emit mid_mask "$mid_mask"
   emit little_mask "$little_mask"
+  emit prime_mask "$prime_mask"
   emit source_pid "$source_pid"
   emit source_uid "$source_uid"
   emit source_name "$source_name"

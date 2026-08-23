@@ -3,7 +3,7 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "5.0",
+  version: "5.1",
   author: "github: silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
@@ -29,6 +29,7 @@ export const MOCK_STATUS = {
   perf_mask: "f8",
   mid_mask: "78",
   little_mask: "7",
+  prime_mask: "80",
   source_pid: "9174",
   source_uid: "10341",
   source_name: "com.tencent.jkchess",

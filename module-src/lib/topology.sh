@@ -4,6 +4,7 @@ THREAD_ALL_MASK=""
 THREAD_PERF_MASK=""
 THREAD_MID_MASK=""
 THREAD_LITTLE_MASK=""
+THREAD_PRIME_MASK=""
 THREAD_FILE_VALUE=""
 
 read_thread_file() {
@@ -45,7 +46,7 @@ cpulist_to_mask() {
 
 derive_launcher_masks() {
   local online_list top_list background_list topology_input previous_input
-  local all_value top_value background_value perf_value mid_value
+  local all_value top_value background_value perf_value mid_value prime_value
   local cpu bit capacity best_capacity prime_cpu lowest_capacity
   local little_value capacity_seen topology previous_topology
 
@@ -55,8 +56,8 @@ derive_launcher_masks() {
   topology_input="$online_list|$top_list|$background_list"
   read_thread_file "$THREAD_TOPOLOGY_INPUT_FILE"; previous_input="$THREAD_FILE_VALUE"
   if [ "$topology_input" = "$previous_input" ] && [ -r "$THREAD_TOPOLOGY_FILE" ]; then
-    read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK <"$THREAD_TOPOLOGY_FILE"
-    [ -n "$THREAD_LITTLE_MASK" ] && return 0
+    read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK THREAD_PRIME_MASK <"$THREAD_TOPOLOGY_FILE"
+    [ -n "$THREAD_PRIME_MASK" ] && return 0
   fi
 
   THREAD_ALL_MASK="$(cpulist_to_mask "$online_list")"
@@ -106,6 +107,8 @@ derive_launcher_masks() {
   mid_value=$perf_value
   [ "$prime_cpu" -lt 0 ] || mid_value=$((perf_value & ~(1 << prime_cpu)))
   [ "$mid_value" -ne 0 ] || mid_value=$perf_value
+  prime_value=$perf_value
+  [ "$prime_cpu" -lt 0 ] || prime_value=$((1 << prime_cpu))
   background_value=$((background_value & all_value))
   [ "$background_value" -ne 0 ] || background_value=$((all_value & ~perf_value))
   [ "$background_value" -ne 0 ] || background_value=$all_value
@@ -115,11 +118,12 @@ derive_launcher_masks() {
   THREAD_PERF_MASK="$(printf '%x' "$perf_value")"
   THREAD_MID_MASK="$(printf '%x' "$mid_value")"
   THREAD_LITTLE_MASK="$(printf '%x' "$little_value")"
-  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK"
+  THREAD_PRIME_MASK="$(printf '%x' "$prime_value")"
+  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_PRIME_MASK"
   read_thread_file "$THREAD_TOPOLOGY_FILE"; previous_topology="$THREAD_FILE_VALUE"
   echo "$topology_input" >"$THREAD_TOPOLOGY_INPUT_FILE"
   if [ "$topology" != "$previous_topology" ]; then
     echo "$topology" >"$THREAD_TOPOLOGY_FILE"
-    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK little=$THREAD_LITTLE_MASK"
+    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK little=$THREAD_LITTLE_MASK prime=$THREAD_PRIME_MASK"
   fi
 }
