@@ -128,7 +128,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 - 轻量 SurfaceFlinger FrameTimeline；
 - 禁用后的亲和/uclamp 恢复和重新启用。
 
-验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
+验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[来源应用 affinity 性能 A/B](docs/SOURCE-AFFINITY-PERFORMANCE-AB.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
 
 ## 项目结构
 
