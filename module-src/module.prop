@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=3.4
-versionCode=34
+version=3.5
+versionCode=35
 author=Codex
-description=Launcher lifecycle scheduling with transition-edge app yielding, topology-derived thread separation, short animation boosts, and a Material 3 management dashboard. No fixed CPU indices or frequency lock.
+description=Launcher lifecycle scheduling with native transition-edge app yielding, topology-derived thread separation, short animation boosts, and a Material 3 management dashboard. No fixed CPU indices or frequency lock.

@@ -37,6 +37,8 @@ Sheng v2.8 实机样本中，快滑从 `gestureStart` 到 Launcher resumed 约 0
 
 Android `logcat` 的文本输出接入非终端 shell 管道时会出现约 0.4 秒块缓冲。模块使用单个 arm64 `launcher-logwatch`，通过系统 `liblog` 直接读取 logd main buffer，只保留状态机需要的 Launcher 消息，并用 `write()` 逐条输出。它不注入 Launcher，不修改日志级别，也不采集高频渲染日志。
 
+入口退避不再等待这条消息进入 shell。`launcher-logwatch` 在识别入口事件后直接把已缓存 source PID 写入 background cpuset 和 cpuctl，再把事件交给 shell 完成状态处理。监听器空闲时阻塞在 logd，不轮询触控或 SurfaceFlinger。此路径消除了 shell 查询和调度造成的数百毫秒延迟，但 logd 仍是异步通道；它只能做到实测低延迟，不能承诺严格的单帧上界。
+
 `PassBlurWindow`、blur 半径和玻璃材质不属于状态输入。它们是视觉实现细节，既可能晚于转场开始，也可能在关闭卡片等其它动画中出现。
 
 ## 源应用与目标应用

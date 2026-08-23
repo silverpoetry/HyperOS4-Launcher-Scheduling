@@ -8,6 +8,13 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 3.5
+
+- 将入口退避的关键路径下沉到原生 `launcher-logwatch`：读取到 `gestureStart`、按键最近任务或 RemoteBack 关闭应用信号后，直接读取缓存 source PID 并写入 cpuset/cpuctl，不再等待 shell 管道和状态机。
+- 原生监听器预先打开 background cgroup 节点，空闲时阻塞在 logd；使用 foreground 调度避免被后台负载长期饿死，但不进入 `top-app`，也不轮询输入或窗口。
+- shell 中的同一退避操作保留为失败兜底，并继续承担生命周期记账、Launcher 线程策略、取消恢复和退出动画完成恢复。
+- Sheng Moonlight 三轮初测中，logd 事件传递加两次 cgroup 写入为约 4.44–8.37ms；后续压力样本显示 logd 本身仍有离群延迟，因此日志触发不能形式化保证每次小于一个 120Hz 帧周期。
+
 ## 3.4
 
 - `gestureStart` 表示 Launcher 已接管窗口、前台应用开始卡片化。收到该事件后先退避已缓存的源应用，再执行状态记账、Launcher 线程提升和壁纸/MiMD 查询，移除首批动画帧前的策略空窗。

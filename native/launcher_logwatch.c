@@ -1,13 +1,28 @@
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define LOG_ID_MAIN 0
 #define ANDROID_LOG_RDONLY 1
 #define LOG_BUFFER_SIZE 65536
+#define SOURCE_APP_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/source-app"
+
+static int cpuset_background_fd = -1;
+static int cpuctl_background_fd = -1;
+
+struct yield_result {
+    int pid;
+    int cpuset_ok;
+    int cpuctl_ok;
+    int64_t delivery_us;
+    int64_t write_us;
+    int64_t complete_monotonic_ns;
+};
 
 typedef void logger_list;
 typedef void logger;
@@ -54,6 +69,84 @@ static int is_relevant(const char *message) {
     return 0;
 }
 
+static int is_launcher_entry_start(const char *message) {
+    return strstr(message, "SceneAnimationSignalType.gestureStart") != NULL ||
+           strstr(message, "onOverviewToggle is_home_and_overview_same=true") != NULL ||
+           strstr(message, "IRecentsAnimationRunnerImplForRemoteBack on_animation_start called type: CloseApp") != NULL;
+}
+
+static int64_t timespec_diff_us(const struct timespec *end, const struct timespec *start) {
+    return ((int64_t)end->tv_sec - (int64_t)start->tv_sec) * 1000000LL +
+           ((int64_t)end->tv_nsec - (int64_t)start->tv_nsec) / 1000LL;
+}
+
+static int write_pid_file(const char *path, int pid) {
+    char value[32];
+    int fd;
+    int length = snprintf(value, sizeof(value), "%d\n", pid);
+    if (length <= 0 || (size_t)length >= sizeof(value)) return 0;
+    fd = open(path, O_WRONLY | O_CLOEXEC);
+    if (fd < 0) return 0;
+    if (write(fd, value, (size_t)length) != length) {
+        close(fd);
+        return 0;
+    }
+    close(fd);
+    return 1;
+}
+
+static int write_pid_open_fd(int fd, const char *fallback_path, int pid) {
+    char value[32];
+    int length = snprintf(value, sizeof(value), "%d\n", pid);
+    if (length <= 0 || (size_t)length >= sizeof(value)) return 0;
+    if (fd >= 0) {
+        (void)lseek(fd, 0, SEEK_SET);
+        if (write(fd, value, (size_t)length) == length) return 1;
+    }
+    return write_pid_file(fallback_path, pid);
+}
+
+static int read_source_pid(void) {
+    char value[128];
+    char *end;
+    long parsed;
+    int fd = open(SOURCE_APP_FILE, O_RDONLY | O_CLOEXEC);
+    ssize_t length;
+    if (fd < 0) return -1;
+    length = read(fd, value, sizeof(value) - 1);
+    close(fd);
+    if (length <= 0) return -1;
+    value[length] = '\0';
+    parsed = strtol(value, &end, 10);
+    if (end == value || parsed <= 1 || parsed > INT32_MAX) return -1;
+    return (int)parsed;
+}
+
+static struct yield_result yield_source_native(void) {
+    struct yield_result result = {-1, 0, 0, -1, -1, -1};
+    struct timespec start;
+    struct timespec end;
+    result.pid = read_source_pid();
+    if (result.pid <= 1) return result;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    result.cpuset_ok = write_pid_open_fd(cpuset_background_fd,
+                                        "/dev/cpuset/background/cgroup.procs", result.pid);
+    result.cpuctl_ok = write_pid_open_fd(cpuctl_background_fd,
+                                        "/dev/cpuctl/background/cgroup.procs", result.pid);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    result.write_us = timespec_diff_us(&end, &start);
+    result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
+    return result;
+}
+
+static void move_watcher_to_foreground(void) {
+    int pid = getpid();
+    /* The reader blocks in logd while idle.  Foreground placement avoids
+       background starvation without turning the log reader into top-app work. */
+    write_pid_file("/dev/cpuset/foreground/cgroup.procs", pid);
+    write_pid_file("/dev/cpuctl/foreground/cgroup.procs", pid);
+}
+
 static void write_all(const char *buffer, size_t length) {
     while (length > 0) {
         ssize_t written = write(STDOUT_FILENO, buffer, length);
@@ -74,6 +167,11 @@ int main(void) {
     logger_list *list;
 
     if (library == NULL) return 10;
+    /* The watcher sleeps inside logd while idle.  Foreground placement prevents
+       an all-core workload from starving the one short transition-edge write. */
+    move_watcher_to_foreground();
+    cpuset_background_fd = open("/dev/cpuset/background/cgroup.procs", O_WRONLY | O_CLOEXEC);
+    cpuctl_background_fd = open("/dev/cpuctl/background/cgroup.procs", O_WRONLY | O_CLOEXEC);
     list_alloc = (list_alloc_fn)dlsym(library, "android_logger_list_alloc");
     logger_open = (logger_open_fn)dlsym(library, "android_logger_open");
     list_read = (list_read_fn)dlsym(library, "android_logger_list_read");
@@ -92,6 +190,8 @@ int main(void) {
         size_t tag_length;
         size_t message_limit;
         size_t message_length;
+        struct yield_result yield = {-1, 0, 0, -1, -1, -1};
+        char suffix[160] = "";
         int count;
         int read_result = list_read(list, raw);
         if (read_result <= 0) break;
@@ -112,12 +212,28 @@ int main(void) {
         message_length = strnlen(message, message_limit);
         if (message_length >= message_limit || !is_relevant(message)) continue;
 
-        count = snprintf(output, sizeof(output), "%u.%09u|%d|%s|%s\n",
-                         entry->sec, entry->nsec, entry->pid, tag, message);
+        if (is_launcher_entry_start(message)) {
+            struct timespec observed;
+            struct timespec emitted = {(time_t)entry->sec, (long)entry->nsec};
+            yield = yield_source_native();
+            clock_gettime(CLOCK_REALTIME, &observed);
+            yield.delivery_us = timespec_diff_us(&observed, &emitted) - yield.write_us;
+            if (yield.delivery_us < 0 || yield.delivery_us > 5000000) yield.delivery_us = -1;
+            snprintf(suffix, sizeof(suffix),
+                     " nativeYieldPid=%d nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCompleteNs=%lld",
+                     yield.pid, yield.cpuset_ok, yield.cpuctl_ok,
+                     (long long)yield.delivery_us, (long long)yield.write_us,
+                     (long long)yield.complete_monotonic_ns);
+        }
+
+        count = snprintf(output, sizeof(output), "%u.%09u|%d|%s|%s%s\n",
+                         entry->sec, entry->nsec, entry->pid, tag, message, suffix);
         if (count > 0 && (size_t)count < sizeof(output)) write_all(output, (size_t)count);
     }
 
     list_free(list);
+    if (cpuset_background_fd >= 0) close(cpuset_background_fd);
+    if (cpuctl_background_fd >= 0) close(cpuctl_background_fd);
     dlclose(library);
     return 0;
 }

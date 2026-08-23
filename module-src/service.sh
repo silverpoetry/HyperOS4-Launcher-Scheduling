@@ -36,7 +36,7 @@ restore_launcher_threads
 chmod 0644 "$LOG_FILE" 2>/dev/null
 exec >>"$LOG_FILE" 2>&1
 
-echo "=== HyperOS 4 Launcher Scheduling v3.4 ==="
+echo "=== HyperOS 4 Launcher Scheduling v3.5 ==="
 date 2>/dev/null || true
 echo $$ >"$PID_FILE"
 [ -f "$ENABLE_FILE" ] || echo enabled >"$ENABLE_FILE"
@@ -485,6 +485,9 @@ monitor_launcher() {
         # or Launcher thread tuning so an active stream cannot occupy the first
         # animation frames.  Raw multi-touch contact is intentionally not used.
         suppress_source
+        case "$line" in
+          *" nativeYieldPid="*) log_state "native-yield ${line##* nativeYieldPid=}" ;;
+        esac
         : >"$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
         trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-start
