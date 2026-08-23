@@ -19,3 +19,5 @@ tools/__pycache__/
 test-results/pointer-three.png
 test-results/recents-current.png
 test-results/sheng-moonlight-recents-*/
+test-results/sheng-jkchess-recents-*/
+test-results/runtime-ab/
