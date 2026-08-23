@@ -12,7 +12,7 @@ Sheng 上 74 个 Settings 线程的控制器内部耗时为：首次事务 2.812
 
 最终安装包还完成了游戏 UID 现场测试：入口前 `minor_window_app=10341`；入口后该值为 `0`，71/71 个线程受限于 CPU `0-2`，700 ms 后仍为 71/71。应用重新打开时，Joyose 曾把标记写回 `10341` 并造成 15 个线程逃逸；同一生命周期事件将标记再次清零并重新约束 15 个线程。动画结束后恢复 65 个仍存活线程，7 个已经退出的线程按启动时间跳过，状态文件删除，标记恢复为 `10341`。
 
-同一 v4.0 游戏进程的 affinity 单变量 A/B 表明：来源应用在性能核的 CPU 时间下降 56.8%，Launcher p95 下降 7.2%，全链路 Full/Partial 从 28 降到 14。第二次开启样本消除了 Launcher 和 task transition leash 的 Full/Partial，但低负载对照仍显示高负载下 Launcher runnable 等待高约 81%，且另一次开启样本存在 Floating Dock 82.4 ms 离群帧。完整结果见 [来源应用 affinity 性能 A/B](SOURCE-AFFINITY-PERFORMANCE-AB.md)。
+同一 v4.0 游戏进程的 affinity 单变量 A/B 表明：来源应用在性能核的 CPU 时间下降 56.8%，Launcher p95 下降 7.2%，全链路 Full/Partial 从 28 降到 14。第二次开启样本消除了 Launcher 和 task transition leash 的 Full/Partial，另一次开启样本仍存在 Floating Dock 82.4 ms 离群帧。Settings 低负载样本因任务类型和辅助组件状态不同，只能作粗略等待量参考，不能用于判定 Dock、Caption 等组件的因果关系。完整结果见 [来源应用 affinity 性能 A/B](SOURCE-AFFINITY-PERFORMANCE-AB.md)。
 
 ## 基础 A/B
 
