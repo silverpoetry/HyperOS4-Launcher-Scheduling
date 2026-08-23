@@ -36,7 +36,7 @@ restore_launcher_threads
 chmod 0644 "$LOG_FILE" 2>/dev/null
 exec >>"$LOG_FILE" 2>&1
 
-echo "=== HyperOS 4 Launcher Scheduling v3.1 ==="
+echo "=== HyperOS 4 Launcher Scheduling v3.4 ==="
 date 2>/dev/null || true
 echo $$ >"$PID_FILE"
 [ -f "$ENABLE_FILE" ] || echo enabled >"$ENABLE_FILE"
@@ -281,6 +281,7 @@ place_resumed_record_top_app() {
 }
 
 restore_resumed_target() {
+  local reason="${1:-launcher-animation-complete}"
   local pending_pid pending_uid pending_name
   [ -r "$PENDING_SOURCE_FILE" ] || return 0
   read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
@@ -289,7 +290,17 @@ restore_resumed_target() {
   # background/foreground placement if a delayed source job raced
   # ActivityManager or if the captured source group was only a gesture-time
   # transitional group.
-  place_resumed_record_top_app "$PENDING_SOURCE_FILE" activity-resumed
+  place_resumed_record_top_app "$PENDING_SOURCE_FILE" "$reason"
+}
+
+hold_resumed_target_for_animation() {
+  local pid uid name
+  [ -r "$PENDING_SOURCE_FILE" ] || return 0
+  read -r pid uid name <"$PENDING_SOURCE_FILE"
+  case "$pid" in ''|*[!0-9]*) return 0 ;; esac
+  [ -d "/proc/$pid" ] || return 0
+  move_pid_to_background "$pid"
+  log_state "target-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
 }
 
 restore_source_for_app_completion() {
@@ -301,8 +312,12 @@ restore_source_for_app_completion() {
 
 apply_policy() {
   local pid
-  refresh_policy_pids
+  # SOURCE_FILE is already cached while the app is stably resumed.  Move that
+  # process first so the hand-off starts on the same Launcher signal that
+  # begins card motion.  Refreshing wallpaper/IME/MiMD PIDs may involve several
+  # service lookups and must not sit on the source-app critical path.
   suppress_source
+  refresh_policy_pids
   for pid in $WALLPAPER_PIDS $MIMD_PIDS; do
     move_pid_to_background "$pid"
   done
@@ -367,7 +382,7 @@ set_mode() {
     rm -f "$GESTURE_FILE"
     restore_processes
     if [ -r "$PENDING_SOURCE_FILE" ]; then
-      restore_resumed_target
+      restore_resumed_target "$reason"
     else
       restore_source_for_app_completion
     fi
@@ -445,10 +460,10 @@ monitor_launcher() {
             case "$(cat "$MODE_FILE" 2>/dev/null)" in
               entering|home|recents|leaving)
                 # Cancel delayed writes from the old transition before the
-                # resumed target is restored.
+                # resumed target is held for the Launcher exit animation.
                 increment_file "$EPOCH_FILE" >/dev/null
                 cache_resume_package "$package" "$PENDING_SOURCE_FILE"
-                restore_resumed_target
+                hold_resumed_target_for_animation
                 serial="$(increment_file "$SERIAL_FILE")"
                 trigger_launcher_thread_boost "$LAUNCHER_PID" app-resumed
                 set_mode leaving app-resumed
@@ -465,6 +480,11 @@ monitor_launcher() {
         begin_launcher_transition
         ;;
       *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
+        # This signal is emitted when Launcher takes control and the full-screen
+        # app starts becoming a card.  Yield the cached source before bookkeeping
+        # or Launcher thread tuning so an active stream cannot occupy the first
+        # animation frames.  Raw multi-touch contact is intentionally not used.
+        suppress_source
         : >"$GESTURE_FILE"
         increment_file "$SERIAL_FILE" >/dev/null
         trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-start

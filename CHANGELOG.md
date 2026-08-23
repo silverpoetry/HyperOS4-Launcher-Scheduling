@@ -8,6 +8,13 @@
 
 2.1–2.7 是同日实机收敛候选；2.8 完成 Launcher 生命周期验证；3.0 恢复并通用化逐线程调度。
 
+## 3.4
+
+- `gestureStart` 表示 Launcher 已接管窗口、前台应用开始卡片化。收到该事件后先退避已缓存的源应用，再执行状态记账、Launcher 线程提升和壁纸/MiMD 查询，移除首批动画帧前的策略空窗。
+- 非 Launcher 应用提前发出 `activityResumed` 时，只缓存并继续退避目标；不再在卡片展开动画仍运行时显式恢复 `top-app`。
+- 目标只在 `openingRemoteAnimationClose` 确认 Launcher 退出动画结束后恢复；缺少完成事件时仍由两秒超时兜底恢复。
+- 不监听原始多点触控。应用内三指操作不会触发策略；入口仍以 Launcher 窗口转场信号为准。
+
 ## 3.3
 
 - 增加 KernelSU WebUI，采用 Material 3 动态色、底部导航和四页横向滑动结构。

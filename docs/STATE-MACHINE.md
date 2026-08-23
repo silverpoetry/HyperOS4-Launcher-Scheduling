@@ -29,11 +29,11 @@
 | `gestureToApp` 且 `gesture.active` 存在 | `entering/home → app` | 本轮上滑取消，恢复原应用进入前的 cgroup |
 | `exitOverviewState` | `recents → leaving` | 从最近任务打开应用 |
 | `openingRemoteAnimationOpen` | `home/recents → leaving` | Launcher 开始打开目标应用 |
-| 非 Launcher 的 `ActivityObserverLauncher activityResumed` | 活跃状态保持 `leaving` | 目标应用已恢复，但 Launcher 仍可能在画最后几帧 |
-| `openingRemoteAnimationClose` | `leaving → app` | Launcher 退出动画完成 |
+| 非 Launcher 的 `ActivityObserverLauncher activityResumed` | 活跃状态保持 `leaving` | 缓存目标并继续退避；Launcher 仍在绘制卡片展开动画 |
+| `openingRemoteAnimationClose` | `leaving → app` | Launcher 退出动画完成，此时才恢复目标到 `top-app` |
 | RemoteBack `on_animation_canceled` | `entering → app` | RemoteBack 路径取消，恢复原应用进入前的 cgroup |
 
-Sheng v2.8 实机样本中，快滑从 `gestureStart` 到 Launcher resumed 约 0.36 秒；慢滑从 `gestureStart` 经 Launcher resumed 到 `enterOverviewState` 约 0.84 秒。策略在第一个事件到达时生效，而不是等卡片完成。
+Sheng v2.8 实机样本中，快滑从 `gestureStart` 到 Launcher resumed 约 0.36 秒；慢滑从 `gestureStart` 经 Launcher resumed 到 `enterOverviewState` 约 0.84 秒。`gestureStart` 到达后第一项调度动作就是退避缓存的 source；不会先等待进程刷新或 Launcher 线程处理，也不会把原始三指接触当作入口。
 
 Android `logcat` 的文本输出接入非终端 shell 管道时会出现约 0.4 秒块缓冲。模块使用单个 arm64 `launcher-logwatch`，通过系统 `liblog` 直接读取 logd main buffer，只保留状态机需要的 Launcher 消息，并用 `write()` 逐条输出。它不注入 Launcher，不修改日志级别，也不采集高频渲染日志。
 
@@ -48,9 +48,9 @@ source-app          进入 Launcher 前的应用
 pending-source-app  离开 Launcher 时刚恢复的目标应用
 ```
 
-进入时只降低 `source-app`。目标应用恢复时先写入 pending，不能立即覆盖 source，否则退出动画期间的重复策略应用会错误降低正在打开的目标应用。只有进入 `app` 后，pending 才提交为下一轮 source。
+进入时只降低 `source-app`。目标应用恢复时先写入 pending，不能立即覆盖 source，也不能立即恢复性能组：此时 Launcher 仍在把最近任务卡片展开为全屏，提前恢复目标会与 Launcher 争用动画资源。只有进入 `app` 后，pending 才恢复到 `top-app` 并提交为下一轮 source。
 
-pending PID 属于保护集合。目标收到 resumed 事件后明确回到 `top-app`，即使它与 source 是同一进程也不能继续沿用退避状态。不能直接恢复手势开始时捕获的 cgroup，因为事件到达模块时 ActivityManager 可能已经把源应用临时降到 `foreground`；稳定 resumed Activity 的语义目标是 `top-app`。
+pending PID 属于延迟 source 重写的保护集合，但 `activityResumed` 处理会明确将该 PID 保持在 background。正常路径由 `openingRemoteAnimationClose` 解除；若完成事件缺失，两秒兜底负责恢复。不能恢复手势开始时捕获的 cgroup，因为事件到达模块时 ActivityManager 可能已把应用暂时放到 `foreground`；稳定完成态的语义目标始终是 `top-app`。
 
 延迟重写持有本轮 source 快照和 PID，不在执行时重新解析可能已提交为新目标的 `source-app`。写入后再次检查 pending 和稳定状态；若 PID 已成为 resumed 目标，立即回滚到 `top-app`。进入 `app` 的最后一步再次落实当前 source 的 `top-app` 状态。
 
@@ -72,7 +72,7 @@ pending PID 属于保护集合。目标收到 resumed 事件后明确回到 `top
 
 1. `app` 状态下壁纸和 MIMD 必须处于记录的原始 cgroup。
 2. 稳定 `app` 状态下当前 resumed source 必须处于 `cpuset/top-app` 和 `cpuctl/top-app`。
-3. 目标应用不能在 Launcher 退出动画中成为 `source-app`。
+3. 目标应用不能在 Launcher 退出动画中成为 `source-app`，也不能在动画完成前被模块恢复到 `top-app`。
 4. Launcher、SystemUI、输入法和显示链进程不能成为退避对象。
 5. 视觉 blur 变化不能触发或结束 CPU 策略。
 6. 模块重启和卸载必须恢复壁纸及 MIMD，并终止旧监听器。

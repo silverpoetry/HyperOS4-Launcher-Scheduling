@@ -6,6 +6,7 @@ STAGE=/data/local/tmp/hyperos4-launcher-scheduling-stage
 
 [ -f "$STAGE/service.sh" ]
 [ -f "$STAGE/thread-policy.sh" ]
+[ -f "$STAGE/module.prop" ]
 [ -x "$STAGE/launcher-logwatch" ]
 [ -x "$STAGE/launcher-threadctl" ]
 
@@ -36,6 +37,7 @@ done <"$process_list"
 rm -f "$process_list"
 sleep 1
 
+cp "$STAGE/module.prop" "$MODDIR/module.prop"
 cp "$STAGE/service.sh" "$MODDIR/service.sh"
 cp "$STAGE/thread-policy.sh" "$MODDIR/thread-policy.sh"
 cp "$STAGE/launcher-logwatch" "$MODDIR/bin/launcher-logwatch"
