@@ -10,7 +10,7 @@ systemui_policy_enabled() {
 read_systemui_placement() {
   local file="$1" default="$2"
   read_thread_file "$file"
-  case "$THREAD_FILE_VALUE" in 1|2|3|4|5|6) ;; *) THREAD_FILE_VALUE="$default" ;; esac
+  case "$THREAD_FILE_VALUE" in 1|2|3|4|5|6|7) ;; *) THREAD_FILE_VALUE="$default" ;; esac
 }
 
 increment_systemui_serial() {
@@ -53,6 +53,7 @@ apply_systemui_transition_policy() {
   if "$SYSTEMUI_THREADCTL" apply "$systemui_pid" "$SYSTEMUI_STATE_FILE" \
       "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" \
       "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" "$THREAD_SECONDARY_MASK" \
+      "$THREAD_BACKGROUND_MASK" \
       "$critical" "$maintenance" >/dev/null 2>&1; then
     printf '%s\n' "$systemui_pid" >"$SYSTEMUI_PID_FILE"
     serial="$(increment_systemui_serial)"

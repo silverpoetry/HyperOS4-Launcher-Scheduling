@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.6
+
+- Preserve the full Android package name in source records instead of the 15-byte `/proc/Name` value.
+- Observe matching `ActivityManager: Start proc` events from logd's system buffer while a source-yield transaction is active. A restarted source process is now captured and moved with one native `replace-yield` transaction before `activityResumed`.
+- Match the exact main-process package and Android UID reported by system_server before replacement; `activityResumed` remains the fallback and new-thread reassert path.
+- Add a source-app placement setting that distinguishes the capacity-derived efficiency cores from Android's system background cpuset.
+- Use one seven-item placement vocabulary for topology reporting, Launcher threads and SystemUI threads, including the system background set.
+- Redesign the WebUI around operational data, move module metadata to About, and report every CPU frequency policy with its current and configured range.
+
 ## 5.5
 
 - 新安装默认将 Launcher Raster 放置到动态 prime 集合，SystemUI 主线程、RenderThread、WMShell 与 GPU completion 放置到非 prime 性能集合。升级保留已有用户配置。

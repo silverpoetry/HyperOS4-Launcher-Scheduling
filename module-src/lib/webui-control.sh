@@ -19,6 +19,7 @@ write_atomic() {
 load_configuration_values() {
   CFG_MASTER="$(state_value "$ENABLE_FILE")"
   CFG_SOURCE="$(state_value "$SOURCE_POLICY_FILE")"
+  CFG_SOURCE_PLACEMENT="$(number_value "$SOURCE_PLACEMENT_FILE" 7)"
   CFG_AUXILIARY="$(state_value "$AUX_POLICY_FILE")"
   CFG_LAUNCHER="$(state_value "$THREAD_POLICY_STATE_FILE")"
   CFG_SYSTEMUI="$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
@@ -47,6 +48,7 @@ assign_configuration_value() {
   case "$key" in
     master) valid_state "$value" && CFG_MASTER="$value" ;;
     source) valid_state "$value" && CFG_SOURCE="$value" ;;
+    source_placement) case "$value" in 5|7) CFG_SOURCE_PLACEMENT="$value" ;; *) return 2 ;; esac ;;
     auxiliary) valid_state "$value" && CFG_AUXILIARY="$value" ;;
     launcher) valid_state "$value" && CFG_LAUNCHER="$value" ;;
     systemui) valid_state "$value" && CFG_SYSTEMUI="$value" ;;
@@ -54,12 +56,12 @@ assign_configuration_value() {
     frequency_percent) valid_number "$value" 40 100 && CFG_FREQUENCY_PERCENT="$value" ;;
     frequency_timeout_ms) valid_number "$value" 300 5000 && CFG_FREQUENCY_TIMEOUT="$value" ;;
     app_fallback_ms) valid_number "$value" 500 5000 && CFG_APP_FALLBACK="$value" ;;
-    launcher_placement) valid_number "$value" 1 6 && CFG_LAUNCHER_PLACEMENT="$value" ;;
-    raster_placement) valid_number "$value" 1 6 && CFG_RASTER_PLACEMENT="$value" ;;
-    resmgr_placement) valid_number "$value" 1 6 && CFG_RESMGR_PLACEMENT="$value" ;;
-    fence_placement) valid_number "$value" 1 6 && CFG_FENCE_PLACEMENT="$value" ;;
-    systemui_critical_placement) valid_number "$value" 1 6 && CFG_SYSTEMUI_CRITICAL_PLACEMENT="$value" ;;
-    systemui_maintenance_placement) valid_number "$value" 1 6 && CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$value" ;;
+    launcher_placement) valid_number "$value" 1 7 && CFG_LAUNCHER_PLACEMENT="$value" ;;
+    raster_placement) valid_number "$value" 1 7 && CFG_RASTER_PLACEMENT="$value" ;;
+    resmgr_placement) valid_number "$value" 1 7 && CFG_RESMGR_PLACEMENT="$value" ;;
+    fence_placement) valid_number "$value" 1 7 && CFG_FENCE_PLACEMENT="$value" ;;
+    systemui_critical_placement) valid_number "$value" 1 7 && CFG_SYSTEMUI_CRITICAL_PLACEMENT="$value" ;;
+    systemui_maintenance_placement) valid_number "$value" 1 7 && CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$value" ;;
     systemui_timeout_ms) valid_number "$value" 300 5000 && CFG_SYSTEMUI_TIMEOUT="$value" ;;
     boost_duration_ms) valid_number "$value" 1 1000 && CFG_BOOST_DURATION="$value" ;;
     uclamp_raster) valid_number "$value" 0 1024 && CFG_UCLAMP_RASTER="$value" ;;
@@ -80,6 +82,7 @@ save_configuration() {
   done
   write_atomic "$ENABLE_FILE" "$CFG_MASTER" &&
   write_atomic "$SOURCE_POLICY_FILE" "$CFG_SOURCE" &&
+  write_atomic "$SOURCE_PLACEMENT_FILE" "$CFG_SOURCE_PLACEMENT" &&
   write_atomic "$AUX_POLICY_FILE" "$CFG_AUXILIARY" &&
   write_atomic "$THREAD_POLICY_STATE_FILE" "$CFG_LAUNCHER" &&
   write_atomic "$SYSTEMUI_POLICY_STATE_FILE" "$CFG_SYSTEMUI" &&

@@ -7,6 +7,7 @@ THREAD_LITTLE_MASK=""
 THREAD_RENDER_MASK=""
 THREAD_PRIME_MASK=""
 THREAD_SECONDARY_MASK=""
+THREAD_BACKGROUND_MASK=""
 THREAD_FILE_VALUE=""
 
 read_thread_file() {
@@ -60,8 +61,9 @@ derive_launcher_masks() {
   read_thread_file "$THREAD_TOPOLOGY_INPUT_FILE"; previous_input="$THREAD_FILE_VALUE"
   if [ "$topology_input" = "$previous_input" ] && [ -r "$THREAD_TOPOLOGY_FILE" ]; then
     read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK \
-      THREAD_RENDER_MASK THREAD_PRIME_MASK THREAD_SECONDARY_MASK <"$THREAD_TOPOLOGY_FILE"
-    [ -n "$THREAD_SECONDARY_MASK" ] && return 0
+      THREAD_RENDER_MASK THREAD_PRIME_MASK THREAD_SECONDARY_MASK \
+      THREAD_BACKGROUND_MASK <"$THREAD_TOPOLOGY_FILE"
+    [ -n "$THREAD_BACKGROUND_MASK" ] && return 0
   fi
 
   THREAD_ALL_MASK="$(cpulist_to_mask "$online_list")"
@@ -151,11 +153,12 @@ derive_launcher_masks() {
   THREAD_RENDER_MASK="$(printf '%x' "$render_value")"
   THREAD_PRIME_MASK="$(printf '%x' "$prime_value")"
   THREAD_SECONDARY_MASK="$(printf '%x' "$secondary_value")"
-  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_RENDER_MASK $THREAD_PRIME_MASK $THREAD_SECONDARY_MASK"
+  THREAD_BACKGROUND_MASK="$(printf '%x' "$background_value")"
+  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_RENDER_MASK $THREAD_PRIME_MASK $THREAD_SECONDARY_MASK $THREAD_BACKGROUND_MASK"
   read_thread_file "$THREAD_TOPOLOGY_FILE"; previous_topology="$THREAD_FILE_VALUE"
   echo "$topology_input" >"$THREAD_TOPOLOGY_INPUT_FILE"
   if [ "$topology" != "$previous_topology" ]; then
     echo "$topology" >"$THREAD_TOPOLOGY_FILE"
-    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK little=$THREAD_LITTLE_MASK render=$THREAD_RENDER_MASK prime=$THREAD_PRIME_MASK secondary=$THREAD_SECONDARY_MASK"
+    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK efficiency=$THREAD_LITTLE_MASK render=$THREAD_RENDER_MASK prime=$THREAD_PRIME_MASK secondary=$THREAD_SECONDARY_MASK background=$THREAD_BACKGROUND_MASK"
   fi
 }

@@ -192,13 +192,13 @@ static int save_state(const char *path, pid_t pid, unsigned long long process_st
 }
 
 static unsigned long long select_mask(int placement,
-                                      const unsigned long long masks[6]) {
-    if (placement < 1 || placement > 6) return 0;
+                                      const unsigned long long masks[7]) {
+    if (placement < 1 || placement > 7) return 0;
     return masks[placement - 1];
 }
 
 static int apply_policy(pid_t pid, const char *path,
-                        const unsigned long long masks[6],
+                        const unsigned long long masks[7],
                         int critical_placement, int maintenance_placement) {
     struct record saved[MAX_RECORDS];
     struct record current[MAX_RECORDS];
@@ -293,21 +293,22 @@ int main(int argc, char **argv) {
         close(lock_fd);
         return result;
     }
-    if (argc != 12 || strcmp(argv[1], "apply") != 0) {
-        fprintf(stderr, "usage: %s apply PID STATE PERF MID LITTLE RENDER PRIME SECONDARY CRITICAL_PLACE MAINTENANCE_PLACE | restore STATE\n", argv[0]);
+    if (argc != 13 || strcmp(argv[1], "apply") != 0) {
+        fprintf(stderr, "usage: %s apply PID STATE PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND CRITICAL_PLACE MAINTENANCE_PLACE | restore STATE\n", argv[0]);
         return 2;
     }
     state_path = argv[3];
-    unsigned long long masks[6] = {
+    unsigned long long masks[7] = {
         strtoull(argv[4], NULL, 16), strtoull(argv[5], NULL, 16),
         strtoull(argv[6], NULL, 16), strtoull(argv[7], NULL, 16),
         strtoull(argv[8], NULL, 16), strtoull(argv[9], NULL, 16),
+        strtoull(argv[10], NULL, 16),
     };
-    int critical_placement = atoi(argv[10]);
-    int maintenance_placement = atoi(argv[11]);
-    for (int i = 0; i < 6; ++i) if (masks[i] == 0) return 2;
-    if (critical_placement < 1 || critical_placement > 6 ||
-        maintenance_placement < 1 || maintenance_placement > 6)
+    int critical_placement = atoi(argv[11]);
+    int maintenance_placement = atoi(argv[12]);
+    for (int i = 0; i < 7; ++i) if (masks[i] == 0) return 2;
+    if (critical_placement < 1 || critical_placement > 7 ||
+        maintenance_placement < 1 || maintenance_placement > 7)
         return 2;
     lock_fd = lock_state(state_path);
     if (lock_fd < 0) return 8;

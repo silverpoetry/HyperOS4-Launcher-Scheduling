@@ -3,10 +3,11 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "5.5",
-  author: "github: silverpoetry",
+  version: "5.6",
+  author: "silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
+  source_placement: "7",
   auxiliary_policy: "enabled",
   launcher_policy: "enabled",
   systemui_policy: "enabled",
@@ -38,6 +39,7 @@ export const MOCK_STATUS = {
   render_mask: "b8",
   prime_mask: "80",
   secondary_mask: "40",
+  background_mask: "7",
   source_pid: "9174",
   source_uid: "10341",
   source_name: "com.tencent.jkchess",
@@ -49,6 +51,7 @@ export const MOCK_STATUS = {
   frequency_cpus: "0,1,2",
   frequency_current_khz: "2016000",
   frequency_max_khz: "2016000",
+  frequency_clusters: "policy0|0,1,2|1248000|307200|2016000|2016000|schedutil;policy3|3,4|1728000|499200|2803200|2803200|schedutil;policy5|5,6|2016000|499200|3158400|3158400|schedutil;policy7|7|2112000|499200|3360000|3360000|schedutil",
   model: "Xiaomi Pad 6S Pro 12.4",
   device: "sheng",
   os: "OS4.0",

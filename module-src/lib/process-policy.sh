@@ -41,7 +41,7 @@ is_protected_pid() {
 }
 
 cache_pid_record() {
-  local pid="$1" destination="$2" uid name key first rest record role
+  local pid="$1" destination="$2" identity="$3" uid name key first rest record role
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -r "/proc/$pid/status" ] || return 0
   uid=""
@@ -52,6 +52,7 @@ cache_pid_record() {
   done <"/proc/$pid/status"
   case "$uid" in ''|*[!0-9]*) return 0 ;; esac
   [ "$uid" -ge 1000 ] || return 0
+  [ -n "$identity" ] && name="$identity"
   record="$pid $uid $name"
   read_first_line "$destination"
   [ "$READ_VALUE" = "$record" ] && return 0
@@ -69,7 +70,7 @@ cache_resume_package() {
   esac
   pid="$(pidof "$package" 2>/dev/null)"
   pid=${pid%% *}
-  cache_pid_record "$pid" "$destination"
+  cache_pid_record "$pid" "$destination" "$package"
 }
 
 cache_current_activity() {
@@ -84,7 +85,7 @@ cache_current_activity() {
   [ -n "$resumed" ] || return 0
   pid="$(pidof "$resumed" 2>/dev/null)"
   pid=${pid%% *}
-  cache_pid_record "$pid" "$SOURCE_FILE"
+  cache_pid_record "$pid" "$SOURCE_FILE" "$resumed"
   place_resumed_record_top_app "$SOURCE_FILE" initial-resumed-activity
   set_mode app initial-resumed-activity
 }

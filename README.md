@@ -8,7 +8,7 @@
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
 
-模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用被限制到小核簇后，可选策略能在 Launcher 转场期间按比例降低该簇的 `scaling_max_freq`；该策略默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
+模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用默认使用 Android 的系统后台核心集合，也可以改为容量推导出的效率核集合。可选限频策略只处理完全位于效率核集合的调频策略；该功能默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
 
 ## 管理界面
 
@@ -16,7 +16,7 @@ KernelSU 管理器可直接打开模块 WebUI。界面按 Material 3 的标题�
 
 - 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
 - 日志页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
-- 设置页可分别控制来源应用、壁纸/MIMD、Launcher、SystemUI 和小核限频，并独立调整 Raster、UI/Rust、ResMgr、FenceWait、SystemUI 渲染链及 ART 维护线程的核心集合；
+- 设置页可分别控制来源应用、壁纸/MIMD、Launcher、SystemUI 和效率核限频，并独立调整来源退避、Raster、UI/Rust、ResMgr、FenceWait、SystemUI 渲染链及 ART 维护线程的核心集合；
 - 所有写操作都映射到 `webui.sh configure` 的固定命名参数；前端和后端分别校验键、枚举及数值范围，不提供任意 Shell 执行入口；
 - 配置仅在内容发生变化时显示保存操作，保存后一次性重载服务，页面轮询不会覆盖尚未保存的表单。
 
@@ -43,7 +43,7 @@ Launcher 活跃期间：
 上一前台应用          → per-TID background affinity + cpuset/background + cpuctl/background
 com.miui.miwallpaper → cpuset/background + cpuctl/background
 MIMD（存在时）       → cpuset/background + cpuctl/background
-小核 cpufreq policy   → 可选地临时限制 scaling_max_freq，默认关闭
+效率核 cpufreq policy → 可选地临时限制 scaling_max_freq，默认关闭
 ```
 
 模块不移动当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复原始 cgroup，SystemUI 受管线程恢复逐 TID 原始亲和。
@@ -70,9 +70,9 @@ IplrVkFenceWait        → 不提升 uclamp
 
 提升持续时间默认 1 ms，之后只恢复 0/1024 uclamp；基础 affinity 覆盖 Launcher 线程的整个运行期。所有放置策略和四类 `uclamp.min` 均可在 WebUI 调整。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含设备固定编号。模块不改变 SurfaceFlinger affinity。
 
-SystemUI 只在 Launcher 转场期间分流：主线程、RenderThread、WMShell 与 GPU completion 默认使用非 prime 性能集合，HeapTaskDaemon、Finalizer、ReferenceQueue 与 JIT 默认使用 `secondary`。转场完成或超时后由原生控制器按 TID 启动时间恢复原亲和，SystemUI 重启也不会把旧 TID 状态应用到新进程。
+SystemUI 只在 Launcher 转场期间分流：主线程、RenderThread、WMShell 与 GPU completion 默认使用非 Prime 性能核，HeapTaskDaemon、Finalizer、ReferenceQueue 与 JIT 默认使用次级性能核。转场完成或超时后由原生控制器按 TID 启动时间恢复原亲和，SystemUI 重启也不会把旧 TID 状态应用到新进程。
 
-小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
+效率核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态效率核 mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
 
 Settings 轻载场景按“关闭、开启、开启、关闭”完成两组交叉 A/B。限频后 Launcher Full jank 合计从 4 增至 8，SurfaceFlinger Full jank 从 11 增至 24，Launcher 最大帧均值从 26.08 ms 增至 37.46 ms。轻载来源应用没有足够的性能核争用可供限频缓解，压低其收尾、Buffer 交接和快照工作只会增加等待；完整数据见 [轻载小核限频 A/B](docs/FREQUENCY-LIMIT-LIGHT-LOAD-AB.md)。
 
@@ -82,7 +82,7 @@ Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移
 
 ## 事件监听
 
-`module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd main buffer，仅输出状态机使用的 Launcher 生命周期消息。
+`module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd 的 main 与 system buffer，输出状态机使用的 Launcher 生命周期消息；当来源退避事务仍有效且同包主进程被重新创建时，它会匹配 system_server 报告的完整包名与 Android UID，并在 `activityResumed` 之前完成一次原生 `replace-yield` 事务。后续 resumed 事件只补收启动期间新建的线程。
 
 采用原生监听器是因为文本 `logcat` 接到 shell 管道后在实机上出现约 0.4 秒块缓冲；反复以单事件模式启动 logcat 又会漏掉紧邻的 resumed 和动画完成事件。原生监听器只有一个连续读取进程，用 `write()` 逐条交给状态机，不注入 Launcher，也不修改系统日志配置。
 
@@ -100,7 +100,7 @@ Joyose 在应用恢复时可能重新写入 `minor_window_app`。重复的 Launc
 
 ## source 与目标应用
 
-`source-app` 保存进入 Launcher 前的应用，`pending-source-app` 保存离开 Launcher 时刚恢复的目标。pending PID 始终受保护，不会被策略当作 source 退避。
+`source-app` 保存进入 Launcher 前应用的 PID、UID 和完整包名，`pending-source-app` 保存离开 Launcher 时刚恢复的目标。pending PID 始终受保护，不会被策略当作 source 退避。
 
 目标应用收到 resumed 事件后，affinity 事务转移到目标，并保持到 Launcher 的卡片展开动画完成。`openingRemoteAnimationClose` 到来后，目标恢复原始 affinity 与 `top-app` cpuset/cpuctl；完成事件缺失时使用两秒安全兜底。进入稳定 `app` 后，pending 才提交为下一轮 source。
 

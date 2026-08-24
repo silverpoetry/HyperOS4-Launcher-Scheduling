@@ -14,6 +14,7 @@ STAGE=/data/local/tmp/hyperos4-launcher-scheduling-stage
 [ -x "$STAGE/bin/launcher-logwatch" ]
 [ -x "$STAGE/bin/launcher-threadctl" ]
 [ -x "$STAGE/bin/source-affinityctl" ]
+[ -x "$STAGE/bin/systemui-threadctl" ]
 
 for script in "$STAGE/service.sh" "$STAGE/action.sh" "$STAGE/uninstall.sh" \
   "$STAGE/webui.sh" "$STAGE/lib"/*.sh; do
@@ -39,6 +40,7 @@ cp "$STAGE/lib"/*.sh "$MODDIR/lib/"
 cp "$STAGE/bin/launcher-logwatch" "$MODDIR/bin/launcher-logwatch"
 cp "$STAGE/bin/launcher-threadctl" "$MODDIR/bin/launcher-threadctl"
 cp "$STAGE/bin/source-affinityctl" "$MODDIR/bin/source-affinityctl"
+cp "$STAGE/bin/systemui-threadctl" "$MODDIR/bin/systemui-threadctl"
 
 [ "$MODDIR" = /data/adb/modules/hyperos4_recents_source_app_yield ] || exit 3
 rm -rf "$MODDIR/webroot.new"
@@ -47,7 +49,7 @@ rm -rf "$MODDIR/webroot"
 mv "$MODDIR/webroot.new" "$MODDIR/webroot"
 
 chmod 0755 "$MODDIR/service.sh" "$MODDIR/action.sh" "$MODDIR/uninstall.sh" "$MODDIR/webui.sh"
-chmod 0755 "$MODDIR/bin/launcher-logwatch" "$MODDIR/bin/launcher-threadctl" "$MODDIR/bin/source-affinityctl"
+chmod 0755 "$MODDIR/bin/launcher-logwatch" "$MODDIR/bin/launcher-threadctl" "$MODDIR/bin/source-affinityctl" "$MODDIR/bin/systemui-threadctl"
 chmod 0644 "$MODDIR/lib"/*.sh
 find "$MODDIR/webroot" -type d -exec chmod 0755 {} \;
 find "$MODDIR/webroot" -type f -exec chmod 0644 {} \;

@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $src = Join-Path $root 'module-src'
+$srcFull = [IO.Path]::GetFullPath($src).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $collectionRoot = Split-Path -Parent $root
 $dist = Join-Path $collectionRoot 'output'
 $nativeBuilder = Join-Path $root 'tools\Build-Native.ps1'
@@ -25,7 +26,26 @@ if (-not $distFull.StartsWith("$collectionFull$([IO.Path]::DirectorySeparatorCha
 New-Item -ItemType Directory -Path $dist -Force | Out-Null
 Remove-Item -LiteralPath $zip, "$zip.sha256" -Force -ErrorAction SilentlyContinue
 
-Compress-Archive -Path (Join-Path $src '*') -DestinationPath $zip -CompressionLevel Optimal
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem -LiteralPath $src -File -Recurse | Sort-Object FullName) {
+        $fileFull = [IO.Path]::GetFullPath($file.FullName)
+        if (-not $fileFull.StartsWith($srcFull, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to package a file outside module-src: $fileFull"
+        }
+        $relative = $fileFull.Substring($srcFull.Length).Replace('\', '/')
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $archive,
+            $file.FullName,
+            $relative,
+            [IO.Compression.CompressionLevel]::Optimal
+        ) | Out-Null
+    }
+} finally {
+    $archive.Dispose()
+}
 
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 Set-Content -LiteralPath "$zip.sha256" -Value "$hash  $zipName" -Encoding ascii

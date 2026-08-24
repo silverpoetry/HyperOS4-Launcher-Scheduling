@@ -1,6 +1,6 @@
 .hero-card {
   position: relative;
-  min-height: 174px;
+  min-height: 132px;
   padding: 24px;
   overflow: hidden;
   border-radius: var(--radius-xl);
@@ -11,25 +11,12 @@
 .hero-copy {
   position: relative;
   z-index: 2;
-  max-width: 72%;
-}
-
-.eyebrow,
-.card-kicker {
-  color: var(--color-on-surface-variant);
-  font-size: 10px;
-  font-weight: 720;
-  letter-spacing: 1.2px;
-}
-
-.hero-card .eyebrow {
-  color: inherit;
-  opacity: 0.72;
+  max-width: 100%;
 }
 
 .hero-card h2 {
-  margin: 7px 0 2px;
-  font-size: clamp(30px, 8vw, 42px);
+  margin: 0 0 2px;
+  font-size: clamp(28px, 7vw, 36px);
   font-weight: 720;
   letter-spacing: -1.2px;
   line-height: 1.1;
@@ -49,26 +36,6 @@
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-on-primary-container) 9%, transparent);
   font: 600 11px var(--font-mono);
-}
-
-.hero-orbit {
-  position: absolute;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-on-primary-container) 6%, transparent);
-}
-
-.orbit-large {
-  top: -48px;
-  right: -30px;
-  width: 178px;
-  height: 178px;
-}
-
-.orbit-small {
-  right: 100px;
-  bottom: -44px;
-  width: 92px;
-  height: 92px;
 }
 
 .summary-grid {
@@ -132,11 +99,34 @@
 }
 
 .card-header h2 {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 18px;
   font-weight: 680;
   letter-spacing: -0.2px;
 }
+
+.frequency-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.frequency-row {
+  display: flex;
+  min-height: 58px;
+  padding: 9px 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.frequency-row:last-child { border-bottom: 0; }
+.frequency-row div { min-width: 0; }
+.frequency-row strong,
+.frequency-row small { display: block; }
+.frequency-row strong { font-size: 13px; }
+.frequency-row small { margin-top: 2px; color: var(--color-on-surface-variant); font-size: 10px; }
+.frequency-row > span { max-width: 68%; font: 600 11px/1.45 var(--font-mono); text-align: right; }
 
 .status-badge {
   display: inline-flex;

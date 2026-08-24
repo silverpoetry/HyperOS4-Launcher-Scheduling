@@ -1,15 +1,17 @@
 import { $, $$, setChecked, setValue } from "./dom.js";
+import { placementOptions } from "./model.js";
 
 const FIELD_SCHEMA = [
   ["frequencyPercent", "frequency_percent", 40, 100],
   ["frequencyTimeout", "frequency_timeout_ms", 300, 5000],
   ["appFallback", "app_fallback_ms", 500, 5000],
-  ["launcherPlacement", "launcher_placement", 1, 6],
-  ["rasterPlacement", "raster_placement", 1, 6],
-  ["resmgrPlacement", "resmgr_placement", 1, 6],
-  ["fencePlacement", "fence_placement", 1, 6],
-  ["systemuiCriticalPlacement", "systemui_critical_placement", 1, 6],
-  ["systemuiMaintenancePlacement", "systemui_maintenance_placement", 1, 6],
+  ["sourcePlacement", "source_placement", 5, 7, [5, 7]],
+  ["launcherPlacement", "launcher_placement", 1, 7],
+  ["rasterPlacement", "raster_placement", 1, 7],
+  ["resmgrPlacement", "resmgr_placement", 1, 7],
+  ["fencePlacement", "fence_placement", 1, 7],
+  ["systemuiCriticalPlacement", "systemui_critical_placement", 1, 7],
+  ["systemuiMaintenancePlacement", "systemui_maintenance_placement", 1, 7],
   ["systemuiTimeout", "systemui_timeout_ms", 300, 5000],
   ["boostDuration", "boost_duration_ms", 1, 1000],
   ["uclampRaster", "uclamp_raster", 0, 1024],
@@ -41,10 +43,26 @@ export class SettingsView {
   }
 
   render(status) {
+    this.renderPlacementOptions(status);
     for (const [id, key] of TOGGLE_SCHEMA) setChecked(id, status[key] !== "disabled");
     for (const [id, key] of FIELD_SCHEMA) setValue(id, status[key]);
     this.baseline = this.snapshot();
     this.reportDirty();
+  }
+
+  renderPlacementOptions(status) {
+    const options = placementOptions(status);
+    for (const select of $$('select[data-placement]')) {
+      const previous = select.value;
+      const allowed = select.dataset.placement === "source" ? new Set([5, 7]) : null;
+      select.replaceChildren(...options.filter((item) => !allowed || allowed.has(item.value)).map((item) => {
+        const option = document.createElement("option");
+        option.value = String(item.value);
+        option.textContent = `${item.label} · ${item.cpus}`;
+        return option;
+      }));
+      if (previous) select.value = previous;
+    }
   }
 
   reset() {
@@ -65,10 +83,11 @@ export class SettingsView {
   configurationTokens() {
     const tokens = [];
     for (const [id, , key] of TOGGLE_SCHEMA) tokens.push(`${key}=${$("#" + id).checked ? "enabled" : "disabled"}`);
-    for (const [id, key, minimum, maximum] of FIELD_SCHEMA) {
+    for (const [id, key, minimum, maximum, allowed] of FIELD_SCHEMA) {
       const control = $("#" + id);
       const value = Number(control.value);
-      if (!Number.isInteger(value) || value < minimum || value > maximum) {
+      if (!Number.isInteger(value) || value < minimum || value > maximum ||
+          (allowed && !allowed.includes(value))) {
         const label = control.closest("label")?.querySelector("span")?.textContent || key;
         throw new Error(`${label}超出范围`);
       }

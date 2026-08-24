@@ -22,6 +22,7 @@ $stage = '/data/local/tmp/hyperos4-launcher-scheduling-stage'
 & $Adb -s $Serial push (Join-Path $moduleSource 'bin\launcher-logwatch') "$stage/bin/launcher-logwatch"
 & $Adb -s $Serial push (Join-Path $moduleSource 'bin\launcher-threadctl') "$stage/bin/launcher-threadctl"
 & $Adb -s $Serial push (Join-Path $moduleSource 'bin\source-affinityctl') "$stage/bin/source-affinityctl"
+& $Adb -s $Serial push (Join-Path $moduleSource 'bin\systemui-threadctl') "$stage/bin/systemui-threadctl"
 & $Adb -s $Serial push (Join-Path $PSScriptRoot 'deploy-runtime.sh') "$stage/deploy-runtime.sh"
-& $Adb -s $Serial shell su -c "chmod 0755 $stage/bin/launcher-logwatch $stage/bin/launcher-threadctl $stage/bin/source-affinityctl $stage/deploy-runtime.sh"
+& $Adb -s $Serial shell su -c "chmod 0755 $stage/bin/launcher-logwatch $stage/bin/launcher-threadctl $stage/bin/source-affinityctl $stage/bin/systemui-threadctl $stage/deploy-runtime.sh"
 & $Adb -s $Serial shell su -c "$stage/deploy-runtime.sh"

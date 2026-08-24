@@ -19,6 +19,8 @@
 #define TOP_APP_CPU_FILE "/dev/cpuset/top-app/cpus"
 #define BACKGROUND_CPUSET_PROCS "/dev/cpuset/background/cgroup.procs"
 #define BACKGROUND_CPUCTL_PROCS "/dev/cpuctl/background/cgroup.procs"
+#define SOURCE_PLACEMENT_FILE "/data/adb/hyperos4-launcher-scheduling/source-placement"
+#define THREAD_TOPOLOGY_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/launcher-thread-topology"
 #define MAX_TASKS 4096
 
 struct task_record {
@@ -136,6 +138,32 @@ static unsigned long long read_cpu_mask(const char *path) {
 
 static unsigned long long read_background_mask(void) {
     return read_cpu_mask(BACKGROUND_CPU_FILE);
+}
+
+static unsigned long long read_source_target_mask(void) {
+    char topology[512];
+    unsigned long long all_mask;
+    unsigned long long perf_mask;
+    unsigned long long mid_mask;
+    unsigned long long little_mask;
+    unsigned long long render_mask;
+    unsigned long long prime_mask;
+    unsigned long long secondary_mask;
+    unsigned long long background_mask;
+    unsigned long long selected;
+    unsigned long long cgroup_mask = read_background_mask();
+    long placement = read_number(SOURCE_PLACEMENT_FILE);
+    int parsed;
+
+    if (read_text(THREAD_TOPOLOGY_FILE, topology, sizeof(topology)) != 0)
+        return cgroup_mask;
+    parsed = sscanf(topology, "%llx %llx %llx %llx %llx %llx %llx %llx",
+                    &all_mask, &perf_mask, &mid_mask, &little_mask,
+                    &render_mask, &prime_mask, &secondary_mask, &background_mask);
+    if (parsed != 8) return cgroup_mask;
+    selected = placement == 5 ? little_mask : background_mask;
+    selected &= cgroup_mask;
+    return selected != 0 ? selected : cgroup_mask;
 }
 
 static void mask_to_cpuset(unsigned long long mask, cpu_set_t *set) {
@@ -389,7 +417,7 @@ static int apply_state(pid_t pid, uid_t uid, const char *path, int move_groups) 
     size_t count = 0;
     size_t applied = 0;
     size_t failed = 0;
-    unsigned long long target_mask = read_background_mask();
+    unsigned long long target_mask = read_source_target_mask();
     cpu_set_t target;
     long original_minor = read_number(MINOR_WINDOW_NODE);
     FILE *existing = fopen(path, "re");
@@ -475,7 +503,7 @@ static int verify_state(pid_t pid) {
     size_t count = 0;
     size_t constrained = 0;
     size_t escaped = 0;
-    unsigned long long target = read_background_mask();
+    unsigned long long target = read_source_target_mask();
     if (records == NULL || target == 0 || collect_tasks(pid, records, &count) != 0) {
         free(records);
         return 4;

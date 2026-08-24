@@ -4,6 +4,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $moduleRoot = Join-Path $RepositoryRoot 'module-src'
+$buildScript = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'build-module.ps1') -Raw
+if ($buildScript -match 'Compress-Archive' -or -not $buildScript.Contains(".Replace('\', '/')")) {
+    throw 'Release ZIP entries must use Android-compatible forward-slash paths'
+}
 
 $required = @(
     'service.sh', 'webui.sh', 'action.sh', 'uninstall.sh', 'module.prop',
@@ -30,6 +34,9 @@ $version = (Get-Content -LiteralPath (Join-Path $RepositoryRoot 'VERSION') -Raw)
 $moduleVersion = (Select-String -LiteralPath (Join-Path $moduleRoot 'module.prop') -Pattern '^version=(.+)$').Matches[0].Groups[1].Value
 if ($moduleVersion -ne $version) {
     throw "VERSION ($version) and module.prop ($moduleVersion) disagree"
+}
+if ((Get-Content -LiteralPath (Join-Path $moduleRoot 'module.prop') -Raw) -notmatch '(?m)^author=silverpoetry$') {
+    throw 'Module author metadata must use the repository author name without a transport prefix'
 }
 
 $sourceFiles = Get-ChildItem -LiteralPath $moduleRoot -File -Recurse |
@@ -93,17 +100,28 @@ if (-not $yieldFunction.Success) {
 }
 $yieldBody = $yieldFunction.Groups['body'].Value
 $affinityApply = $yieldBody.IndexOf('run_affinity_apply(result.pid, result.uid)')
-if ($affinityApply -lt 0) {
+if ($yieldBody -notmatch 'run_affinity_apply\("yield", result.pid, result.uid\)') {
     throw 'Native source yield must invoke the atomic affinity controller transaction'
 }
-if ($logWatcher -notmatch '\(char \*\)"yield"') {
+if ($logWatcher -notmatch 'run_affinity_apply\("yield"') {
     throw 'Native source yield must use the snapshot-before-cgroup operation'
+}
+if ($logWatcher -notmatch 'Start proc ' -or
+    $logWatcher -notmatch "cursor\[1\] != 'u'" -or
+    $logWatcher -notmatch "\*end != 'a'" -or
+    $logWatcher -notmatch 'run_affinity_apply\("replace-yield"' -or
+    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_STATE, F_OK\)' -or
+    $logWatcher -notmatch 'logger_open\(list, LOG_ID_SYSTEM\)') {
+    throw 'Native watcher must atomically replace a restarted source while its yield transaction is active'
 }
 if ($logWatcher -notmatch 'finish_remote_transition to_home = false') {
     throw 'Native watcher must forward same-app return completion'
 }
 
 $events = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\events.sh') -Raw
+if ($events -notmatch 'NativeSourceSpawn') {
+    throw 'State log must retain native restarted-source transaction results'
+}
 if ($events -notmatch 'finish_remote_transition to_home = false') {
     throw 'State machine must restore the source on same-app return completion'
 }
@@ -112,8 +130,17 @@ $configuration = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\config.sh'
 if ($configuration -notmatch 'write_default "\$THREAD_RASTER_PLACEMENT_FILE" 4') {
     throw 'Launcher Raster must default to the topology-derived prime mask'
 }
+
+$processPolicy = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\process-policy.sh') -Raw
+if ($processPolicy -notmatch 'cache_pid_record "\$pid" "\$destination" "\$package"' -or
+    $processPolicy -notmatch 'cache_pid_record "\$pid" "\$SOURCE_FILE" "\$resumed"') {
+    throw 'Source records must retain the full Android package identity'
+}
 if ($configuration -notmatch 'write_default "\$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2') {
     throw 'SystemUI critical threads must default to the non-prime performance mask'
+}
+if ($configuration -notmatch 'write_default "\$SOURCE_PLACEMENT_FILE" 7') {
+    throw 'Source placement must default to Android system background CPUs'
 }
 
 $runtime = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\runtime.sh') -Raw
@@ -132,6 +159,11 @@ if ($runtime -notmatch 'while \[ "\$attempt" -lt 50 \]' -or
 }
 
 $affinityController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c') -Raw
+if ($affinityController -notmatch 'read_source_target_mask' -or
+    $affinityController -notmatch 'SOURCE_PLACEMENT_FILE' -or
+    $affinityController -notmatch 'selected = placement == 5 \? little_mask : background_mask') {
+    throw 'Source placement must distinguish the efficiency and system background sets'
+}
 $yieldState = [regex]::Match(
     $affinityController,
     'static int yield_state\([^)]*\) \{(?<body>[\s\S]*?)\n\}',

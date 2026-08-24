@@ -19,6 +19,7 @@ MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 SOURCE_AFFINITYCTL="$MODDIR/bin/source-affinityctl"
 SOURCE_AFFINITY_STATE="$MODDIR/source-affinity.state"
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
+SOURCE_PLACEMENT_FILE="$CONFIG_DIR/source-placement"
 AUX_POLICY_FILE="$CONFIG_DIR/aux-policy.state"
 
 FREQ_POLICY_FILE="$CONFIG_DIR/frequency-policy.state"
@@ -80,6 +81,7 @@ migrate_config_file() {
 migrate_legacy_configuration() {
   migrate_config_file state "$ENABLE_FILE"
   migrate_config_file source-policy.state "$SOURCE_POLICY_FILE"
+  migrate_config_file source-placement "$SOURCE_PLACEMENT_FILE"
   migrate_config_file aux-policy.state "$AUX_POLICY_FILE"
   migrate_config_file frequency-policy.state "$FREQ_POLICY_FILE"
   migrate_config_file frequency-limit-percent "$FREQ_PERCENT_FILE"
@@ -152,6 +154,7 @@ initialize_configuration() {
   migrate_placement_schema || return 1
   write_default "$ENABLE_FILE" enabled
   write_default "$SOURCE_POLICY_FILE" enabled
+  write_default "$SOURCE_PLACEMENT_FILE" 7
   write_default "$AUX_POLICY_FILE" enabled
   write_default "$THREAD_POLICY_STATE_FILE" enabled
   write_default "$SYSTEMUI_POLICY_STATE_FILE" enabled

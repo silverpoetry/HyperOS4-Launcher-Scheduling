@@ -3,6 +3,9 @@
 handle_launcher_event() {
   local line="$1" package serial
   case "$line" in
+    *"|NativeSourceSpawn|"*)
+      log_state "native-source-spawn event=$line"
+      ;;
     *"activityResumed pkg="*)
       package=${line##*activityResumed pkg=}
       package=${package%%,*}

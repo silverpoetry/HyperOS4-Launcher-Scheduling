@@ -11,11 +11,14 @@
 #include <unistd.h>
 
 #define LOG_ID_MAIN 0
+#define LOG_ID_SYSTEM 3
 #define ANDROID_LOG_RDONLY 1
 #define LOG_BUFFER_SIZE 65536
 #define SOURCE_APP_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/source-app"
 #define SOURCE_AFFINITYCTL "/data/adb/modules/hyperos4_recents_source_app_yield/bin/source-affinityctl"
 #define SOURCE_AFFINITY_STATE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.state"
+#define SOURCE_APP_NATIVE_TMP "/data/adb/modules/hyperos4_recents_source_app_yield/source-app.native.tmp"
+#define PACKAGE_LENGTH 256
 
 struct yield_result {
     int pid;
@@ -102,8 +105,8 @@ static int write_pid_file(const char *path, int pid) {
     return 1;
 }
 
-static int read_source_record(int *pid, int *uid) {
-    char value[128];
+static int read_source_record(int *pid, int *uid, char *package, size_t package_size) {
+    char value[512];
     char *end;
     char *uid_start;
     long parsed_pid;
@@ -121,17 +124,25 @@ static int read_source_record(int *pid, int *uid) {
     uid_start = end;
     parsed_uid = strtol(uid_start, &end, 10);
     if (end == uid_start || parsed_uid < 1000 || parsed_uid > INT32_MAX) return -1;
+    while (*end == ' ' || *end == '\t') end++;
+    if (*end == '\0' || *end == '\n') return -1;
+    {
+        size_t length = strcspn(end, " \t\r\n");
+        if (length == 0 || length >= package_size) return -1;
+        memcpy(package, end, length);
+        package[length] = '\0';
+    }
     *pid = (int)parsed_pid;
     *uid = (int)parsed_uid;
     return 0;
 }
 
-static int run_affinity_apply(int pid, int uid) {
+static int run_affinity_apply(const char *operation, int pid, int uid) {
     char pid_text[32];
     char uid_text[32];
     char *arguments[] = {
         (char *)SOURCE_AFFINITYCTL,
-        (char *)"yield",
+        (char *)operation,
         pid_text,
         uid_text,
         (char *)SOURCE_AFFINITY_STATE,
@@ -171,9 +182,10 @@ static struct yield_result yield_source_native(void) {
     struct yield_result result = {-1, -1, 0, 0, -1, -1, -1, -1, -1, -1};
     struct timespec start;
     struct timespec end;
-    if (read_source_record(&result.pid, &result.uid) != 0) return result;
+    char package[PACKAGE_LENGTH];
+    if (read_source_record(&result.pid, &result.uid, package, sizeof(package)) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result.affinity_status = run_affinity_apply(result.pid, result.uid);
+    result.affinity_status = run_affinity_apply("yield", result.pid, result.uid);
     clock_gettime(CLOCK_MONOTONIC, &end);
     result.affinity_us = timespec_diff_us(&end, &start);
     result.write_us = 0;
@@ -183,6 +195,98 @@ static struct yield_result yield_source_native(void) {
         (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     return result;
+}
+
+static int parse_started_process(const char *message, int *pid, int *uid,
+                                 char *process, size_t process_size) {
+    const char *cursor;
+    char *end;
+    long parsed_pid;
+    long user_id;
+    long app_index;
+    long parsed_uid;
+    size_t length;
+    cursor = strstr(message, "Start proc ");
+    if (cursor == NULL) return -1;
+    cursor += strlen("Start proc ");
+    errno = 0;
+    parsed_pid = strtol(cursor, &end, 10);
+    if (errno != 0 || end == cursor || parsed_pid <= 1 ||
+        parsed_pid > INT32_MAX || *end != ':') return -1;
+    cursor = end + 1;
+    length = strcspn(cursor, "/ \t\r\n");
+    if (length == 0 || length >= process_size) return -1;
+    memcpy(process, cursor, length);
+    process[length] = '\0';
+    cursor += length;
+    if (cursor[0] != '/' || cursor[1] != 'u') return -1;
+    cursor += 2;
+    user_id = strtol(cursor, &end, 10);
+    if (end == cursor || user_id < 0 || user_id > 99 || *end != 'a') return -1;
+    cursor = end + 1;
+    app_index = strtol(cursor, &end, 10);
+    if (end == cursor || app_index < 0 || app_index > 89999) return -1;
+    parsed_uid = user_id * 100000L + 10000L + app_index;
+    if (parsed_uid > INT32_MAX) return -1;
+    *pid = (int)parsed_pid;
+    *uid = (int)parsed_uid;
+    return 0;
+}
+
+static int write_source_record(int pid, int uid, const char *package) {
+    char value[640];
+    int fd;
+    int length = snprintf(value, sizeof(value), "%d %d %s\n", pid, uid, package);
+    if (length <= 0 || (size_t)length >= sizeof(value)) return -1;
+    fd = open(SOURCE_APP_NATIVE_TMP,
+              O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+    if (fd < 0) return -1;
+    if (write(fd, value, (size_t)length) != length) {
+        close(fd);
+        unlink(SOURCE_APP_NATIVE_TMP);
+        return -1;
+    }
+    if (close(fd) != 0 || rename(SOURCE_APP_NATIVE_TMP, SOURCE_APP_FILE) != 0) {
+        unlink(SOURCE_APP_NATIVE_TMP);
+        return -1;
+    }
+    return 0;
+}
+
+static int replace_started_source(const char *tag, const char *message,
+                                  struct yield_result *result,
+                                  char *package, size_t package_size) {
+    char cached_package[PACKAGE_LENGTH];
+    char logged_process[PACKAGE_LENGTH];
+    int logged_pid;
+    int logged_uid;
+    struct timespec start;
+    struct timespec end;
+
+    if (strcmp(tag, "ActivityManager") != 0 ||
+        strstr(message, "Start proc ") == NULL ||
+        access(SOURCE_AFFINITY_STATE, F_OK) != 0) return 0;
+    if (parse_started_process(message, &logged_pid, &logged_uid, logged_process,
+                              sizeof(logged_process)) != 0) return 0;
+    if (read_source_record(&result->pid, &result->uid, cached_package,
+                           sizeof(cached_package)) != 0) return 0;
+    if (strcmp(logged_process, cached_package) != 0) return 0;
+    if (logged_uid != result->uid) return 0;
+
+    result->pid = logged_pid;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    result->affinity_status = run_affinity_apply("replace-yield", logged_pid, logged_uid);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    result->affinity_us = timespec_diff_us(&end, &start);
+    result->cpuset_ok = result->affinity_status == 0;
+    result->cpuctl_ok = result->affinity_status == 0;
+    result->complete_monotonic_ns =
+        (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
+    result->cgroup_complete_monotonic_ns = result->complete_monotonic_ns;
+    if (result->affinity_status == 0)
+        result->write_us = write_source_record(logged_pid, logged_uid, cached_package);
+    snprintf(package, package_size, "%s", cached_package);
+    return 1;
 }
 
 static void move_watcher_to_foreground(void) {
@@ -223,7 +327,8 @@ int main(void) {
     if (list_alloc == NULL || logger_open == NULL || list_read == NULL || list_free == NULL) return 11;
 
     list = list_alloc(ANDROID_LOG_RDONLY, 1, 0);
-    if (list == NULL || logger_open(list, LOG_ID_MAIN) == NULL) return 12;
+    if (list == NULL || logger_open(list, LOG_ID_MAIN) == NULL ||
+        logger_open(list, LOG_ID_SYSTEM) == NULL) return 12;
 
     for (;;) {
         struct logger_entry_v4 *entry;
@@ -254,7 +359,24 @@ int main(void) {
         message = tag + tag_length + 1;
         message_limit = payload_length - 1 - tag_length - 1;
         message_length = strnlen(message, message_limit);
-        if (message_length >= message_limit || !is_relevant(message)) continue;
+        if (message_length >= message_limit) continue;
+
+        {
+            char package[PACKAGE_LENGTH] = "";
+            if (replace_started_source(tag, message, &yield, package, sizeof(package))) {
+                count = snprintf(output, sizeof(output),
+                                 "%u.%09u|%d|NativeSourceSpawn|package=%s pid=%d uid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld sourceRecordStatus=%lld nativeCompleteNs=%lld\n",
+                                 entry->sec, entry->nsec, entry->pid, package,
+                                 yield.pid, yield.uid, yield.affinity_status,
+                                 (long long)yield.affinity_us,
+                                 (long long)yield.write_us,
+                                 (long long)yield.complete_monotonic_ns);
+                if (count > 0 && (size_t)count < sizeof(output))
+                    write_all(output, (size_t)count);
+                continue;
+            }
+        }
+        if (!is_relevant(message)) continue;
 
         if (is_launcher_entry_start(message)) {
             struct timespec observed;

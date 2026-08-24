@@ -35,6 +35,18 @@ export function frequency(khz) {
   return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(2)} GHz` : `${Math.round(value / 1000)} MHz`;
 }
 
+export function placementOptions(status) {
+  return [
+    [1, "性能核", status.perf_mask],
+    [2, "非 Prime 性能核", status.mid_mask],
+    [3, "渲染核", status.render_mask],
+    [4, "Prime 核", status.prime_mask],
+    [5, "效率核", status.little_mask],
+    [6, "次级性能核", status.secondary_mask],
+    [7, "系统后台核", status.background_mask],
+  ].map(([value, label, mask]) => ({ value, label, mask, cpus: cpuList(mask) }));
+}
+
 export function serviceSummary(status) {
   if (status.daemon_alive !== "1") return { title: "服务离线", detail: "守护进程未运行" };
   if (status.master_policy === "disabled") return { title: "策略关闭", detail: `服务在线 · ${modeLabel(status.mode)}` };

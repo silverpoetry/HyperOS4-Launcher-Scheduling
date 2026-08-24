@@ -57,9 +57,30 @@ print_frequency_status() {
   emit frequency_applied_khz "$applied"
 }
 
+print_cluster_frequencies() {
+  local policy name related compact token current minimum maximum hardware governor rows record
+  rows=""
+  for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+    [ -r "$policy/related_cpus" ] || continue
+    IFS= read -r related <"$policy/related_cpus"
+    compact=""
+    for token in $related; do compact="${compact}${compact:+,}$token"; done
+    current=""; minimum=""; maximum=""; hardware=""; governor=""
+    [ -r "$policy/scaling_cur_freq" ] && IFS= read -r current <"$policy/scaling_cur_freq"
+    [ -r "$policy/scaling_min_freq" ] && IFS= read -r minimum <"$policy/scaling_min_freq"
+    [ -r "$policy/scaling_max_freq" ] && IFS= read -r maximum <"$policy/scaling_max_freq"
+    [ -r "$policy/cpuinfo_max_freq" ] && IFS= read -r hardware <"$policy/cpuinfo_max_freq"
+    [ -r "$policy/scaling_governor" ] && IFS= read -r governor <"$policy/scaling_governor"
+    name=${policy##*/}
+    record="$name|$compact|$current|$minimum|$maximum|$hardware|$governor"
+    rows="${rows}${rows:+;}$record"
+  done
+  emit frequency_clusters "$rows"
+}
+
 print_status() {
   local mode daemon_pid daemon_alive launcher_pid topology
-  local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask
+  local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask
   local source_pid source_uid source_name pending_pid pending_uid pending_name
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
@@ -68,7 +89,7 @@ print_status() {
   read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
   [ -d "/proc/$launcher_pid" ] || launcher_pid=""
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
-  read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask <<EOF
+  read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask <<EOF
 $topology
 EOF
   [ -n "$all_mask" ] || all_mask=-
@@ -78,15 +99,17 @@ EOF
   [ -n "$render_mask" ] || render_mask=-
   [ -n "$prime_mask" ] || prime_mask=-
   [ -n "$secondary_mask" ] || secondary_mask=-
+  [ -n "$background_mask" ] || background_mask=-
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
   pending_pid=""; pending_uid=""; pending_name=""
   [ -r "$PENDING_SOURCE_FILE" ] && read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
 
   emit version "$(module_version)"
-  emit author 'github: silverpoetry'
+  emit author 'silverpoetry'
   emit master_policy "$(state_value "$ENABLE_FILE")"
   emit source_policy "$(state_value "$SOURCE_POLICY_FILE")"
+  emit source_placement "$(number_value "$SOURCE_PLACEMENT_FILE" 7)"
   emit auxiliary_policy "$(state_value "$AUX_POLICY_FILE")"
   emit launcher_policy "$(state_value "$THREAD_POLICY_STATE_FILE")"
   emit systemui_policy "$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
@@ -119,6 +142,7 @@ EOF
   emit render_mask "$render_mask"
   emit prime_mask "$prime_mask"
   emit secondary_mask "$secondary_mask"
+  emit background_mask "$background_mask"
   emit source_pid "$source_pid"
   emit source_uid "$source_uid"
   emit source_name "$source_name"
@@ -126,6 +150,7 @@ EOF
   emit pending_uid "$pending_uid"
   emit pending_name "$pending_name"
   print_frequency_status
+  print_cluster_frequencies
 }
 
 print_device_info() {

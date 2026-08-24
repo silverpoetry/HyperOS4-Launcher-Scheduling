@@ -12,18 +12,16 @@
     <link rel="stylesheet" href="./css/cards.css" />
     <link rel="stylesheet" href="./css/controls.css" />
     <link rel="stylesheet" href="./css/diagnostics.css" />
-    <title>Launcher Scheduling</title>
+    <title>桌面调度</title>
   </head>
   <body>
     <div class="app-root">
       <header class="top-bar">
         <div class="top-bar-content">
-          <h1>Launcher Scheduling</h1>
+          <h1>桌面调度</h1>
           <div class="top-actions">
             <span class="service-chip" id="serviceState"><i></i><b>读取中</b></span>
-            <button class="icon-button" id="refreshButton" type="button" aria-label="刷新">
-              <svg aria-hidden="true"><use href="#icon-refresh" /></svg>
-            </button>
+            <button class="icon-button" id="refreshButton" type="button" aria-label="刷新"><svg aria-hidden="true"><use href="#icon-refresh" /></svg></button>
           </div>
         </div>
       </header>
@@ -33,34 +31,14 @@
           <section class="swipe-page" data-page="status">
             <div class="page-scroller">
               <article class="hero-card">
-                <div class="hero-copy">
-                  <span class="eyebrow">调度服务</span>
-                  <h2 id="heroState">读取中</h2>
-                  <p id="heroDetail">正在读取运行状态</p>
-                  <span class="hero-version" id="versionText">—</span>
-                </div>
-                <span class="hero-orbit orbit-large"></span>
-                <span class="hero-orbit orbit-small"></span>
+                <div class="hero-copy"><h2 id="heroState">读取中</h2><p id="heroDetail">正在读取运行状态</p><span class="hero-version" id="versionText">—</span></div>
               </article>
-
               <div class="summary-grid">
-                <article class="summary-card">
-                  <svg aria-hidden="true"><use href="#icon-layers" /></svg>
-                  <strong id="modeValue">—</strong>
-                  <span>当前阶段</span>
-                </article>
-                <article class="summary-card">
-                  <svg aria-hidden="true"><use href="#icon-timeline" /></svg>
-                  <strong id="serialValue">—</strong>
-                  <span>转场序号</span>
-                </article>
+                <article class="summary-card"><svg aria-hidden="true"><use href="#icon-layers" /></svg><strong id="modeValue">—</strong><span>当前阶段</span></article>
+                <article class="summary-card"><svg aria-hidden="true"><use href="#icon-timeline" /></svg><strong id="serialValue">—</strong><span>转场序号</span></article>
               </div>
-
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">PROCESS</span><h2>来源应用</h2></div>
-                  <span class="status-badge" id="sourceBadge">未记录</span>
-                </header>
+                <header class="card-header"><h2>来源应用</h2><span class="status-badge" id="sourceBadge">未记录</span></header>
                 <div class="data-list">
                   <div class="data-row"><span>进程</span><strong id="sourceValue">—</strong></div>
                   <div class="data-row"><span>PID / UID</span><strong id="sourcePidValue">—</strong></div>
@@ -68,37 +46,25 @@
                   <div class="data-row"><span>控制组</span><strong id="sourceGroupValue">—</strong></div>
                 </div>
               </article>
-
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">TOPOLOGY</span><h2>CPU 拓扑</h2></div>
-                </header>
+                <header class="card-header"><h2>CPU 核心集合</h2></header>
                 <div class="mask-grid">
-                  <div><span>全部</span><strong id="allMask">—</strong><small id="allList">—</small></div>
-                  <div><span>性能</span><strong id="perfMask">—</strong><small id="perfList">—</small></div>
-                  <div><span>中核</span><strong id="midMask">—</strong><small id="midList">—</small></div>
-                  <div><span>小核</span><strong id="littleMask">—</strong><small id="littleList">—</small></div>
-                  <div><span>渲染</span><strong id="renderMask">—</strong><small id="renderList">—</small></div>
-                  <div><span>次级性能</span><strong id="secondaryMask">—</strong><small id="secondaryList">—</small></div>
+                  <div><span>在线 CPU</span><strong id="allMask">—</strong><small id="allList">—</small></div>
+                  <div><span>性能核</span><strong id="perfMask">—</strong><small id="perfList">—</small></div>
+                  <div><span>非 Prime 性能核</span><strong id="midMask">—</strong><small id="midList">—</small></div>
+                  <div><span>渲染核</span><strong id="renderMask">—</strong><small id="renderList">—</small></div>
+                  <div><span>Prime 核</span><strong id="primeMask">—</strong><small id="primeList">—</small></div>
+                  <div><span>效率核</span><strong id="littleMask">—</strong><small id="littleList">—</small></div>
+                  <div><span>次级性能核</span><strong id="secondaryMask">—</strong><small id="secondaryList">—</small></div>
+                  <div><span>系统后台核</span><strong id="backgroundMask">—</strong><small id="backgroundList">—</small></div>
                 </div>
               </article>
-
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">CPUFREQ</span><h2>小核频率</h2></div>
-                  <span class="status-badge" id="freqActiveValue">未活动</span>
-                </header>
-                <div class="data-list">
-                  <div class="data-row"><span>Policy / CPU</span><strong id="freqPolicyValue">—</strong></div>
-                  <div class="data-row"><span>当前上限</span><strong id="freqCurrentValue">—</strong></div>
-                  <div class="data-row"><span>硬件上限</span><strong id="freqMaxValue">—</strong></div>
-                </div>
+                <header class="card-header"><h2>CPU 频率</h2><span class="status-badge" id="freqActiveValue">未限频</span></header>
+                <div class="frequency-list" id="frequencyList"><p class="empty-state">尚未读取</p></div>
               </article>
-
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">DEVICE</span><h2>设备信息</h2></div>
-                </header>
+                <header class="card-header"><h2>设备信息</h2></header>
                 <div class="data-list">
                   <div class="data-row"><span>设备</span><strong id="deviceValue">—</strong></div>
                   <div class="data-row"><span>系统</span><strong id="osValue">—</strong></div>
@@ -112,61 +78,48 @@
           <section class="swipe-page" data-page="settings">
             <div class="page-scroller">
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">POLICIES</span><h2>策略开关</h2></div>
-                </header>
+                <header class="card-header"><h2>策略开关</h2></header>
                 <div class="setting-list">
                   <label class="setting-row"><span><strong>模块策略</strong><small>启用所有转场处理</small></span><input id="masterToggle" type="checkbox" role="switch" /><i></i></label>
-                  <label class="setting-row"><span><strong>来源应用退避</strong><small>Affinity 与后台控制组</small></span><input id="sourceToggle" type="checkbox" role="switch" /><i></i></label>
-                  <label class="setting-row"><span><strong>壁纸与 MIMD</strong><small>动画期间放入后台控制组</small></span><input id="auxToggle" type="checkbox" role="switch" /><i></i></label>
-                  <label class="setting-row"><span><strong>Launcher 线程</strong><small>动态亲和与 uclamp</small></span><input id="launcherToggle" type="checkbox" role="switch" /><i></i></label>
-                  <label class="setting-row"><span><strong>SystemUI 转场线程</strong><small>渲染链与 ART 维护线程分流</small></span><input id="systemuiToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>来源应用退避</strong><small>逐线程亲和与后台控制组</small></span><input id="sourceToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>壁纸与 MIMD</strong><small>动画期间移入后台控制组</small></span><input id="auxToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>桌面线程</strong><small>动态亲和与最低利用率</small></span><input id="launcherToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>SystemUI 转场线程</strong><small>渲染链与维护线程分流</small></span><input id="systemuiToggle" type="checkbox" role="switch" /><i></i></label>
                 </div>
               </article>
-
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">PLACEMENT</span><h2>线程放置</h2></div>
-                </header>
+                <header class="card-header"><h2>来源应用</h2></header>
                 <div class="field-grid">
-                  <label class="field wide"><span>Raster 线程</span><select id="rasterPlacement"><option value="4">仅 Prime</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="5">小核集合</option></select></label>
-                  <label class="field wide"><span>UI / Rust 线程</span><select id="launcherPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
-                  <label class="field wide"><span>ResMgr 线程</span><select id="resmgrPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
-                  <label class="field wide"><span>FenceWait 线程</span><select id="fencePlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
-                  <label class="field"><span>Boost 持续</span><div><input id="boostDuration" type="number" min="1" max="1000" step="1" /><em>ms</em></div></label>
-                  <label class="field"><span>Raster min</span><input id="uclampRaster" type="number" min="0" max="1024" step="16" /></label>
-                  <label class="field"><span>UI min</span><input id="uclampUi" type="number" min="0" max="1024" step="16" /></label>
-                  <label class="field"><span>Rust min</span><input id="uclampRust" type="number" min="0" max="1024" step="16" /></label>
-                  <label class="field"><span>ResMgr min</span><input id="uclampResmgr" type="number" min="0" max="1024" step="16" /></label>
-                </div>
-              </article>
-
-              <article class="card">
-                <header class="card-header"><div><span class="card-kicker">SYSTEMUI</span><h2>转场线程分流</h2></div></header>
-                <div class="field-grid">
-                  <label class="field wide"><span>主线程 / RenderThread / WMShell</span><select id="systemuiCriticalPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
-                  <label class="field wide"><span>GC / Finalizer / JIT</span><select id="systemuiMaintenancePlacement"><option value="6">次级性能集合</option><option value="2">非 Prime 性能集合</option><option value="1">性能集合</option><option value="3">渲染集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
-                  <label class="field wide"><span>结束事件缺失兜底</span><div><input id="systemuiTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
-                </div>
-              </article>
-
-              <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">TRANSITION</span><h2>转场恢复</h2></div>
-                </header>
-                <div class="field-grid">
+                  <label class="field wide"><span>退避核心</span><select id="sourcePlacement" data-placement="source"></select></label>
                   <label class="field wide"><span>返回应用兜底时间</span><div><input id="appFallback" type="number" min="500" max="5000" step="100" /><em>ms</em></div></label>
                 </div>
               </article>
-
+              <article class="card">
+                <header class="card-header"><h2>桌面线程</h2></header>
+                <div class="field-grid">
+                  <label class="field wide"><span>渲染线程（Raster）</span><select id="rasterPlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>界面与 Rust 线程</span><select id="launcherPlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>资源管理线程</span><select id="resmgrPlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>Fence 等待线程</span><select id="fencePlacement" data-placement="all"></select></label>
+                  <label class="field"><span>提升持续时间</span><div><input id="boostDuration" type="number" min="1" max="1000" step="1" /><em>ms</em></div></label>
+                  <label class="field"><span>Raster 最低利用率</span><input id="uclampRaster" type="number" min="0" max="1024" step="16" /></label>
+                  <label class="field"><span>界面最低利用率</span><input id="uclampUi" type="number" min="0" max="1024" step="16" /></label>
+                  <label class="field"><span>Rust 最低利用率</span><input id="uclampRust" type="number" min="0" max="1024" step="16" /></label>
+                  <label class="field"><span>资源管理最低利用率</span><input id="uclampResmgr" type="number" min="0" max="1024" step="16" /></label>
+                </div>
+              </article>
+              <article class="card">
+                <header class="card-header"><h2>SystemUI 转场线程</h2></header>
+                <div class="field-grid">
+                  <label class="field wide"><span>主线程、渲染线程与 WMShell</span><select id="systemuiCriticalPlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>GC、终结器与 JIT</span><select id="systemuiMaintenancePlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>结束事件缺失兜底</span><div><input id="systemuiTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
+                </div>
+              </article>
               <article class="card experimental-card">
-                <header class="card-header">
-                  <div><span class="card-kicker">EXPERIMENTAL</span><h2>小核频率</h2></div>
-                  <span class="status-badge">默认关闭</span>
-                </header>
-                <p class="card-note">轻载 A/B 中会增加长帧，仅供高负载或功耗实验。</p>
+                <header class="card-header"><h2>转场限频</h2><span class="status-badge">默认关闭</span></header>
                 <div class="setting-list compact">
-                  <label class="setting-row"><span><strong>转场限频</strong><small>只处理完全位于小核集合的 Policy</small></span><input id="frequencyToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>限制效率核频率</strong><small>只处理完全位于效率核集合的调频策略</small></span><input id="frequencyToggle" type="checkbox" role="switch" /><i></i></label>
                 </div>
                 <div class="field-grid">
                   <label class="field"><span>硬件上限比例</span><div><input id="frequencyPercent" type="number" min="40" max="100" step="1" /><em>%</em></div></label>
@@ -179,45 +132,38 @@
           <section class="swipe-page" data-page="diagnostics">
             <div class="page-scroller">
               <article class="card">
-                <header class="card-header">
-                  <div><span class="card-kicker">THREADS</span><h2>受管线程</h2></div>
-                  <button class="tonal-button compact-button" id="threadRefreshButton" type="button">刷新</button>
-                </header>
+                <header class="card-header"><h2>受管线程</h2><button class="tonal-button compact-button" id="threadRefreshButton" type="button">刷新</button></header>
                 <div class="thread-table" id="threadTable"><p class="empty-state">尚未读取</p></div>
               </article>
-
               <article class="card log-card">
-                <header class="card-header">
-                  <div><span class="card-kicker">EVENTS</span><h2>运行日志</h2></div>
-                  <button class="tonal-button compact-button" id="logRefreshButton" type="button">刷新</button>
-                </header>
+                <header class="card-header"><h2>运行日志</h2><button class="tonal-button compact-button" id="logRefreshButton" type="button">刷新</button></header>
                 <pre class="log-output" id="logOutput">尚未读取</pre>
               </article>
-
               <div class="action-grid">
                 <button class="tonal-button" id="copyButton" type="button">复制诊断</button>
                 <button class="tonal-button" id="clearLogButton" type="button">清空日志</button>
                 <button class="filled-button" id="restartButton" type="button">重载服务</button>
               </div>
+              <article class="card">
+                <header class="card-header"><h2>关于</h2></header>
+                <div class="data-list">
+                  <div class="data-row"><span>版本</span><strong id="aboutVersion">—</strong></div>
+                  <div class="data-row"><span>作者</span><strong id="aboutAuthor">silverpoetry</strong></div>
+                </div>
+              </article>
             </div>
           </section>
         </div>
       </main>
 
-      <div class="bottom-actions" id="bottomActions" aria-hidden="true">
-        <button class="text-button" id="resetButton" type="button">还原</button>
-        <button class="filled-button" id="saveButton" type="button">保存并重载</button>
-      </div>
-
+      <div class="bottom-actions" id="bottomActions" aria-hidden="true"><button class="text-button" id="resetButton" type="button">还原</button><button class="filled-button" id="saveButton" type="button">保存并重载</button></div>
       <nav class="bottom-nav" aria-label="页面">
         <button class="nav-tab active" data-index="0" type="button"><span><svg><use href="#icon-status" /></svg></span><b>状态</b></button>
         <button class="nav-tab" data-index="1" type="button"><span><svg><use href="#icon-tune" /></svg></span><b>设置</b></button>
         <button class="nav-tab" data-index="2" type="button"><span><svg><use href="#icon-terminal" /></svg></span><b>诊断</b></button>
       </nav>
-
       <div class="snackbar" id="snackbar" role="status"><span></span></div>
       <div class="busy" id="busy" aria-hidden="true"><i></i><span>处理中</span></div>
-
       <svg class="svg-sprite" aria-hidden="true">
         <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M17.65 6.35A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h8V3l-3.35 3.35Z" /></symbol>
         <symbol id="icon-status" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z" /></symbol>
