@@ -104,12 +104,20 @@ apply_source_affinity() {
 
 source_yield_active() {
   local pid="$1" uid="$2" active_pid active_uid cpuset cpu
-  [ -r "$SOURCE_AFFINITY_ACTIVE" ] && [ -r "$SOURCE_AFFINITY_STATE" ] || return 1
+  [ -r "$SOURCE_AFFINITY_ACTIVE" ] || return 1
   read -r active_pid active_uid <"$SOURCE_AFFINITY_ACTIVE"
   [ "$active_pid" = "$pid" ] && [ "$active_uid" = "$uid" ] || return 1
   read_controller_group "$pid" cpuset; cpuset="$CGROUP_RESULT"
   read_controller_group "$pid" cpu; cpu="$CGROUP_RESULT"
   [ "$cpuset" = /background ] && [ "$cpu" = /background ]
+}
+
+yield_source_process_group() {
+  local pid="$1" uid="$2"
+  write_controller_group "$pid" /dev/cpuset /background || return 1
+  write_controller_group "$pid" /dev/cpuctl /background || return 1
+  printf '%s %s\n' "$pid" "$uid" >"$SOURCE_AFFINITY_ACTIVE.tmp" || return 1
+  mv -f "$SOURCE_AFFINITY_ACTIVE.tmp" "$SOURCE_AFFINITY_ACTIVE"
 }
 
 suppress_source() {
@@ -121,8 +129,8 @@ suppress_source() {
   [ -d "/proc/$pid" ] || return 0
   is_protected_pid "$pid" && return 0
   source_yield_active "$pid" "$uid" && return 0
-  if apply_source_affinity "$pid" "$uid" source-yield yield; then
-    log_state "source-yield pid=$pid uid=$uid name=$name"
+  if yield_source_process_group "$pid" "$uid"; then
+    log_state "source-group-yield pid=$pid uid=$uid name=$name"
   fi
 }
 
@@ -186,8 +194,9 @@ hold_resumed_target_for_animation() {
   read -r pid uid name <"$PENDING_SOURCE_FILE"
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
-  apply_source_affinity "$pid" "$uid" launcher-exit-animation replace-yield
-  log_state "target-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
+  if yield_source_process_group "$pid" "$uid"; then
+    log_state "target-group-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
+  fi
 }
 
 restore_source_for_app_completion() {
@@ -197,8 +206,7 @@ restore_source_for_app_completion() {
 
 apply_policy() {
   local pid
-  # Source yield is first: wallpaper and IME discovery must not delay the
-  # source-app critical path.
+  # Source yield is process-level: two cgroup writes and no per-thread scan.
   suppress_source
   config_enabled "$AUX_POLICY_FILE" || return 0
   refresh_policy_pids

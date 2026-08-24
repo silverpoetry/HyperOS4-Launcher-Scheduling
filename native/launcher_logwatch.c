@@ -17,6 +17,8 @@
 #define SOURCE_APP_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/source-app"
 #define SOURCE_AFFINITYCTL "/data/adb/modules/hyperos4_recents_source_app_yield/bin/source-affinityctl"
 #define SOURCE_AFFINITY_STATE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.state"
+#define SOURCE_AFFINITY_ACTIVE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.active"
+#define SOURCE_AFFINITY_ACTIVE_TMP "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.active.tmp"
 #define SOURCE_APP_NATIVE_TMP "/data/adb/modules/hyperos4_recents_source_app_yield/source-app.native.tmp"
 #define PACKAGE_LENGTH 256
 
@@ -105,6 +107,37 @@ static int write_pid_file(const char *path, int pid) {
     return 1;
 }
 
+static int write_active_record(int pid, int uid) {
+    char value[64];
+    int fd;
+    int length = snprintf(value, sizeof(value), "%d %d\n", pid, uid);
+    if (length <= 0 || (size_t)length >= sizeof(value)) return 0;
+    fd = open(SOURCE_AFFINITY_ACTIVE_TMP,
+              O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+    if (fd < 0) return 0;
+    if (write(fd, value, (size_t)length) != length) {
+        close(fd);
+        unlink(SOURCE_AFFINITY_ACTIVE_TMP);
+        return 0;
+    }
+    if (close(fd) != 0) {
+        unlink(SOURCE_AFFINITY_ACTIVE_TMP);
+        return 0;
+    }
+    if (rename(SOURCE_AFFINITY_ACTIVE_TMP, SOURCE_AFFINITY_ACTIVE) != 0) {
+        unlink(SOURCE_AFFINITY_ACTIVE_TMP);
+        return 0;
+    }
+    return 1;
+}
+
+static int yield_process_group(int pid, int uid, int *cpuset_ok, int *cpuctl_ok) {
+    *cpuset_ok = write_pid_file("/dev/cpuset/background/cgroup.procs", pid);
+    *cpuctl_ok = write_pid_file("/dev/cpuctl/background/cgroup.procs", pid);
+    if (!*cpuset_ok || !*cpuctl_ok) return 10;
+    return write_active_record(pid, uid) ? 0 : 12;
+}
+
 static int read_source_record(int *pid, int *uid, char *package, size_t package_size) {
     char value[512];
     char *end;
@@ -137,7 +170,7 @@ static int read_source_record(int *pid, int *uid, char *package, size_t package_
     return 0;
 }
 
-static int run_affinity_apply(const char *operation, int pid, int uid) {
+static __attribute__((unused)) int run_affinity_apply(const char *operation, int pid, int uid) {
     char pid_text[32];
     char uid_text[32];
     char *arguments[] = {
@@ -185,12 +218,12 @@ static struct yield_result yield_source_native(void) {
     char package[PACKAGE_LENGTH];
     if (read_source_record(&result.pid, &result.uid, package, sizeof(package)) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result.affinity_status = run_affinity_apply("yield", result.pid, result.uid);
+    result.affinity_status = yield_process_group(result.pid, result.uid,
+                                                 &result.cpuset_ok,
+                                                 &result.cpuctl_ok);
     clock_gettime(CLOCK_MONOTONIC, &end);
     result.affinity_us = timespec_diff_us(&end, &start);
     result.write_us = 0;
-    result.cpuset_ok = result.affinity_status == 0;
-    result.cpuctl_ok = result.affinity_status == 0;
     result.cgroup_complete_monotonic_ns =
         (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
@@ -265,7 +298,7 @@ static int replace_started_source(const char *tag, const char *message,
 
     if (strcmp(tag, "ActivityManager") != 0 ||
         strstr(message, "Start proc ") == NULL ||
-        access(SOURCE_AFFINITY_STATE, F_OK) != 0) return 0;
+        access(SOURCE_AFFINITY_ACTIVE, F_OK) != 0) return 0;
     if (parse_started_process(message, &logged_pid, &logged_uid, logged_process,
                               sizeof(logged_process)) != 0) return 0;
     if (read_source_record(&result->pid, &result->uid, cached_package,
@@ -275,11 +308,11 @@ static int replace_started_source(const char *tag, const char *message,
 
     result->pid = logged_pid;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result->affinity_status = run_affinity_apply("replace-yield", logged_pid, logged_uid);
+    result->affinity_status = yield_process_group(logged_pid, logged_uid,
+                                                  &result->cpuset_ok,
+                                                  &result->cpuctl_ok);
     clock_gettime(CLOCK_MONOTONIC, &end);
     result->affinity_us = timespec_diff_us(&end, &start);
-    result->cpuset_ok = result->affinity_status == 0;
-    result->cpuctl_ok = result->affinity_status == 0;
     result->complete_monotonic_ns =
         (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result->cgroup_complete_monotonic_ns = result->complete_monotonic_ns;

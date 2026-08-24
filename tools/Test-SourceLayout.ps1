@@ -101,18 +101,17 @@ if (-not $yieldFunction.Success) {
     throw 'yield_source_native was not found'
 }
 $yieldBody = $yieldFunction.Groups['body'].Value
-$affinityApply = $yieldBody.IndexOf('run_affinity_apply(result.pid, result.uid)')
-if ($yieldBody -notmatch 'run_affinity_apply\("yield", result.pid, result.uid\)') {
-    throw 'Native source yield must invoke the atomic affinity controller transaction'
-}
-if ($logWatcher -notmatch 'run_affinity_apply\("yield"') {
-    throw 'Native source yield must use the snapshot-before-cgroup operation'
+$groupYield = $yieldBody.IndexOf('yield_process_group(result.pid, result.uid')
+if ($groupYield -lt 0 -or
+    $logWatcher -notmatch '/dev/cpuset/background/cgroup\.procs' -or
+    $logWatcher -notmatch '/dev/cpuctl/background/cgroup\.procs') {
+    throw 'Native source yield must use the constant-time process cgroup operation'
 }
 if ($logWatcher -notmatch 'Start proc ' -or
     $logWatcher -notmatch "cursor\[1\] != 'u'" -or
     $logWatcher -notmatch "\*end != 'a'" -or
-    $logWatcher -notmatch 'run_affinity_apply\("replace-yield"' -or
-    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_STATE, F_OK\)' -or
+    $logWatcher -notmatch 'yield_process_group\(logged_pid, logged_uid' -or
+    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_ACTIVE, F_OK\)' -or
     $logWatcher -notmatch 'logger_open\(list, LOG_ID_SYSTEM\)') {
     throw 'Native watcher must atomically replace a restarted source while its yield transaction is active'
 }
@@ -139,9 +138,10 @@ if ($processPolicy -notmatch 'cache_pid_record "\$pid" "\$destination" "\$packag
     throw 'Source records must retain the full Android package identity'
 }
 if ($processPolicy -notmatch '(?m)^source_yield_active\(\)' -or
-    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] && \[ -r "\$SOURCE_AFFINITY_STATE" \]' -or
+    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] \|\| return 1' -or
+    $processPolicy -notmatch '(?m)^yield_source_process_group\(\)' -or
     $processPolicy -notmatch '\[ "\$cpuset" = /background \] && \[ "\$cpu" = /background \]') {
-    throw 'Repeated source events must use the active transaction fast path'
+    throw 'Repeated source events must use the process-group active fast path'
 }
 $stateMachine = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\state-machine.sh') -Raw
 if ($stateMachine -notmatch '\[ "\$current" = app \] && apply_policy' -or

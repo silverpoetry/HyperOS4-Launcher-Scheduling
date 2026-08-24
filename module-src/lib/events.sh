@@ -39,13 +39,12 @@ handle_launcher_event() {
       set_mode entering launcher-transition-start
       ;;
     *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
-      # Native logwatch has already yielded the cached source before emitting
-      # this event. The shell completes state bookkeeping outside frame one.
+      # Native logwatch has already moved the whole process group before
+      # emitting this event. The shell only completes state bookkeeping.
       apply_source_frequency launcher-transition-start
       case "$line" in
         *nativeAffinityStatus=0*nativeYieldCpuset=1*nativeYieldCpuctl=1*)
-          # Native watcher completed the full transaction before it emitted
-          # this event. Avoid rescanning every source thread a second time.
+          # The two process-level cgroup writes succeeded. Do not scan TIDs.
           log_state "native-yield ${line##* nativeYieldPid=}"
           ;;
         *)
