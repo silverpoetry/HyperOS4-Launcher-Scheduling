@@ -39,12 +39,12 @@ handle_launcher_event() {
       set_mode entering launcher-transition-start
       ;;
     *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
-      # Native logwatch has already moved the whole process group before
-      # emitting this event. The shell only completes state bookkeeping.
+      # Native logwatch has already applied the prepared thread affinity and
+      # moved the process groups. The shell only completes bookkeeping.
       apply_source_frequency launcher-transition-start
       case "$line" in
         *nativeAffinityStatus=0*nativeYieldCpuset=1*nativeYieldCpuctl=1*)
-          # The two process-level cgroup writes succeeded. Do not scan TIDs.
+          # The prepared native transaction succeeded. Do not apply it twice.
           log_state "native-yield ${line##* nativeYieldPid=}"
           ;;
         *)

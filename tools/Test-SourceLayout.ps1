@@ -101,17 +101,15 @@ if (-not $yieldFunction.Success) {
     throw 'yield_source_native was not found'
 }
 $yieldBody = $yieldFunction.Groups['body'].Value
-$groupYield = $yieldBody.IndexOf('yield_process_group(result.pid, result.uid')
-if ($groupYield -lt 0 -or
-    $logWatcher -notmatch '/dev/cpuset/background/cgroup\.procs' -or
-    $logWatcher -notmatch '/dev/cpuctl/background/cgroup\.procs') {
-    throw 'Native source yield must use the constant-time process cgroup operation'
+$affinityApply = $yieldBody.IndexOf('run_affinity_apply("yield", result.pid, result.uid)')
+if ($affinityApply -lt 0) {
+    throw 'Native source yield must invoke the prepared affinity transaction'
 }
 if ($logWatcher -notmatch 'Start proc ' -or
     $logWatcher -notmatch "cursor\[1\] != 'u'" -or
     $logWatcher -notmatch "\*end != 'a'" -or
-    $logWatcher -notmatch 'yield_process_group\(logged_pid, logged_uid' -or
-    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_ACTIVE, F_OK\)' -or
+    $logWatcher -notmatch 'run_affinity_apply\("replace-yield"' -or
+    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_STATE, F_OK\)' -or
     $logWatcher -notmatch 'logger_open\(list, LOG_ID_SYSTEM\)') {
     throw 'Native watcher must atomically replace a restarted source while its yield transaction is active'
 }
@@ -138,10 +136,11 @@ if ($processPolicy -notmatch 'cache_pid_record "\$pid" "\$destination" "\$packag
     throw 'Source records must retain the full Android package identity'
 }
 if ($processPolicy -notmatch '(?m)^source_yield_active\(\)' -or
-    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] \|\| return 1' -or
-    $processPolicy -notmatch '(?m)^yield_source_process_group\(\)' -or
+    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] && \[ -r "\$SOURCE_AFFINITY_STATE" \]' -or
+    $processPolicy -notmatch '(?m)^prepare_source_affinity_cache\(\)' -or
+    $processPolicy -notmatch 'SOURCE_AFFINITYCTL" prepare' -or
     $processPolicy -notmatch '\[ "\$cpuset" = /background \] && \[ "\$cpu" = /background \]') {
-    throw 'Repeated source events must use the process-group active fast path'
+    throw 'Source events must use prepared affinity state and the active fast path'
 }
 $stateMachine = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\state-machine.sh') -Raw
 if ($stateMachine -notmatch '\[ "\$current" = app \] && apply_policy' -or
@@ -209,21 +208,15 @@ if (-not $yieldState.Success) {
     throw 'yield_state was not found in source_affinityctl'
 }
 $yieldStateBody = $yieldState.Groups['body'].Value
-if ($yieldStateBody -notmatch 'apply_state\(pid, uid, path, 1\)') {
-    throw 'Source yield must request the atomic snapshot-cgroup-affinity transaction'
+if ($yieldStateBody -notmatch 'fast_yield_state\(pid, uid, path\)') {
+    throw 'Source yield must use the prepared fast affinity transaction'
 }
-$applyStart = $affinityController.IndexOf('static int apply_state(')
-$applyEnd = $affinityController.IndexOf('static int yield_state(', $applyStart + 1)
-if ($applyStart -lt 0 -or $applyEnd -le $applyStart) {
-    throw 'apply_state was not found in source_affinityctl'
-}
-$applyStateBody = $affinityController.Substring($applyStart, $applyEnd - $applyStart)
-$snapshotSave = $applyStateBody.IndexOf('save_state(path')
-$backgroundMove = $applyStateBody.LastIndexOf('write_pid(BACKGROUND_CPUSET_PROCS, pid)')
-$affinityBind = $applyStateBody.LastIndexOf('sched_setaffinity(records[i].tid')
-if ($snapshotSave -lt 0 -or $backgroundMove -lt 0 -or $affinityBind -lt 0 -or
-    $snapshotSave -gt $backgroundMove -or $backgroundMove -gt $affinityBind) {
-    throw 'Source transaction order must be snapshot, background cgroup, then affinity'
+if ($affinityController -notmatch 'SAF3' -or
+    $affinityController -notmatch 'collect_affinity_tasks' -or
+    $affinityController -notmatch 'save_prepared_state' -or
+    $affinityController -notmatch 'apply_mask_to_tasks' -or
+    $affinityController -notmatch 'prepare_state') {
+    throw 'Source affinity must prepare minimal restore state outside the transition'
 }
 
 $systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw

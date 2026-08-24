@@ -104,20 +104,12 @@ apply_source_affinity() {
 
 source_yield_active() {
   local pid="$1" uid="$2" active_pid active_uid cpuset cpu
-  [ -r "$SOURCE_AFFINITY_ACTIVE" ] || return 1
+  [ -r "$SOURCE_AFFINITY_ACTIVE" ] && [ -r "$SOURCE_AFFINITY_STATE" ] || return 1
   read -r active_pid active_uid <"$SOURCE_AFFINITY_ACTIVE"
   [ "$active_pid" = "$pid" ] && [ "$active_uid" = "$uid" ] || return 1
   read_controller_group "$pid" cpuset; cpuset="$CGROUP_RESULT"
   read_controller_group "$pid" cpu; cpu="$CGROUP_RESULT"
   [ "$cpuset" = /background ] && [ "$cpu" = /background ]
-}
-
-yield_source_process_group() {
-  local pid="$1" uid="$2"
-  write_controller_group "$pid" /dev/cpuset /background || return 1
-  write_controller_group "$pid" /dev/cpuctl /background || return 1
-  printf '%s %s\n' "$pid" "$uid" >"$SOURCE_AFFINITY_ACTIVE.tmp" || return 1
-  mv -f "$SOURCE_AFFINITY_ACTIVE.tmp" "$SOURCE_AFFINITY_ACTIVE"
 }
 
 suppress_source() {
@@ -129,14 +121,15 @@ suppress_source() {
   [ -d "/proc/$pid" ] || return 0
   is_protected_pid "$pid" && return 0
   source_yield_active "$pid" "$uid" && return 0
-  if yield_source_process_group "$pid" "$uid"; then
-    log_state "source-group-yield pid=$pid uid=$uid name=$name"
+  if apply_source_affinity "$pid" "$uid" source-yield yield; then
+    log_state "source-yield pid=$pid uid=$uid name=$name"
   fi
 }
 
 restore_source_affinity() {
   local reason="$1" resumed_uid="$2"
   local magic active_pid active_uid original_minor target count operation
+  [ -r "$SOURCE_AFFINITY_ACTIVE" ] || return 0
   if [ ! -x "$SOURCE_AFFINITYCTL" ] || [ ! -r "$SOURCE_AFFINITY_STATE" ]; then
     rm -f "$SOURCE_AFFINITY_ACTIVE"
     return 0
@@ -152,6 +145,26 @@ restore_source_affinity() {
     log_state "source-affinity-restored reason=$reason operation=$operation resumed_uid=$resumed_uid"
   else
     log_state "source-affinity-restore-failed reason=$reason"
+  fi
+}
+
+prepare_source_affinity_cache() {
+  local pid uid name magic cached_pid cached_uid minor target count
+  config_enabled "$SOURCE_POLICY_FILE" || return 0
+  [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_FILE" ] || return 0
+  read -r pid uid name <"$SOURCE_FILE"
+  case "$pid:$uid" in *[!0-9:]*) return 0 ;; esac
+  [ -d "/proc/$pid/task" ] || return 0
+  if [ -r "$SOURCE_AFFINITY_STATE" ]; then
+    read -r magic cached_pid cached_uid minor target count <"$SOURCE_AFFINITY_STATE"
+    [ "$magic" = SAF3 ] && [ "$cached_pid" = "$pid" ] &&
+      [ "$cached_uid" = "$uid" ] && return 0
+  fi
+  if "$SOURCE_AFFINITYCTL" prepare "$pid" "$uid" "$SOURCE_AFFINITY_STATE" \
+      >/dev/null 2>&1; then
+    log_state "source-affinity-prepared pid=$pid uid=$uid name=$name"
+  else
+    log_state "source-affinity-prepare-failed pid=$pid uid=$uid name=$name"
   fi
 }
 
@@ -194,9 +207,8 @@ hold_resumed_target_for_animation() {
   read -r pid uid name <"$PENDING_SOURCE_FILE"
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
-  if yield_source_process_group "$pid" "$uid"; then
-    log_state "target-group-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
-  fi
+  apply_source_affinity "$pid" "$uid" launcher-exit-animation replace-yield
+  log_state "target-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
 }
 
 restore_source_for_app_completion() {
@@ -206,7 +218,8 @@ restore_source_for_app_completion() {
 
 apply_policy() {
   local pid
-  # Source yield is process-level: two cgroup writes and no per-thread scan.
+  # Source affinity state is prepared while the app is stable. The transition
+  # path only applies the cached mask and moves the process cgroups.
   suppress_source
   config_enabled "$AUX_POLICY_FILE" || return 0
   refresh_policy_pids

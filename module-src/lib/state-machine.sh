@@ -19,6 +19,7 @@ set_mode() {
       resumed_uid=""
       [ -r "$SOURCE_FILE" ] && read -r resumed_pid resumed_uid resumed_name <"$SOURCE_FILE"
       restore_source_affinity stable-app-reassert "$resumed_uid"
+      prepare_source_affinity_cache
     fi
     return 0
   fi
@@ -43,6 +44,7 @@ set_mode() {
     resumed_uid=""
     [ -r "$SOURCE_FILE" ] && read -r resumed_pid resumed_uid resumed_name <"$SOURCE_FILE"
     restore_source_affinity stable-app-commit "$resumed_uid"
+    prepare_source_affinity_cache
   else
     echo "$next" >"$MODE_FILE"
     # A source transaction and auxiliary placement belong to the transition,
