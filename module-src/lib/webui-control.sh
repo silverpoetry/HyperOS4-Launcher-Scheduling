@@ -20,6 +20,7 @@ load_configuration_values() {
   CFG_MASTER="$(state_value "$ENABLE_FILE")"
   CFG_SOURCE="$(state_value "$SOURCE_POLICY_FILE")"
   CFG_SOURCE_PLACEMENT="$(number_value "$SOURCE_PLACEMENT_FILE" 7)"
+  CFG_SOURCE_NICE_SUPPRESSION="$(number_value "$SOURCE_NICE_SUPPRESSION_FILE" 40)"
   CFG_AUXILIARY="$(state_value "$AUX_POLICY_FILE")"
   CFG_LAUNCHER="$(state_value "$THREAD_POLICY_STATE_FILE")"
   CFG_SYSTEMUI="$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
@@ -49,6 +50,7 @@ assign_configuration_value() {
     master) valid_state "$value" && CFG_MASTER="$value" ;;
     source) valid_state "$value" && CFG_SOURCE="$value" ;;
     source_placement) case "$value" in 5|7) CFG_SOURCE_PLACEMENT="$value" ;; *) return 2 ;; esac ;;
+    source_nice_suppression) valid_number "$value" 0 40 && CFG_SOURCE_NICE_SUPPRESSION="$value" ;;
     auxiliary) valid_state "$value" && CFG_AUXILIARY="$value" ;;
     launcher) valid_state "$value" && CFG_LAUNCHER="$value" ;;
     systemui) valid_state "$value" && CFG_SYSTEMUI="$value" ;;
@@ -83,6 +85,7 @@ save_configuration() {
   write_atomic "$ENABLE_FILE" "$CFG_MASTER" &&
   write_atomic "$SOURCE_POLICY_FILE" "$CFG_SOURCE" &&
   write_atomic "$SOURCE_PLACEMENT_FILE" "$CFG_SOURCE_PLACEMENT" &&
+  write_atomic "$SOURCE_NICE_SUPPRESSION_FILE" "$CFG_SOURCE_NICE_SUPPRESSION" &&
   write_atomic "$AUX_POLICY_FILE" "$CFG_AUXILIARY" &&
   write_atomic "$THREAD_POLICY_STATE_FILE" "$CFG_LAUNCHER" &&
   write_atomic "$SYSTEMUI_POLICY_STATE_FILE" "$CFG_SYSTEMUI" &&

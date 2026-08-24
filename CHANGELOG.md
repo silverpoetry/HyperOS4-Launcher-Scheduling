@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.8
+
+- Add a configurable source-app nice target level of 0–40, defaulting to 40. The level maps from no suppression to `nice=19`; each thread moves directly to the target only when needed, and its original value is restored only while the module still owns the applied value.
+- Move Launcher uclamp changes and SystemUI transition placement onto validated cached thread identities. Full thread enumeration is deferred outside the first animation frames and retained only as a cache-miss fallback.
+- Reload settings through the existing PID 1-owned daemon. WebUI no longer starts a descendant service process that Android can classify and terminate as a phantom process.
+- Upgrade source transaction state to `SAF2` while retaining safe recovery of active `SAF1` transactions.
+
 ## 5.7
 
 - Publish a source-yield activity record from the same locked native transaction that saves affinity, moves cgroups and binds source threads.

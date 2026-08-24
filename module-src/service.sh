@@ -20,6 +20,7 @@ trap 'release_service_instance' EXIT HUP INT TERM
 promote_controller_process
 cleanup_stale_daemons
 echo $$ >"$PID_FILE"
+acknowledge_reload
 restore_frequency_state_quiet
 [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
   "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
@@ -72,6 +73,7 @@ run_daemon() {
   refresh_frequency_info
 
   while true; do
+    acknowledge_reload
     read_first_line "$ENABLE_FILE"
     if [ "$READ_VALUE" != enabled ]; then
       set_mode app module-disabled

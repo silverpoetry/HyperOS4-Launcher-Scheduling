@@ -145,6 +145,45 @@ static uint64_t select_mask(int placement, uint64_t perf_mask,
     }
 }
 
+static int apply_cached_clamp(pid_t pid, const char *snapshot,
+                              int reset_only, uint32_t raster_min,
+                              uint32_t ui_min, uint32_t rust_min,
+                              uint32_t resmgr_min) {
+    FILE *file = fopen(snapshot, "re");
+    struct counts counts = {0};
+    unsigned matched = 0;
+    int saved_pid;
+    int tid;
+    char saved_name[64];
+    char live_name[64];
+    unsigned long long saved_mask;
+    if (file == NULL) return 3;
+    while (fscanf(file, "%d %d %63s %llx", &saved_pid, &tid,
+                  saved_name, &saved_mask) == 4) {
+        enum thread_class thread_class;
+        uint32_t minimum;
+        (void)saved_mask;
+        if (saved_pid != pid || read_comm(pid, (pid_t)tid, live_name,
+                                         sizeof(live_name)) != 0 ||
+            strcmp(saved_name, live_name) != 0)
+            continue;
+        thread_class = classify(live_name);
+        if (thread_class == CLASS_NONE) continue;
+        increment_class(&counts, thread_class);
+        matched++;
+        if (thread_class == CLASS_FENCE) continue;
+        minimum = reset_only ? 0 : boost_minimum(thread_class, raster_min,
+                                                 ui_min, rust_min, resmgr_min);
+        if (set_uclamp((pid_t)tid, minimum, 1024) != 0) counts.clamp_fail++;
+    }
+    fclose(file);
+    printf("cached=%u raster=%u ui=%u rust=%u resmgr=%u fence=%u clamp_fail=%u\n",
+           matched, counts.raster, counts.ui, counts.rust, counts.resmgr,
+           counts.fence, counts.clamp_fail);
+    if (matched == 0) return 3;
+    return counts.clamp_fail == 0 ? 0 : 4;
+}
+
 int main(int argc, char **argv) {
     char task_path[64];
     char comm[64];
@@ -169,9 +208,28 @@ int main(int argc, char **argv) {
     uint32_t rust_min = 0;
     uint32_t resmgr_min = 0;
 
+    if (argc >= 2 && strcmp(argv[1], "boost-cached") == 0) {
+        if (argc != 8) return 2;
+        pid = (pid_t)strtol(argv[2], NULL, 10);
+        if (pid <= 0) return 2;
+        raster_min = (uint32_t)strtoul(argv[4], NULL, 10);
+        ui_min = (uint32_t)strtoul(argv[5], NULL, 10);
+        rust_min = (uint32_t)strtoul(argv[6], NULL, 10);
+        resmgr_min = (uint32_t)strtoul(argv[7], NULL, 10);
+        if (raster_min > 1024 || ui_min > 1024 || rust_min > 1024 ||
+            resmgr_min > 1024) return 2;
+        return apply_cached_clamp(pid, argv[3], 0, raster_min, ui_min,
+                                  rust_min, resmgr_min);
+    }
+    if (argc >= 2 && strcmp(argv[1], "reset-cached") == 0) {
+        if (argc != 4) return 2;
+        pid = (pid_t)strtol(argv[2], NULL, 10);
+        if (pid <= 0) return 2;
+        return apply_cached_clamp(pid, argv[3], 1, 0, 0, 0, 0);
+    }
     if (argc < 3) {
         fprintf(stderr,
-                "usage: %s apply PID PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND UI_PLACE RASTER_PLACE RESMGR_PLACE FENCE_PLACE RASTER_MIN UI_MIN RUST_MIN RESMGR_MIN | reset PID\n",
+                "usage: %s apply PID PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND UI_PLACE RASTER_PLACE RESMGR_PLACE FENCE_PLACE RASTER_MIN UI_MIN RUST_MIN RESMGR_MIN | reset PID | boost-cached PID SNAPSHOT RASTER_MIN UI_MIN RUST_MIN RESMGR_MIN | reset-cached PID SNAPSHOT\n",
                 argv[0]);
         return 2;
     }

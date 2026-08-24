@@ -85,7 +85,9 @@ foreach ($match in $assetPattern.Matches($html)) {
 
 $threadController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\launcher_threadctl.c') -Raw
 if ($threadController -notmatch 'CLASS_RASTER[\s\S]*select_mask\(raster_placement' -or
-    $threadController -notmatch 'render_mask') {
+    $threadController -notmatch 'render_mask' -or
+    $threadController -notmatch 'boost-cached' -or
+    $threadController -notmatch 'reset-cached') {
     throw 'Launcher Raster must use the configurable topology-derived placement mask'
 }
 
@@ -157,6 +159,9 @@ if ($configuration -notmatch 'write_default "\$SYSTEMUI_CRITICAL_PLACEMENT_FILE"
 if ($configuration -notmatch 'write_default "\$SOURCE_PLACEMENT_FILE" 7') {
     throw 'Source placement must default to Android system background CPUs'
 }
+if ($configuration -notmatch 'write_default "\$SOURCE_NICE_SUPPRESSION_FILE" 40') {
+    throw 'Source nice suppression must default to the full 40-level range'
+}
 
 $runtime = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\runtime.sh') -Raw
 foreach ($requiredRuntimeFunction in @(
@@ -169,8 +174,11 @@ foreach ($requiredRuntimeFunction in @(
     }
 }
 if ($runtime -notmatch 'while \[ "\$attempt" -lt 50 \]' -or
-    $runtime -notmatch 'is_module_service_pid "\$daemon_pid"') {
-    throw 'Service restart must wait for and validate the new daemon PID'
+    $runtime -notmatch 'is_module_service_pid "\$daemon_pid"' -or
+    $runtime -match 'nohup /system/bin/sh "\$MODDIR/service\.sh"' -or
+    $runtime -notmatch '(?m)^acknowledge_reload\(\)' -or
+    $runtime -notmatch 'signal_daemon_reload "\$daemon_pid"') {
+    throw 'Service reload must reuse and validate the existing daemon'
 }
 
 $affinityController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c') -Raw
@@ -184,6 +192,13 @@ if ($affinityController -notmatch 'SOURCE_AFFINITY_ACTIVE' -or
     $affinityController -notmatch 'unlink\(SOURCE_AFFINITY_ACTIVE\)' -or
     $affinityController -notmatch 'bsearch\(&current\[i\]') {
     throw 'Native source transactions must publish active state and use indexed reassert lookup'
+}
+if ($affinityController -notmatch 'SAF2' -or
+    $affinityController -notmatch 'SOURCE_NICE_SUPPRESSION_FILE' -or
+    $affinityController -notmatch 'getpriority\(PRIO_PROCESS' -or
+    $affinityController -notmatch 'setpriority\(PRIO_PROCESS' -or
+    $affinityController -notmatch 'current_nice == applied_nice') {
+    throw 'Source transactions must own, suppress and conditionally restore per-thread nice values'
 }
 $yieldState = [regex]::Match(
     $affinityController,
@@ -214,8 +229,22 @@ if ($snapshotSave -lt 0 -or $backgroundMove -lt 0 -or $affinityBind -lt 0 -or
 $systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw
 if ($systemUiController -notmatch 'HeapTaskDaemon' -or
     $systemUiController -notmatch 'wmshell\.main' -or
-    $systemUiController -notmatch 'restore_policy') {
+    $systemUiController -notmatch 'restore_policy' -or
+    $systemUiController -notmatch 'apply-cached' -or
+    $systemUiController -notmatch 'prepare_cache') {
     throw 'SystemUI controller must separate and restore render and maintenance threads'
+}
+
+if ($systemUiPolicy -notmatch 'prepare_systemui_thread_cache' -or
+    $systemUiPolicy -notmatch 'apply-cached') {
+    throw 'SystemUI transition placement must use a prepared identity cache'
+}
+
+$launcherPolicy = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\launcher-policy.sh') -Raw
+if ($launcherPolicy -notmatch 'boost-cached' -or
+    $launcherPolicy -notmatch 'reset-cached' -or
+    $launcherPolicy -notmatch 'thread-cache-refreshed') {
+    throw 'Launcher transition boost must use cached identities and deferred refresh'
 }
 
 Write-Output 'source_layout=passed'

@@ -22,6 +22,17 @@ increment_systemui_serial() {
   printf '%s' "$value"
 }
 
+prepare_systemui_thread_cache() {
+  local systemui_pid
+  systemui_policy_enabled || return 0
+  [ -x "$SYSTEMUI_THREADCTL" ] || return 0
+  systemui_pid="$(pidof com.android.systemui 2>/dev/null)"
+  systemui_pid=${systemui_pid%% *}
+  [ -n "$systemui_pid" ] && [ -d "/proc/$systemui_pid/task" ] || return 0
+  "$SYSTEMUI_THREADCTL" prepare "$systemui_pid" "$SYSTEMUI_CACHE_FILE" \
+    >/dev/null 2>&1 || rm -f "$SYSTEMUI_CACHE_FILE" "$SYSTEMUI_CACHE_FILE.lock"
+}
+
 restore_systemui_threads() {
   local reason="${1:-restore}"
   if [ -x "$SYSTEMUI_THREADCTL" ] && [ -r "$SYSTEMUI_STATE_FILE" ]; then
@@ -56,7 +67,12 @@ apply_systemui_transition_policy() {
     critical="$THREAD_FILE_VALUE"
     read_systemui_placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
     maintenance="$THREAD_FILE_VALUE"
-    if "$SYSTEMUI_THREADCTL" apply "$systemui_pid" "$SYSTEMUI_STATE_FILE" \
+    if "$SYSTEMUI_THREADCTL" apply-cached "$systemui_pid" "$SYSTEMUI_CACHE_FILE" \
+        "$SYSTEMUI_STATE_FILE" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
+        "$THREAD_LITTLE_MASK" "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" \
+        "$THREAD_SECONDARY_MASK" "$THREAD_BACKGROUND_MASK" \
+        "$critical" "$maintenance" >/dev/null 2>&1 ||
+       "$SYSTEMUI_THREADCTL" apply "$systemui_pid" "$SYSTEMUI_STATE_FILE" \
         "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" \
         "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" "$THREAD_SECONDARY_MASK" \
         "$THREAD_BACKGROUND_MASK" \
@@ -77,6 +93,8 @@ apply_systemui_transition_policy() {
     [ "$THREAD_FILE_VALUE" = "$serial" ] || exit 0
     restore_systemui_threads timeout
     thread_log "systemui-policy-restored serial=$serial reason=timeout"
+    sleep_milliseconds 250
+    [ -r "$SYSTEMUI_STATE_FILE" ] || prepare_systemui_thread_cache
   ) &
 }
 

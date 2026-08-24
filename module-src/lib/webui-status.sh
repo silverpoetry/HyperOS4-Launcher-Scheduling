@@ -110,6 +110,7 @@ EOF
   emit master_policy "$(state_value "$ENABLE_FILE")"
   emit source_policy "$(state_value "$SOURCE_POLICY_FILE")"
   emit source_placement "$(number_value "$SOURCE_PLACEMENT_FILE" 7)"
+  emit source_nice_suppression "$(number_value "$SOURCE_NICE_SUPPRESSION_FILE" 40)"
   emit auxiliary_policy "$(state_value "$AUX_POLICY_FILE")"
   emit launcher_policy "$(state_value "$THREAD_POLICY_STATE_FILE")"
   emit systemui_policy "$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"

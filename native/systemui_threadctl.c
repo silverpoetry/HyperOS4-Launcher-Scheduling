@@ -191,6 +191,16 @@ static int save_state(const char *path, pid_t pid, unsigned long long process_st
     return 0;
 }
 
+static int prepare_cache(pid_t pid, const char *path) {
+    struct record records[MAX_RECORDS];
+    size_t count = 0;
+    unsigned long long process_start = task_start_time(pid);
+    if (process_start == 0 || collect(pid, records, &count) != 0) return 3;
+    if (save_state(path, pid, process_start, records, count) != 0) return 5;
+    printf("prepare pid=%d cached=%zu\n", pid, count);
+    return 0;
+}
+
 static unsigned long long select_mask(int placement,
                                       const unsigned long long masks[7]) {
     if (placement < 1 || placement > 7) return 0;
@@ -252,6 +262,60 @@ static int apply_policy(pid_t pid, const char *path,
     return failed == 0 ? 0 : 6;
 }
 
+static int apply_cached_policy(pid_t pid, const char *cache_path,
+                               const char *state_path,
+                               const unsigned long long masks[7],
+                               int critical_placement,
+                               int maintenance_placement) {
+    struct record cached[MAX_RECORDS];
+    struct record active[MAX_RECORDS];
+    pid_t cached_pid = 0;
+    unsigned long long cached_start = 0;
+    unsigned long long process_start = task_start_time(pid);
+    size_t cached_count = 0;
+    size_t active_count = 0;
+    size_t critical = 0;
+    size_t maintenance = 0;
+    size_t failed = 0;
+    char comm[64];
+    if (process_start == 0 ||
+        load_state(cache_path, &cached_pid, &cached_start, cached,
+                   &cached_count) != 0 ||
+        cached_pid != pid || cached_start != process_start)
+        return 3;
+    for (size_t i = 0; i < cached_count; ++i) {
+        cpu_set_t affinity;
+        enum thread_class live_class;
+        if (task_start_time(cached[i].tid) != cached[i].start_time ||
+            read_comm(pid, cached[i].tid, comm, sizeof(comm)) != 0)
+            continue;
+        live_class = classify(pid, cached[i].tid, comm);
+        if ((int)live_class != cached[i].thread_class ||
+            sched_getaffinity(cached[i].tid, sizeof(affinity), &affinity) != 0)
+            continue;
+        active[active_count] = cached[i];
+        active[active_count].original_mask = cpuset_to_mask(&affinity);
+        active_count++;
+    }
+    if (active_count == 0) return 3;
+    if (save_state(state_path, pid, process_start, active, active_count) != 0)
+        return 5;
+    for (size_t i = 0; i < active_count; ++i) {
+        int placement = active[i].thread_class == CLASS_CRITICAL
+                            ? critical_placement : maintenance_placement;
+        cpu_set_t affinity;
+        mask_to_cpuset(select_mask(placement, masks), &affinity);
+        if (active[i].thread_class == CLASS_CRITICAL) critical++;
+        else maintenance++;
+        if (sched_setaffinity(active[i].tid, sizeof(affinity), &affinity) != 0 &&
+            errno != ESRCH)
+            failed++;
+    }
+    printf("apply-cached pid=%d critical=%zu maintenance=%zu failed=%zu\n",
+           pid, critical, maintenance, failed);
+    return failed == 0 ? 0 : 6;
+}
+
 static int restore_policy(const char *path) {
     struct record saved[MAX_RECORDS];
     pid_t pid = 0;
@@ -285,6 +349,14 @@ int main(int argc, char **argv) {
     const char *state_path;
     int lock_fd;
     int result;
+    if (argc == 4 && strcmp(argv[1], "prepare") == 0) {
+        state_path = argv[3];
+        lock_fd = lock_state(state_path);
+        if (lock_fd < 0) return 8;
+        result = prepare_cache((pid_t)atoi(argv[2]), state_path);
+        close(lock_fd);
+        return result;
+    }
     if (argc == 3 && strcmp(argv[1], "restore") == 0) {
         state_path = argv[2];
         lock_fd = lock_state(state_path);
@@ -293,8 +365,31 @@ int main(int argc, char **argv) {
         close(lock_fd);
         return result;
     }
+    if (argc == 14 && strcmp(argv[1], "apply-cached") == 0) {
+        const char *cache_path = argv[3];
+        state_path = argv[4];
+        unsigned long long masks[7] = {
+            strtoull(argv[5], NULL, 16), strtoull(argv[6], NULL, 16),
+            strtoull(argv[7], NULL, 16), strtoull(argv[8], NULL, 16),
+            strtoull(argv[9], NULL, 16), strtoull(argv[10], NULL, 16),
+            strtoull(argv[11], NULL, 16),
+        };
+        int critical_placement = atoi(argv[12]);
+        int maintenance_placement = atoi(argv[13]);
+        for (int i = 0; i < 7; ++i) if (masks[i] == 0) return 2;
+        if (critical_placement < 1 || critical_placement > 7 ||
+            maintenance_placement < 1 || maintenance_placement > 7)
+            return 2;
+        lock_fd = lock_state(state_path);
+        if (lock_fd < 0) return 8;
+        result = apply_cached_policy((pid_t)atoi(argv[2]), cache_path,
+                                     state_path, masks, critical_placement,
+                                     maintenance_placement);
+        close(lock_fd);
+        return result;
+    }
     if (argc != 13 || strcmp(argv[1], "apply") != 0) {
-        fprintf(stderr, "usage: %s apply PID STATE PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND CRITICAL_PLACE MAINTENANCE_PLACE | restore STATE\n", argv[0]);
+        fprintf(stderr, "usage: %s prepare PID CACHE | apply-cached PID CACHE STATE PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND CRITICAL_PLACE MAINTENANCE_PLACE | apply PID STATE PERF MID LITTLE RENDER PRIME SECONDARY BACKGROUND CRITICAL_PLACE MAINTENANCE_PLACE | restore STATE\n", argv[0]);
         return 2;
     }
     state_path = argv[3];

@@ -104,6 +104,7 @@ monitor_launcher() {
   LAUNCHER_PID="$1"
   refresh_policy_pids
   apply_launcher_base_affinity "$LAUNCHER_PID"
+  prepare_systemui_thread_cache
   log_state "monitor launcher_pid=$LAUNCHER_PID"
 
   "$MODDIR/bin/launcher-logwatch" 2>/dev/null |

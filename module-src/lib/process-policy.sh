@@ -136,7 +136,8 @@ restore_source_affinity() {
   operation=restore
   if [ -n "$resumed_uid" ]; then
     read -r magic active_pid active_uid original_minor target count <"$SOURCE_AFFINITY_STATE"
-    [ "$magic" = SAF1 ] && [ "$active_uid" = "$resumed_uid" ] || operation=restore-no-minor
+    case "$magic" in SAF1|SAF2) ;; *) active_uid= ;; esac
+    [ "$active_uid" = "$resumed_uid" ] || operation=restore-no-minor
   fi
   if "$SOURCE_AFFINITYCTL" "$operation" "$SOURCE_AFFINITY_STATE"; then
     rm -f "$SOURCE_AFFINITY_ACTIVE"

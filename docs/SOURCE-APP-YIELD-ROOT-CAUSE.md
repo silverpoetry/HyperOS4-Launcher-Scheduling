@@ -6,11 +6,11 @@
 
 有效顺序是：
 
-1. 读取并保存来源进程每个现有 TID 的原始 CPU affinity；
+1. 读取并保存来源进程每个现有 TID 的原始 CPU affinity 与 nice；
 2. 若 `/sys/module/metis/parameters/minor_window_app` 等于来源 UID，按 Joyose 的结束小窗语义写入 `0`；
-3. 对全部来源 TID 调用 `sched_setaffinity()`，目标掩码取自设备自己的 `/dev/cpuset/background/cpus`；
+3. 对全部来源 TID 调用 `sched_setaffinity()`，目标掩码取自设备自己的 `/dev/cpuset/background/cpus`，并按设置提高 nice；
 4. 动画期间对新增 TID和 Xiaomi 标记回写做事件驱动补入；
-5. 动画完成、取消、服务恢复或卸载时，按 TID 启动时间校验并恢复原始掩码。
+5. 动画完成、取消、服务恢复或卸载时，按 TID 启动时间校验并恢复原始掩码与模块仍持有的 nice。
 
 Sheng 的后台 CPU 集是 `0-2`。模块不把这个编号写死；在其它设备上使用其本机 background cpuset。
 
@@ -43,12 +43,14 @@ Joyose 中的小窗命令最终映射到：
 `source-affinityctl` 使用一个短生命周期状态文件记录：
 
 ```text
-PID、UID、原始 minor_window_app、目标掩码、TID、TID 启动时间、原始 affinity
+PID、UID、原始 minor_window_app、目标掩码、TID、TID 启动时间、原始 affinity、原始 nice、本轮应用 nice
 ```
 
 状态文件通过临时文件加原子重命名更新。动画关键路径不调用同步落盘；设备突然重启会重新初始化调度参数，普通进程崩溃时状态文件仍可由服务启动恢复。
 
-初次应用时，控制器枚举 `/proc/<PID>/task`，保存全部原始掩码，清除与来源 UID 相同的小窗标记，再统一绑定到 background CPU 集。线程创建会继承创建者 affinity；若后续事件发现新 TID，则把它加入状态。新线程已经继承后台掩码时，恢复掩码使用设备 `top-app` CPU 集，避免退出动画后永久留在小核。
+初次应用时，控制器枚举 `/proc/<PID>/task`，保存全部原始掩码和 nice，清除与来源 UID 相同的小窗标记，再统一绑定到 background CPU 集。nice 压制目标可设为 0–40 级，默认 40：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`。线程应用值为 `max(原值, 目标 nice)`，因此只降低高于目标的优先级，不改变已经低于目标的线程。线程创建会继承创建者 affinity；若后续事件发现新 TID，则把它加入状态。新线程已经继承后台掩码时，恢复掩码使用设备 `top-app` CPU 集，避免退出动画后永久留在小核。
+
+恢复 nice 时同时核对 TID 启动时间与当前值。只有当前 nice 仍等于状态文件记录的本轮应用值，控制器才恢复原值；系统或应用在动画期间主动改过的值由其继续管理。
 
 重复 Launcher 事件采用快路径：没有新 TID、没有线程逃逸、`minor_window_app` 也未回写时，只验证，不重复保存或绑定。若 Joyose 再次写回相同 UID，则清零该值并只重绑逃逸线程。
 
@@ -75,8 +77,8 @@ Sheng 上的控制器测试结果：
 
 验收同时检查 `Cpus_allowed_list` 与控制器枚举结果。仅看到 cgroup 路径变化、`taskset` 返回成功或 CPU 时间小幅下降，都不能判定退避生效。
 
-## 不采用的方案
+## 策略边界
 
-线程 `nice=+10` 在同一暖态游戏进程中使来源 CPU 时间下降约 10.9%，但线程仍可运行在性能核，未实现后台核隔离，因此不作为正式退避方案。
+nice 用于解决来源线程与 system_server、显示提交线程共享后台核心时的运行优先级竞争；affinity 与 cgroup 负责核心隔离。两者在同一个原生事务内保存、应用和恢复。
 
-20 ms、120 ms 或 200 ms 周期性重写 cgroup 同样不解决 Xiaomi affinity 覆盖，还会制造额外唤醒和竞态。v4.0 删除了这类延迟抢写。
+控制器由转场事件驱动。20 ms、120 ms 或 200 ms 周期性重写 cgroup 会增加唤醒与竞态，不属于当前执行链路。

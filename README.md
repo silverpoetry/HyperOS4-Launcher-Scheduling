@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/silverpoetry/HyperOS4-Launcher-Scheduling?display_name=tag)](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-这是一个 HyperOS 4 KernelSU 调度模块。Launcher 参与桌面、最近任务或应用转场时，模块把来源应用限制到设备定义的 background CPU 集，分配 Launcher 的关键线程，并在转场期把 SystemUI 渲染线程与 ART 维护线程分流，减少同一性能核心上的 runnable 竞争。
+这是一个 HyperOS 4 KernelSU 调度模块。Launcher 参与桌面、最近任务或应用转场时，模块把来源应用限制到设备定义的 background CPU 集并临时提高其 nice 值，分配 Launcher 的关键线程，并在转场期把 SystemUI 渲染线程与 ART 维护线程分流，减少同一性能核心上的 runnable 竞争。
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
 
@@ -16,7 +16,7 @@ KernelSU 管理器可直接打开模块 WebUI。界面按 Material 3 的标题�
 
 - 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
 - 日志页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
-- 设置页可分别控制来源应用、壁纸/MIMD、Launcher、SystemUI 和效率核限频，并独立调整来源退避、Raster、UI/Rust、ResMgr、FenceWait、SystemUI 渲染链及 ART 维护线程的核心集合；
+- 设置页可分别控制来源应用、壁纸/MIMD、Launcher、SystemUI 和效率核限频，并独立调整来源退避核心、nice 压制目标、Raster、UI/Rust、ResMgr、FenceWait、SystemUI 渲染链及 ART 维护线程的核心集合；
 - 所有写操作都映射到 `webui.sh configure` 的固定命名参数；前端和后端分别校验键、枚举及数值范围，不提供任意 Shell 执行入口；
 - 配置仅在内容发生变化时显示保存操作，保存后一次性重载服务，页面轮询不会覆盖尚未保存的表单。
 
@@ -48,7 +48,7 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 
 模块不移动当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复原始 cgroup，SystemUI 受管线程恢复逐 TID 原始亲和。
 
-来源应用不能只写 cgroup。Xiaomi `metis` 会根据 `minor_window_app` 静默扩展指定 UID 的 affinity。模块仅在该节点等于当前来源 UID 时按 Joyose 的结束语义写入 `0`，保存每个 TID 的原始 affinity，再使用 `/dev/cpuset/background/cpus` 作为真实约束。动画结束或取消后按 TID 启动时间恢复；详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
+来源应用不能只写 cgroup。Xiaomi `metis` 会根据 `minor_window_app` 静默扩展指定 UID 的 affinity。模块仅在该节点等于当前来源 UID 时按 Joyose 的结束语义写入 `0`，保存每个 TID 的原始 affinity 和 nice，再使用 `/dev/cpuset/background/cpus` 作为真实约束。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`；线程只在优先级高于目标时降到目标，默认 40。动画结束或取消后按 TID 启动时间恢复；nice 只在当前值仍等于模块应用值时恢复，避免覆盖应用或系统随后作出的调度调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
 
 Launcher 自身采用逐线程策略：
 

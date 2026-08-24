@@ -21,6 +21,7 @@ SOURCE_AFFINITY_STATE="$MODDIR/source-affinity.state"
 SOURCE_AFFINITY_ACTIVE="$MODDIR/source-affinity.active"
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
 SOURCE_PLACEMENT_FILE="$CONFIG_DIR/source-placement"
+SOURCE_NICE_SUPPRESSION_FILE="$CONFIG_DIR/source-nice-suppression"
 AUX_POLICY_FILE="$CONFIG_DIR/aux-policy.state"
 
 FREQ_POLICY_FILE="$CONFIG_DIR/frequency-policy.state"
@@ -52,6 +53,7 @@ THREAD_TOPOLOGY_INPUT_FILE="$MODDIR/launcher-thread-topology.input"
 
 SYSTEMUI_THREADCTL="$MODDIR/bin/systemui-threadctl"
 SYSTEMUI_STATE_FILE="$MODDIR/systemui-thread-original"
+SYSTEMUI_CACHE_FILE="$MODDIR/systemui-thread-cache"
 SYSTEMUI_PID_FILE="$MODDIR/systemui-thread-pid"
 SYSTEMUI_SERIAL_FILE="$MODDIR/systemui-thread.serial"
 SYSTEMUI_POLICY_STATE_FILE="$CONFIG_DIR/systemui-policy.state"
@@ -63,6 +65,8 @@ SERVICE_LOCK_DIR="$CONFIG_DIR/service.lock"
 SERVICE_LOCK_OWNER="$SERVICE_LOCK_DIR/owner"
 RESTART_LOCK_DIR="$CONFIG_DIR/restart.lock"
 RESTART_LOCK_OWNER="$RESTART_LOCK_DIR/owner"
+RELOAD_REQUEST_FILE="$CONFIG_DIR/reload.request"
+RELOAD_ACK_FILE="$MODDIR/reload.ack"
 
 write_default() {
   [ -f "$1" ] || printf '%s\n' "$2" >"$1"
@@ -83,6 +87,7 @@ migrate_legacy_configuration() {
   migrate_config_file state "$ENABLE_FILE"
   migrate_config_file source-policy.state "$SOURCE_POLICY_FILE"
   migrate_config_file source-placement "$SOURCE_PLACEMENT_FILE"
+  migrate_config_file source-nice-suppression "$SOURCE_NICE_SUPPRESSION_FILE"
   migrate_config_file aux-policy.state "$AUX_POLICY_FILE"
   migrate_config_file frequency-policy.state "$FREQ_POLICY_FILE"
   migrate_config_file frequency-limit-percent "$FREQ_PERCENT_FILE"
@@ -156,6 +161,7 @@ initialize_configuration() {
   write_default "$ENABLE_FILE" enabled
   write_default "$SOURCE_POLICY_FILE" enabled
   write_default "$SOURCE_PLACEMENT_FILE" 7
+  write_default "$SOURCE_NICE_SUPPRESSION_FILE" 40
   write_default "$AUX_POLICY_FILE" enabled
   write_default "$THREAD_POLICY_STATE_FILE" enabled
   write_default "$SYSTEMUI_POLICY_STATE_FILE" enabled
@@ -175,5 +181,6 @@ initialize_configuration() {
   write_default "$THREAD_UI_UCLAMP_FILE" 768
   write_default "$THREAD_RUST_UCLAMP_FILE" 512
   write_default "$THREAD_RESMGR_UCLAMP_FILE" 384
+  write_default "$RELOAD_REQUEST_FILE" 0
   chmod 0600 "$CONFIG_DIR"/* 2>/dev/null
 }

@@ -3,11 +3,12 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "5.6",
+  version: "5.8",
   author: "silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
   source_placement: "7",
+  source_nice_suppression: "40",
   auxiliary_policy: "enabled",
   launcher_policy: "enabled",
   systemui_policy: "enabled",

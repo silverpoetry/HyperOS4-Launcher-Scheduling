@@ -139,27 +139,45 @@ cleanup_stale_daemons() {
   rm -f "$list"
 }
 
+signal_daemon_reload() {
+  local daemon_pid="$1" child comm
+  [ -r "/proc/$daemon_pid/task/$daemon_pid/children" ] || return 0
+  for child in $(cat "/proc/$daemon_pid/task/$daemon_pid/children" 2>/dev/null); do
+    [ -r "/proc/$child/comm" ] || continue
+    IFS= read -r comm <"/proc/$child/comm"
+    [ "$comm" = launcher-logwatch ] || continue
+    kill "$child" 2>/dev/null || true
+  done
+}
+
+acknowledge_reload() {
+  local requested acknowledged
+  read_first_line "$RELOAD_REQUEST_FILE"; requested="$READ_VALUE"
+  case "$requested" in ''|*[!0-9]*) requested=0 ;; esac
+  read_first_line "$RELOAD_ACK_FILE"; acknowledged="$READ_VALUE"
+  [ "$acknowledged" = "$requested" ] || printf '%s\n' "$requested" >"$RELOAD_ACK_FILE"
+}
+
 restart_daemon() {
-  local daemon_pid watcher_pid started_pid attempt result=1
+  local daemon_pid serial attempt result=1
   promote_controller_process
   acquire_restart_lock || return 1
   [ "$RESTART_LOCK_ACQUIRED" = 1 ] || return 0
-  find_active_service_pid && daemon_pid="$ACTIVE_SERVICE_PID"
-  [ -n "$daemon_pid" ] && kill_process_tree "$daemon_pid"
-  for watcher_pid in $(pidof launcher-logwatch 2>/dev/null); do
-    kill -9 "$watcher_pid" 2>/dev/null || true
-  done
-  rm -f "$PID_FILE"
-  nohup /system/bin/sh "$MODDIR/service.sh" >/dev/null 2>&1 &
-  started_pid=$!
+  if ! find_active_service_pid; then
+    release_restart_lock
+    return 1
+  fi
+  daemon_pid="$ACTIVE_SERVICE_PID"
+  serial="$(increment_file "$RELOAD_REQUEST_FILE")"
+  signal_daemon_reload "$daemon_pid"
   attempt=0
   while [ "$attempt" -lt 50 ]; do
-    read_first_line "$PID_FILE"; daemon_pid="$READ_VALUE"
-    if is_module_service_pid "$daemon_pid"; then
+    read_first_line "$RELOAD_ACK_FILE"
+    if [ "$READ_VALUE" = "$serial" ] && is_module_service_pid "$daemon_pid"; then
       result=0
       break
     fi
-    [ -d "/proc/$started_pid" ] || break
+    is_module_service_pid "$daemon_pid" || break
     sleep 0.10
     attempt=$((attempt + 1))
   done
