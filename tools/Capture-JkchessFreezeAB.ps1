@@ -1,9 +1,10 @@
 param(
-    [string]$Adb = 'E:\Develop\Android\Sdk\platform-tools\adb.exe',
-    [string]$Serial = '192.168.3.3:5555'
+    [string]$Adb = 'adb',
+    [string]$Serial = $env:ANDROID_SERIAL
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Serial)) { throw 'Pass -Serial or set ANDROID_SERIAL.' }
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $pairRoot = Join-Path $projectRoot "test-results\jkchess-freeze-ab-$stamp"

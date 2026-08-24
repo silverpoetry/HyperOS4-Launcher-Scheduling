@@ -29,3 +29,5 @@ test-results/validated-recents-*/
 test-results/moonlight-current.png
 test-results/moonlight-heavy-ab.txt
 test-results/recents-corrected.png
+test-results/shennong-heavy-recents-*.pbtxt
+test-results/shennong-heavy-recents-*/

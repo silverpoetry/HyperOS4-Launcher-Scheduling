@@ -11,7 +11,6 @@ $sdkCandidates = @(
     $AndroidSdk,
     $env:ANDROID_SDK_ROOT,
     $env:ANDROID_HOME,
-    'E:\Develop\Android\Sdk',
     (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique
 
@@ -33,4 +32,3 @@ New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "NDK compiler failed: $LASTEXITCODE" }
 Get-Item -LiteralPath $output
 Get-FileHash -LiteralPath $output -Algorithm SHA256
-

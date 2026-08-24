@@ -1,3 +1,7 @@
+param(
+    [string]$AndroidSdk
+)
+
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -16,7 +20,7 @@ if (-not $distFull.StartsWith("$collectionFull$([IO.Path]::DirectorySeparatorCha
 }
 
 & $sourceValidator -RepositoryRoot $root | Out-Null
-& $nativeBuilder | Out-Null
+& $nativeBuilder -AndroidSdk $AndroidSdk | Out-Null
 
 New-Item -ItemType Directory -Path $dist -Force | Out-Null
 Remove-Item -LiteralPath $zip, "$zip.sha256" -Force -ErrorAction SilentlyContinue

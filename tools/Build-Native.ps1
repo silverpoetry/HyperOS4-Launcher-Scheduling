@@ -11,7 +11,6 @@ $sdkCandidates = @(
     $AndroidSdk,
     $env:ANDROID_SDK_ROOT,
     $env:ANDROID_HOME,
-    'E:\Develop\Android\Sdk',
     (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique
 

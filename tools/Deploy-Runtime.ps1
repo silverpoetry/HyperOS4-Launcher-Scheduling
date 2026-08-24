@@ -1,10 +1,11 @@
 param(
-    [string]$Adb = 'E:\Develop\Android\Sdk\platform-tools\adb.exe',
-    [string]$Serial = '192.168.3.2:5555',
+    [string]$Adb = 'adb',
+    [string]$Serial = $env:ANDROID_SERIAL,
     [string]$SourceRoot
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Serial)) { throw 'Pass -Serial or set ANDROID_SERIAL.' }
 $root = Split-Path -Parent $PSScriptRoot
 $moduleSource = if ($SourceRoot) { $SourceRoot } else { Join-Path $root 'module-src' }
 $stage = '/data/local/tmp/hyperos4-launcher-scheduling-stage'

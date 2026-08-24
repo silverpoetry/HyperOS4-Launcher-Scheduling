@@ -1,10 +1,11 @@
 param(
-    [string]$Adb = 'E:\Develop\Android\Sdk\platform-tools\adb.exe',
-    [string]$Serial = '192.168.3.3:5555',
+    [string]$Adb = 'adb',
+    [string]$Serial = $env:ANDROID_SERIAL,
     [switch]$Warm
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($Serial)) { throw 'Pass -Serial or set ANDROID_SERIAL.' }
 $root = Split-Path -Parent $PSScriptRoot
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $launchMode = if ($Warm) { 'warm' } else { 'cold' }

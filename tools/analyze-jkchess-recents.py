@@ -1,11 +1,12 @@
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
 
-PERFETTO_SITE = Path(r"D:\Projects\HyperOS4-Sheng-DSU\tools\perfetto-python")
-if PERFETTO_SITE.exists():
-    sys.path.insert(0, str(PERFETTO_SITE))
+PERFETTO_SITE = os.environ.get("PERFETTO_PYTHON")
+if PERFETTO_SITE:
+    sys.path.insert(0, PERFETTO_SITE)
 
 from perfetto.trace_processor import TraceProcessor
 
