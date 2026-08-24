@@ -2,11 +2,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <spawn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -15,9 +15,11 @@
 #define ANDROID_LOG_RDONLY 1
 #define LOG_BUFFER_SIZE 65536
 #define SOURCE_APP_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/source-app"
-#define SOURCE_AFFINITYCTL "/data/adb/modules/hyperos4_recents_source_app_yield/bin/source-affinityctl"
-#define SOURCE_AFFINITY_STATE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.state"
 #define SOURCE_APP_NATIVE_TMP "/data/adb/modules/hyperos4_recents_source_app_yield/source-app.native.tmp"
+#define SOURCE_GUARD_SOCKET "/dev/.hyperos4-launcher-scheduling/source-guard.sock"
+#define SOURCE_GUARD_STATUS "/dev/.hyperos4-launcher-scheduling/source-guard.status"
+#define SOURCE_CPUSET_PROCS "/dev/cpuset/hyperos4-source/cgroup.procs"
+#define SOURCE_CPUCTL_PROCS "/dev/cpuctl/hyperos4-source/cgroup.procs"
 #define PACKAGE_LENGTH 256
 
 struct yield_result {
@@ -25,10 +27,10 @@ struct yield_result {
     int uid;
     int cpuset_ok;
     int cpuctl_ok;
-    int affinity_status;
+    int guard_status;
     int64_t delivery_us;
     int64_t write_us;
-    int64_t affinity_us;
+    int64_t guard_us;
     int64_t cgroup_complete_monotonic_ns;
     int64_t complete_monotonic_ns;
 };
@@ -137,45 +139,36 @@ static int read_source_record(int *pid, int *uid, char *package, size_t package_
     return 0;
 }
 
-static int run_affinity_apply(const char *operation, int pid, int uid) {
-    char pid_text[32];
-    char uid_text[32];
-    char *arguments[] = {
-        (char *)SOURCE_AFFINITYCTL,
-        (char *)operation,
-        pid_text,
-        uid_text,
-        (char *)SOURCE_AFFINITY_STATE,
-        NULL,
-    };
-    posix_spawn_file_actions_t actions;
-    pid_t child;
-    int status;
-    int null_fd;
-    int spawn_result;
-    extern char **environ;
-    snprintf(pid_text, sizeof(pid_text), "%d", pid);
-    snprintf(uid_text, sizeof(uid_text), "%d", uid);
-    null_fd = open("/dev/null", O_WRONLY | O_CLOEXEC);
-    if (null_fd < 0) return -1;
-    if (posix_spawn_file_actions_init(&actions) != 0) {
-        close(null_fd);
+static int guard_active(void) {
+    char text[512];
+    int fd = open(SOURCE_GUARD_STATUS, O_RDONLY | O_CLOEXEC);
+    ssize_t length;
+    if (fd < 0) return 0;
+    length = read(fd, text, sizeof(text) - 1);
+    close(fd);
+    if (length <= 0) return 0;
+    text[length] = '\0';
+    return strstr(text, "active=1\n") != NULL;
+}
+
+static int send_guard_command(const char *operation, int pid, int uid) {
+    struct sockaddr_un address;
+    char command[96];
+    int fd;
+    int length = snprintf(command, sizeof(command), "%s %d %d", operation, pid, uid);
+    if (length <= 0 || (size_t)length >= sizeof(command)) return -1;
+    fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+    if (fd < 0) return -1;
+    memset(&address, 0, sizeof(address));
+    address.sun_family = AF_UNIX;
+    snprintf(address.sun_path, sizeof(address.sun_path), "%s", SOURCE_GUARD_SOCKET);
+    if (sendto(fd, command, (size_t)length + 1, 0,
+               (struct sockaddr *)&address, sizeof(address)) < 0) {
+        close(fd);
         return -1;
     }
-    posix_spawn_file_actions_adddup2(&actions, null_fd, STDOUT_FILENO);
-    posix_spawn_file_actions_adddup2(&actions, null_fd, STDERR_FILENO);
-    posix_spawn_file_actions_addclose(&actions, null_fd);
-    spawn_result = posix_spawn(&child, SOURCE_AFFINITYCTL, &actions,
-                               NULL, arguments, environ);
-    posix_spawn_file_actions_destroy(&actions);
-    close(null_fd);
-    if (spawn_result != 0) return -1;
-    do {
-        if (waitpid(child, &status, 0) >= 0) break;
-        if (errno != EINTR) return -1;
-    } while (errno == EINTR);
-    if (!WIFEXITED(status)) return -1;
-    return WEXITSTATUS(status);
+    close(fd);
+    return 0;
 }
 
 static struct yield_result yield_source_native(void) {
@@ -185,12 +178,13 @@ static struct yield_result yield_source_native(void) {
     char package[PACKAGE_LENGTH];
     if (read_source_record(&result.pid, &result.uid, package, sizeof(package)) != 0) return result;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result.affinity_status = run_affinity_apply("yield", result.pid, result.uid);
+    result.cpuset_ok = write_pid_file(SOURCE_CPUSET_PROCS, result.pid);
+    result.cpuctl_ok = write_pid_file(SOURCE_CPUCTL_PROCS, result.pid);
+    result.guard_status = send_guard_command("activate", result.pid, result.uid);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    result.affinity_us = timespec_diff_us(&end, &start);
+    result.guard_us = timespec_diff_us(&end, &start);
     result.write_us = 0;
-    result.cpuset_ok = result.affinity_status == 0;
-    result.cpuctl_ok = result.affinity_status == 0;
+    if (!result.cpuset_ok || !result.cpuctl_ok) result.guard_status = -1;
     result.cgroup_complete_monotonic_ns =
         (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result.complete_monotonic_ns = (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
@@ -264,8 +258,7 @@ static int replace_started_source(const char *tag, const char *message,
     struct timespec end;
 
     if (strcmp(tag, "ActivityManager") != 0 ||
-        strstr(message, "Start proc ") == NULL ||
-        access(SOURCE_AFFINITY_STATE, F_OK) != 0) return 0;
+        strstr(message, "Start proc ") == NULL || !guard_active()) return 0;
     if (parse_started_process(message, &logged_pid, &logged_uid, logged_process,
                               sizeof(logged_process)) != 0) return 0;
     if (read_source_record(&result->pid, &result->uid, cached_package,
@@ -275,15 +268,16 @@ static int replace_started_source(const char *tag, const char *message,
 
     result->pid = logged_pid;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    result->affinity_status = run_affinity_apply("replace-yield", logged_pid, logged_uid);
+    result->cpuset_ok = write_pid_file(SOURCE_CPUSET_PROCS, logged_pid);
+    result->cpuctl_ok = write_pid_file(SOURCE_CPUCTL_PROCS, logged_pid);
+    result->guard_status = send_guard_command("activate", logged_pid, logged_uid);
     clock_gettime(CLOCK_MONOTONIC, &end);
-    result->affinity_us = timespec_diff_us(&end, &start);
-    result->cpuset_ok = result->affinity_status == 0;
-    result->cpuctl_ok = result->affinity_status == 0;
+    result->guard_us = timespec_diff_us(&end, &start);
+    if (!result->cpuset_ok || !result->cpuctl_ok) result->guard_status = -1;
     result->complete_monotonic_ns =
         (int64_t)end.tv_sec * 1000000000LL + end.tv_nsec;
     result->cgroup_complete_monotonic_ns = result->complete_monotonic_ns;
-    if (result->affinity_status == 0)
+    if (result->guard_status == 0)
         result->write_us = write_source_record(logged_pid, logged_uid, cached_package);
     snprintf(package, package_size, "%s", cached_package);
     return 1;
@@ -365,10 +359,10 @@ int main(void) {
             char package[PACKAGE_LENGTH] = "";
             if (replace_started_source(tag, message, &yield, package, sizeof(package))) {
                 count = snprintf(output, sizeof(output),
-                                 "%u.%09u|%d|NativeSourceSpawn|package=%s pid=%d uid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld sourceRecordStatus=%lld nativeCompleteNs=%lld\n",
+                                 "%u.%09u|%d|NativeSourceSpawn|package=%s pid=%d uid=%d nativeGuardStatus=%d nativeGuardUs=%lld sourceRecordStatus=%lld nativeCompleteNs=%lld\n",
                                  entry->sec, entry->nsec, entry->pid, package,
-                                 yield.pid, yield.uid, yield.affinity_status,
-                                 (long long)yield.affinity_us,
+                                 yield.pid, yield.uid, yield.guard_status,
+                                 (long long)yield.guard_us,
                                  (long long)yield.write_us,
                                  (long long)yield.complete_monotonic_ns);
                 if (count > 0 && (size_t)count < sizeof(output))
@@ -384,14 +378,13 @@ int main(void) {
             yield = yield_source_native();
             clock_gettime(CLOCK_REALTIME, &observed);
             yield.delivery_us = timespec_diff_us(&observed, &emitted) -
-                                yield.write_us - yield.affinity_us;
+                                yield.write_us - yield.guard_us;
             if (yield.delivery_us < 0 || yield.delivery_us > 5000000) yield.delivery_us = -1;
             snprintf(suffix, sizeof(suffix),
-                     " nativeYieldPid=%d nativeYieldUid=%d nativeAffinityStatus=%d nativeAffinityUs=%lld nativeYieldCpuset=%d nativeYieldCpuctl=%d nativeDeliveryUs=%lld nativeYieldUs=%lld nativeCgroupCompleteNs=%lld nativeCompleteNs=%lld",
-                     yield.pid, yield.uid, yield.affinity_status,
-                     (long long)yield.affinity_us, yield.cpuset_ok, yield.cpuctl_ok,
-                     (long long)yield.delivery_us, (long long)yield.write_us,
-                     (long long)yield.cgroup_complete_monotonic_ns,
+                     " nativeGuardPid=%d nativeGuardUid=%d nativeGuardStatus=%d nativeGuardUs=%lld nativeGuardCpuset=%d nativeGuardCpuctl=%d nativeDeliveryUs=%lld nativeCompleteNs=%lld",
+                     yield.pid, yield.uid, yield.guard_status,
+                     (long long)yield.guard_us, yield.cpuset_ok, yield.cpuctl_ok,
+                     (long long)yield.delivery_us,
                      (long long)yield.complete_monotonic_ns);
         }
 

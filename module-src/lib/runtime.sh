@@ -132,8 +132,9 @@ cleanup_stale_daemons() {
   while read -r pid args; do
     [ "$pid" = "$$" ] && continue
     case "$args" in
-      *"$MODDIR/service.sh"*) kill_process_tree "$pid" ;;
-      *launcher-logwatch*) kill -9 "$pid" 2>/dev/null ;;
+      *"$MODDIR/service.sh"*) kill_process_tree "$pid"; continue ;;
+      *launcher-logwatch*) kill -9 "$pid" 2>/dev/null || true; continue ;;
+      *source-guard*daemon*) kill -9 "$pid" 2>/dev/null || true; continue ;;
     esac
   done <"$list"
   rm -f "$list"

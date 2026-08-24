@@ -27,7 +27,7 @@ load_configuration_values() {
   CFG_FREQUENCY="$(state_value "$FREQ_POLICY_FILE" disabled)"
   CFG_FREQUENCY_PERCENT="$(number_value "$FREQ_PERCENT_FILE" 78)"
   CFG_FREQUENCY_TIMEOUT="$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
-  CFG_APP_FALLBACK="$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
+  CFG_APP_COMPLETION_TIMEOUT="$(number_value "$APP_COMPLETION_TIMEOUT_FILE" 2000)"
   CFG_LAUNCHER_PLACEMENT="$(number_value "$THREAD_PLACEMENT_FILE" 2)"
   CFG_RASTER_PLACEMENT="$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 4)"
   CFG_RESMGR_PLACEMENT="$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
@@ -57,7 +57,7 @@ assign_configuration_value() {
     frequency) valid_state "$value" && CFG_FREQUENCY="$value" ;;
     frequency_percent) valid_number "$value" 40 100 && CFG_FREQUENCY_PERCENT="$value" ;;
     frequency_timeout_ms) valid_number "$value" 300 5000 && CFG_FREQUENCY_TIMEOUT="$value" ;;
-    app_fallback_ms) valid_number "$value" 500 5000 && CFG_APP_FALLBACK="$value" ;;
+    app_completion_timeout_ms) valid_number "$value" 500 5000 && CFG_APP_COMPLETION_TIMEOUT="$value" ;;
     launcher_placement) valid_number "$value" 1 7 && CFG_LAUNCHER_PLACEMENT="$value" ;;
     raster_placement) valid_number "$value" 1 7 && CFG_RASTER_PLACEMENT="$value" ;;
     resmgr_placement) valid_number "$value" 1 7 && CFG_RESMGR_PLACEMENT="$value" ;;
@@ -92,7 +92,7 @@ save_configuration() {
   write_atomic "$FREQ_POLICY_FILE" "$CFG_FREQUENCY" &&
   write_atomic "$FREQ_PERCENT_FILE" "$CFG_FREQUENCY_PERCENT" &&
   write_atomic "$FREQ_TIMEOUT_FILE" "$CFG_FREQUENCY_TIMEOUT" &&
-  write_atomic "$APP_FALLBACK_MS_FILE" "$CFG_APP_FALLBACK" &&
+  write_atomic "$APP_COMPLETION_TIMEOUT_FILE" "$CFG_APP_COMPLETION_TIMEOUT" &&
   write_atomic "$THREAD_PLACEMENT_FILE" "$CFG_LAUNCHER_PLACEMENT" &&
   write_atomic "$THREAD_RASTER_PLACEMENT_FILE" "$CFG_RASTER_PLACEMENT" &&
   write_atomic "$THREAD_RESMGR_PLACEMENT_FILE" "$CFG_RESMGR_PLACEMENT" &&

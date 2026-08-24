@@ -13,7 +13,7 @@ STAGE=/data/local/tmp/hyperos4-launcher-scheduling-stage
 [ -d "$STAGE/webroot" ]
 [ -x "$STAGE/bin/launcher-logwatch" ]
 [ -x "$STAGE/bin/launcher-threadctl" ]
-[ -x "$STAGE/bin/source-affinityctl" ]
+[ -x "$STAGE/bin/source-guard" ]
 [ -x "$STAGE/bin/systemui-threadctl" ]
 
 for script in "$STAGE/service.sh" "$STAGE/action.sh" "$STAGE/uninstall.sh" \
@@ -23,24 +23,25 @@ done
 
 . "$STAGE/lib/config.sh"
 . "$STAGE/lib/runtime.sh"
-read_first_line "$MODDIR/daemon.pid"
-[ -n "$READ_VALUE" ] && kill_process_tree "$READ_VALUE"
-for watcher_pid in $(pidof launcher-logwatch 2>/dev/null); do
-  kill -9 "$watcher_pid" 2>/dev/null || true
-done
-sleep 1
+promote_controller_process
+cleanup_stale_daemons
+rm -f "$SERVICE_LOCK_OWNER" "$RESTART_LOCK_OWNER"
+rmdir "$SERVICE_LOCK_DIR" "$RESTART_LOCK_DIR" 2>/dev/null || true
 
-mkdir -p "$MODDIR/lib" "$MODDIR/bin"
+mkdir -p "$MODDIR"
 cp "$STAGE/module.prop" "$MODDIR/module.prop"
 cp "$STAGE/service.sh" "$MODDIR/service.sh"
 cp "$STAGE/action.sh" "$MODDIR/action.sh"
 cp "$STAGE/uninstall.sh" "$MODDIR/uninstall.sh"
 cp "$STAGE/webui.sh" "$MODDIR/webui.sh"
-cp "$STAGE/lib"/*.sh "$MODDIR/lib/"
-cp "$STAGE/bin/launcher-logwatch" "$MODDIR/bin/launcher-logwatch"
-cp "$STAGE/bin/launcher-threadctl" "$MODDIR/bin/launcher-threadctl"
-cp "$STAGE/bin/source-affinityctl" "$MODDIR/bin/source-affinityctl"
-cp "$STAGE/bin/systemui-threadctl" "$MODDIR/bin/systemui-threadctl"
+
+rm -rf "$MODDIR/lib.new" "$MODDIR/bin.new"
+mkdir -p "$MODDIR/lib.new" "$MODDIR/bin.new"
+cp "$STAGE/lib"/*.sh "$MODDIR/lib.new/"
+cp "$STAGE/bin"/* "$MODDIR/bin.new/"
+rm -rf "$MODDIR/lib" "$MODDIR/bin"
+mv "$MODDIR/lib.new" "$MODDIR/lib"
+mv "$MODDIR/bin.new" "$MODDIR/bin"
 
 [ "$MODDIR" = /data/adb/modules/hyperos4_recents_source_app_yield ] || exit 3
 rm -rf "$MODDIR/webroot.new"
@@ -49,15 +50,8 @@ rm -rf "$MODDIR/webroot"
 mv "$MODDIR/webroot.new" "$MODDIR/webroot"
 
 chmod 0755 "$MODDIR/service.sh" "$MODDIR/action.sh" "$MODDIR/uninstall.sh" "$MODDIR/webui.sh"
-chmod 0755 "$MODDIR/bin/launcher-logwatch" "$MODDIR/bin/launcher-threadctl" "$MODDIR/bin/source-affinityctl" "$MODDIR/bin/systemui-threadctl"
+chmod 0755 "$MODDIR/bin/launcher-logwatch" "$MODDIR/bin/launcher-threadctl" "$MODDIR/bin/source-guard" "$MODDIR/bin/systemui-threadctl"
 chmod 0644 "$MODDIR/lib"/*.sh
-find "$MODDIR/webroot" -type d -exec chmod 0755 {} \;
-find "$MODDIR/webroot" -type f -exec chmod 0644 {} \;
-rm -f "$MODDIR/thread-policy.sh"
-
-nohup /system/bin/sh "$MODDIR/service.sh" >/dev/null 2>&1 &
-sleep 2
 
 echo runtime_deployed=1
-echo "daemon_pid=$(cat "$MODDIR/daemon.pid" 2>/dev/null)"
 echo "version=$(sed -n 's/^version=//p' "$MODDIR/module.prop" | head -n 1)"

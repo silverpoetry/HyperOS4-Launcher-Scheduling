@@ -3,7 +3,7 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "6.1",
+  version: "7.0",
   author: "silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
@@ -15,7 +15,7 @@ export const MOCK_STATUS = {
   frequency_policy: "disabled",
   frequency_percent: "78",
   frequency_timeout_ms: "1500",
-  app_fallback_ms: "2000",
+  app_completion_timeout_ms: "2000",
   launcher_placement: "2",
   raster_placement: "4",
   resmgr_placement: "2",

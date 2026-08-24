@@ -82,6 +82,7 @@ print_status() {
   local mode daemon_pid daemon_alive launcher_pid topology
   local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask
   local source_pid source_uid source_name pending_pid pending_uid pending_name
+  local guard_active=0 guard_tasks=0 guard_reassertions=0 key value
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
   daemon_pid=""; find_active_service_pid && daemon_pid="$ACTIVE_SERVICE_PID"
@@ -104,6 +105,15 @@ EOF
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
   pending_pid=""; pending_uid=""; pending_name=""
   [ -r "$PENDING_SOURCE_FILE" ] && read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
+  if [ -r "$SOURCE_GUARD_STATUS" ]; then
+    while IFS='=' read -r key value; do
+      case "$key" in
+        active) guard_active="$value" ;;
+        tasks) guard_tasks="$value" ;;
+        reassertions) guard_reassertions="$value" ;;
+      esac
+    done <"$SOURCE_GUARD_STATUS"
+  fi
 
   emit version "$(module_version)"
   emit author 'silverpoetry'
@@ -117,7 +127,7 @@ EOF
   emit frequency_policy "$(state_value "$FREQ_POLICY_FILE" disabled)"
   emit frequency_percent "$(number_value "$FREQ_PERCENT_FILE" 78)"
   emit frequency_timeout_ms "$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
-  emit app_fallback_ms "$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
+  emit app_completion_timeout_ms "$(number_value "$APP_COMPLETION_TIMEOUT_FILE" 2000)"
   emit launcher_placement "$(number_value "$THREAD_PLACEMENT_FILE" 2)"
   emit raster_placement "$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 4)"
   emit resmgr_placement "$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
@@ -147,6 +157,9 @@ EOF
   emit source_pid "$source_pid"
   emit source_uid "$source_uid"
   emit source_name "$source_name"
+  emit source_guard_active "$guard_active"
+  emit source_guard_tasks "$guard_tasks"
+  emit source_guard_reassertions "$guard_reassertions"
   emit pending_pid "$pending_pid"
   emit pending_uid "$pending_uid"
   emit pending_name "$pending_name"

@@ -4,7 +4,7 @@ import { placementOptions } from "./model.js";
 const FIELD_SCHEMA = [
   ["frequencyPercent", "frequency_percent", 40, 100],
   ["frequencyTimeout", "frequency_timeout_ms", 300, 5000],
-  ["appFallback", "app_fallback_ms", 500, 5000],
+  ["appCompletionTimeout", "app_completion_timeout_ms", 500, 5000],
   ["sourcePlacement", "source_placement", 5, 7, [5, 7]],
   ["sourceNiceSuppression", "source_nice_suppression", 0, 40],
   ["launcherPlacement", "launcher_placement", 1, 7],

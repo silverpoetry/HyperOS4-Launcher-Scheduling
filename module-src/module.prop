@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=6.1
-versionCode=61
+version=7.0
+versionCode=70
 author=silverpoetry
-description=Event-driven HyperOS 4 Launcher scheduling with dynamic CPU topology and reversible source-app isolation.
+description=HyperOS 4 transition scheduling with dynamic topology and an event-driven source cgroup guard.

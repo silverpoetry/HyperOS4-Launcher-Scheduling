@@ -16,10 +16,13 @@ GESTURE_FILE="$MODDIR/gesture.active"
 WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
 MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 
-SOURCE_AFFINITYCTL="$MODDIR/bin/source-affinityctl"
 SOURCE_RUNTIME_DIR=/dev/.hyperos4-launcher-scheduling
-SOURCE_AFFINITY_STATE="$SOURCE_RUNTIME_DIR/source-affinity.state"
-SOURCE_AFFINITY_ACTIVE="$SOURCE_RUNTIME_DIR/source-affinity.active"
+SOURCE_GUARD="$MODDIR/bin/source-guard"
+SOURCE_GUARD_PID_FILE="$SOURCE_RUNTIME_DIR/source-guard.pid"
+SOURCE_GUARD_SOCKET="$SOURCE_RUNTIME_DIR/source-guard.sock"
+SOURCE_GUARD_STATUS="$SOURCE_RUNTIME_DIR/source-guard.status"
+SOURCE_CPUSET_DIR=/dev/cpuset/hyperos4-source
+SOURCE_CPUCTL_DIR=/dev/cpuctl/hyperos4-source
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
 SOURCE_PLACEMENT_FILE="$CONFIG_DIR/source-placement"
 SOURCE_NICE_SUPPRESSION_FILE="$CONFIG_DIR/source-nice-suppression"
@@ -31,7 +34,7 @@ FREQ_TIMEOUT_FILE="$CONFIG_DIR/frequency-timeout-ms"
 FREQ_STATE_FILE="$MODDIR/frequency-limit.active"
 FREQ_INFO_FILE="$MODDIR/frequency-info"
 FREQ_SERIAL_FILE="$MODDIR/frequency.serial"
-APP_FALLBACK_MS_FILE="$CONFIG_DIR/app-fallback-ms"
+APP_COMPLETION_TIMEOUT_FILE="$CONFIG_DIR/app-completion-timeout-ms"
 
 TASKSET=/system/bin/taskset
 UCLAMPSET=/system/bin/uclampset
@@ -93,7 +96,6 @@ migrate_legacy_configuration() {
   migrate_config_file frequency-policy.state "$FREQ_POLICY_FILE"
   migrate_config_file frequency-limit-percent "$FREQ_PERCENT_FILE"
   migrate_config_file frequency-timeout-ms "$FREQ_TIMEOUT_FILE"
-  migrate_config_file app-fallback-ms "$APP_FALLBACK_MS_FILE"
   migrate_config_file thread-policy.state "$THREAD_POLICY_STATE_FILE"
   migrate_config_file launcher-placement "$THREAD_PLACEMENT_FILE"
   migrate_config_file raster-placement "$THREAD_RASTER_PLACEMENT_FILE"
@@ -169,7 +171,7 @@ initialize_configuration() {
   write_default "$FREQ_POLICY_FILE" disabled
   write_default "$FREQ_PERCENT_FILE" 78
   write_default "$FREQ_TIMEOUT_FILE" 1500
-  write_default "$APP_FALLBACK_MS_FILE" 2000
+  write_default "$APP_COMPLETION_TIMEOUT_FILE" 2000
   write_default "$THREAD_PLACEMENT_FILE" 2
   write_default "$THREAD_RASTER_PLACEMENT_FILE" 4
   write_default "$THREAD_RESMGR_PLACEMENT_FILE" 2

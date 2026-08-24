@@ -11,7 +11,7 @@ if ($buildScript -match 'Compress-Archive' -or -not $buildScript.Contains(".Repl
 
 $required = @(
     'service.sh', 'webui.sh', 'action.sh', 'uninstall.sh', 'module.prop',
-    'lib\config.sh', 'lib\runtime.sh', 'lib\topology.sh',
+    'lib\config.sh', 'lib\runtime.sh', 'lib\topology.sh', 'lib\source-guard.sh',
     'lib\launcher-policy.sh', 'lib\frequency-policy.sh',
     'lib\systemui-policy.sh',
     'lib\process-policy.sh', 'lib\state-machine.sh', 'lib\events.sh',
@@ -101,17 +101,18 @@ if (-not $yieldFunction.Success) {
     throw 'yield_source_native was not found'
 }
 $yieldBody = $yieldFunction.Groups['body'].Value
-$affinityApply = $yieldBody.IndexOf('run_affinity_apply("yield", result.pid, result.uid)')
-if ($affinityApply -lt 0) {
-    throw 'Native source yield must invoke the prepared affinity transaction'
+if ($yieldBody -notmatch 'SOURCE_CPUSET_PROCS' -or
+    $yieldBody -notmatch 'SOURCE_CPUCTL_PROCS' -or
+    $yieldBody -notmatch 'send_guard_command\("activate"') {
+    throw 'Native source yield must enter the dedicated cgroups and arm the resident guard'
 }
 if ($logWatcher -notmatch 'Start proc ' -or
     $logWatcher -notmatch "cursor\[1\] != 'u'" -or
     $logWatcher -notmatch "\*end != 'a'" -or
-    $logWatcher -notmatch 'run_affinity_apply\("replace-yield"' -or
-    $logWatcher -notmatch 'access\(SOURCE_AFFINITY_STATE, F_OK\)' -or
+    $logWatcher -notmatch 'guard_active\(\)' -or
+    $logWatcher -notmatch 'send_guard_command\("activate"' -or
     $logWatcher -notmatch 'logger_open\(list, LOG_ID_SYSTEM\)') {
-    throw 'Native watcher must atomically replace a restarted source while its yield transaction is active'
+    throw 'Native watcher must transfer a restarted source into the resident guard'
 }
 if ($logWatcher -notmatch 'finish_remote_transition to_home = false') {
     throw 'Native watcher must forward same-app return completion'
@@ -124,6 +125,10 @@ if ($events -notmatch 'NativeSourceSpawn') {
 if ($events -notmatch 'finish_remote_transition to_home = false') {
     throw 'State machine must restore the source on same-app return completion'
 }
+if ($events -notmatch 'app-resumed-duplicate' -or
+    $events -match 'Repair a missing or partially failed native transaction') {
+    throw 'Leaving-state duplicates must be side-effect free and entry must have one native path'
+}
 
 $configuration = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\config.sh') -Raw
 if ($configuration -notmatch 'write_default "\$THREAD_RASTER_PLACEMENT_FILE" 4') {
@@ -135,21 +140,11 @@ if ($processPolicy -notmatch 'cache_pid_record "\$pid" "\$destination" "\$packag
     $processPolicy -notmatch 'cache_pid_record "\$pid" "\$SOURCE_FILE" "\$resumed"') {
     throw 'Source records must retain the full Android package identity'
 }
-if ($processPolicy -notmatch '(?m)^source_yield_active\(\)' -or
-    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] && \[ -r "\$SOURCE_AFFINITY_STATE" \]' -or
-    $processPolicy -notmatch '(?m)^prepare_source_affinity_cache\(\)' -or
-    $processPolicy -notmatch 'SOURCE_AFFINITYCTL" prepare' -or
-    $processPolicy -notmatch '\[ "\$cpuset" = /background \] && \[ "\$cpu" = /background \]') {
-    throw 'Source events must use prepared affinity state and the active fast path'
-}
-if ($processPolicy -notmatch '(?m)^reassert_active_source\(\)' -or
-    $processPolicy -notmatch 'apply_source_affinity .* reassert') {
-    throw 'Source constraints must support event-driven reassertion'
-}
-$events = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\events.sh') -Raw
-if ($events -notmatch 'reassert_active_source launcher-resumed' -or
-    $events -notmatch 'reassert_active_source overview-entered') {
-    throw 'Launcher resume and overview events must reassert source constraints'
+if ($processPolicy -notmatch '(?m)^arm_source_record\(\)' -or
+    $processPolicy -notmatch '(?m)^activate_source_record\(\)' -or
+    $processPolicy -notmatch 'source_guard_command activate' -or
+    $processPolicy -match 'SAF[1-4]|source-affinity') {
+    throw 'Source events must use only the resident cgroup guard'
 }
 $stateMachine = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\state-machine.sh') -Raw
 if ($stateMachine -notmatch '\[ "\$current" = app \] && apply_policy' -or
@@ -170,6 +165,10 @@ if ($configuration -notmatch 'write_default "\$SOURCE_PLACEMENT_FILE" 7') {
 if ($configuration -notmatch 'write_default "\$SOURCE_NICE_SUPPRESSION_FILE" 40') {
     throw 'Source nice suppression must default to the full 40-level range'
 }
+if ($configuration -notmatch 'APP_COMPLETION_TIMEOUT_FILE=' -or
+    $configuration -match 'APP_FALLBACK|app-fallback') {
+    throw 'Application completion must use the current timeout model only'
+}
 
 $runtime = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\runtime.sh') -Raw
 foreach ($requiredRuntimeFunction in @(
@@ -189,48 +188,26 @@ if ($runtime -notmatch 'while \[ "\$attempt" -lt 50 \]' -or
     throw 'Service reload must reuse and validate the existing daemon'
 }
 
-$affinityController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c') -Raw
-if ($affinityController -notmatch 'read_source_target_mask' -or
-    $affinityController -notmatch 'SOURCE_PLACEMENT_FILE' -or
-    $affinityController -notmatch 'selected = placement == 5 \? little_mask : background_mask') {
-    throw 'Source placement must distinguish the efficiency and system background sets'
+$sourceGuard = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_guard.c') -Raw
+if ($sourceGuard -notmatch 'cgroup_attach_task' -or
+    $sourceGuard -notmatch 'PERF_TYPE_TRACEPOINT' -or
+    $sourceGuard -notmatch 'SOURCE_CPUSET_PROCS' -or
+    $sourceGuard -notmatch 'SOURCE_CPUCTL_PROCS' -or
+    $sourceGuard -notmatch 'reassert_source\(\)' -or
+    $sourceGuard -notmatch 'SOCK_DGRAM' -or
+    $sourceGuard -notmatch 'attribute.disabled = 1' -or
+    $sourceGuard -notmatch 'starttime' -or
+    $sourceGuard -notmatch 'TRACE_FORMAT_PATH') {
+    throw 'The resident source guard must own cgroup placement and kernel attach events'
 }
-if ($affinityController -notmatch 'SOURCE_AFFINITY_ACTIVE' -or
-    $affinityController -notmatch 'write_active_record' -or
-    $affinityController -notmatch 'unlink\(SOURCE_AFFINITY_ACTIVE\)' -or
-    $affinityController -notmatch 'bsearch\(&current\[i\]') {
-    throw 'Native source transactions must publish active state and use indexed reassert lookup'
-}
-if ($affinityController -notmatch 'SAF2' -or
-    $affinityController -notmatch 'SOURCE_NICE_SUPPRESSION_FILE' -or
-    $affinityController -notmatch 'getpriority\(PRIO_PROCESS' -or
-    $affinityController -notmatch 'setpriority\(PRIO_PROCESS' -or
-    $affinityController -notmatch 'current_nice == applied_nice') {
-    throw 'Source transactions must own, suppress and conditionally restore per-thread nice values'
-}
-$yieldState = [regex]::Match(
-    $affinityController,
-    'static int yield_state\([^)]*\) \{(?<body>[\s\S]*?)\n\}',
-    [Text.RegularExpressions.RegexOptions]::Singleline
-)
-if (-not $yieldState.Success) {
-    throw 'yield_state was not found in source_affinityctl'
-}
-$yieldStateBody = $yieldState.Groups['body'].Value
-if ($yieldStateBody -notmatch 'fast_yield_state\(pid, uid, path\)') {
-    throw 'Source yield must use the prepared fast affinity transaction'
-}
-if ($affinityController -notmatch 'SAF4' -or
-    $affinityController -notmatch 'collect_tasks' -or
-    $affinityController -notmatch 'save_prepared_state' -or
-    $affinityController -notmatch 'apply_mask_to_tasks' -or
-    $affinityController -notmatch 'apply_prepared_nice' -or
-    $affinityController -notmatch 'prepare_state') {
-    throw 'Source affinity must prepare affinity and nice restore state outside the transition'
+if ($sourceGuard -match 'SAF[1-4]|source_affinityctl|SOURCE_AFFINITY' -or
+    (Test-Path -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c')) -or
+    (Test-Path -LiteralPath (Join-Path $moduleRoot 'bin\source-affinityctl'))) {
+    throw 'Legacy source-affinity transactions must not be packaged'
 }
 if ($configuration -notmatch 'SOURCE_RUNTIME_DIR=/dev/' -or
-    $configuration -notmatch 'SOURCE_AFFINITY_STATE="\$SOURCE_RUNTIME_DIR/') {
-    throw 'Transient source state must live on the /dev tmpfs'
+    $configuration -notmatch 'SOURCE_GUARD_SOCKET="\$SOURCE_RUNTIME_DIR/') {
+    throw 'The source guard control plane must live on /dev tmpfs'
 }
 
 $systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw

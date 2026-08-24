@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 handle_launcher_event() {
-  local line="$1" package serial
+  local line="$1" package serial pending_pid pending_uid pending_name
   case "$line" in
     *"|NativeSourceSpawn|"*)
       log_state "native-source-spawn event=$line"
@@ -13,12 +13,18 @@ handle_launcher_event() {
       if [ "$package" = com.miui.home ]; then
         rm -f "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
         increment_file "$SERIAL_FILE" >/dev/null
-        reassert_active_source launcher-resumed
         trigger_transition_thread_policies "$LAUNCHER_PID" launcher-resumed
         set_mode home launcher-resumed
         return 0
       fi
       read_first_line "$MODE_FILE"
+      if [ "$READ_VALUE" = leaving ] && [ -r "$PENDING_SOURCE_FILE" ]; then
+        read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
+        if [ "$pending_name" = "$package" ] && [ -d "/proc/$pending_pid" ]; then
+          log_state "app-resumed-duplicate pid=$pending_pid uid=$pending_uid name=$pending_name"
+          return 0
+        fi
+      fi
       case "$READ_VALUE" in
         entering|home|recents|leaving)
           increment_file "$EPOCH_FILE" >/dev/null
@@ -28,7 +34,7 @@ handle_launcher_event() {
           apply_source_frequency app-resumed
           trigger_transition_thread_policies "$LAUNCHER_PID" app-resumed
           set_mode leaving app-resumed
-          schedule_app_fallback "$serial"
+          schedule_app_completion_timeout "$serial"
           ;;
         *) cache_resume_package "$package" "$SOURCE_FILE" ;;
       esac
@@ -40,17 +46,14 @@ handle_launcher_event() {
       set_mode entering launcher-transition-start
       ;;
     *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
-      # Native logwatch has already applied the prepared thread affinity and
-      # moved the process groups. The shell only completes bookkeeping.
+      # Native logwatch has already moved the source into the guarded groups.
       apply_source_frequency launcher-transition-start
       case "$line" in
-        *nativeAffinityStatus=0*nativeYieldCpuset=1*nativeYieldCpuctl=1*)
-          # The prepared native transaction succeeded. Do not apply it twice.
-          log_state "native-yield ${line##* nativeYieldPid=}"
+        *nativeGuardStatus=0*nativeGuardCpuset=1*nativeGuardCpuctl=1*)
+          log_state "native-guard ${line##* nativeGuardPid=}"
           ;;
         *)
-          # Repair a missing or partially failed native transaction.
-          suppress_source
+          log_state "native-guard-entry-failed event=$line"
           ;;
       esac
       : >"$GESTURE_FILE"
@@ -67,7 +70,6 @@ handle_launcher_event() {
     *SceneTransitionDetectorService*enterOverviewState*)
       rm -f "$GESTURE_FILE"
       increment_file "$SERIAL_FILE" >/dev/null
-      reassert_active_source overview-entered
       trigger_transition_thread_policies "$LAUNCHER_PID" overview-entered
       set_mode recents overview-entered
       ;;
@@ -76,7 +78,7 @@ handle_launcher_event() {
       apply_source_frequency launcher-exit-start
       trigger_transition_thread_policies "$LAUNCHER_PID" launcher-exit-start
       set_mode leaving launcher-exit-start
-      [ -r "$PENDING_SOURCE_FILE" ] && schedule_app_fallback "$serial"
+      [ -r "$PENDING_SOURCE_FILE" ] && schedule_app_completion_timeout "$serial"
       ;;
     *SceneAnimationSignalType.openingRemoteAnimationClose*|*"finish_remote_transition to_home = false"*)
       increment_file "$SERIAL_FILE" >/dev/null

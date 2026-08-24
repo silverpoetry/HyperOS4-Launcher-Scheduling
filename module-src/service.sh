@@ -7,6 +7,7 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/config.sh"
 . "$MODDIR/lib/runtime.sh"
 . "$MODDIR/lib/topology.sh"
+. "$MODDIR/lib/source-guard.sh"
 . "$MODDIR/lib/launcher-policy.sh"
 . "$MODDIR/lib/systemui-policy.sh"
 . "$MODDIR/lib/frequency-policy.sh"
@@ -14,19 +15,17 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/state-machine.sh"
 . "$MODDIR/lib/events.sh"
 
+promote_controller_process
 initialize_configuration || exit 1
 claim_service_instance || exit 0
-trap 'release_service_instance' EXIT HUP INT TERM
+trap 'stop_source_guard; release_service_instance' EXIT HUP INT TERM
+cleanup_stale_daemons
+rm -rf "$SOURCE_RUNTIME_DIR"
 mkdir -p "$SOURCE_RUNTIME_DIR" || exit 1
 chmod 0700 "$SOURCE_RUNTIME_DIR" 2>/dev/null
-promote_controller_process
-cleanup_stale_daemons
 echo $$ >"$PID_FILE"
 acknowledge_reload
 restore_frequency_state_quiet
-[ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
-  "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
-rm -f "$SOURCE_AFFINITY_ACTIVE"
 restore_launcher_threads
 restore_systemui_threads startup
 
@@ -42,7 +41,7 @@ echo 0 >"$SERIAL_FILE"
 echo 0 >"$EPOCH_FILE"
 echo 0 >"$FREQ_SERIAL_FILE"
 rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
-rm -f "$GESTURE_FILE" "$SOURCE_AFFINITY_ACTIVE"
+rm -f "$GESTURE_FILE"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
@@ -73,14 +72,19 @@ run_daemon() {
   wait_for_boot
   wait_for_final_topology
   refresh_frequency_info
+  remove_source_groups
+  configure_source_groups || { log_state "source-groups-failed"; return 1; }
+  start_source_guard || { log_state "source-guard-start-failed"; return 1; }
 
   while true; do
     acknowledge_reload
+    refresh_source_guard_configuration || { log_state "source-groups-refresh-failed"; return 1; }
     read_first_line "$ENABLE_FILE"
     if [ "$READ_VALUE" != enabled ]; then
       set_mode app module-disabled
       restore_launcher_threads
       restore_systemui_threads module-disabled
+      source_guard_command disable >/dev/null 2>&1 || true
       sleep 2
       continue
     fi

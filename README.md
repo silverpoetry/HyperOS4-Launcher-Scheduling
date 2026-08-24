@@ -40,7 +40,7 @@ app
 Launcher 活跃期间：
 
 ```text
-上一前台应用          → per-TID background affinity + cpuset/background + cpuctl/background
+上一前台应用          → 专用 background cpuset + 专用 cpuctl shares + nice
 com.miui.miwallpaper → cpuset/background + cpuctl/background
 MIMD（存在时）       → cpuset/background + cpuctl/background
 效率核 cpufreq policy → 可选地临时限制 scaling_max_freq，默认关闭
@@ -48,7 +48,7 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 
 模块不移动当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复原始 cgroup，SystemUI 受管线程恢复逐 TID 原始亲和。
 
-来源应用不能只写 cgroup。Xiaomi `metis` 会根据 `minor_window_app` 静默扩展指定 UID 的 affinity。模块仅在该节点等于当前来源 UID 时按 Joyose 的结束语义写入 `0`，保存每个 TID 的原始 affinity 和 nice，再使用 `/dev/cpuset/background/cpus` 作为真实约束。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`；线程只在优先级高于目标时降到目标，默认 40。动画结束或取消后按 TID 启动时间恢复；nice 只在当前值仍等于模块应用值时恢复，避免覆盖应用或系统随后作出的调度调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
+来源应用位于模块专用的 cpuset 与 cpuctl。cpuset 的 CPU 列表取自本机 Android background 集合或容量推导的效率核集合，一次写入 `cgroup.procs` 即约束整个进程及后续新线程；cpuctl 的 `cpu.shares` 提供进程级退让。常驻守卫仅在内存中保存每个现有 TID 的原始 nice，并在 Xiaomi `minor_window_app` 等于来源 UID 时临时清除该标记。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`，默认 40。恢复前同时核对 PID、UID、进程 starttime 与当前 nice，避免覆盖系统或应用后来作出的调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
 
 Launcher 自身采用逐线程策略：
 
@@ -82,29 +82,29 @@ Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移
 
 ## 事件监听
 
-`module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd 的 main 与 system buffer，输出状态机使用的 Launcher 生命周期消息；当来源退避事务仍有效且同包主进程被重新创建时，它会匹配 system_server 报告的完整包名与 Android UID，并在 `activityResumed` 之前完成一次原生 `replace-yield` 事务。后续 resumed 事件只补收启动期间新建的线程。
+`module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd 的 main 与 system buffer，输出状态机使用的 Launcher 生命周期消息。动画入口上，它直接把已缓存来源 PID 写入模块专用 cpuset/cpuctl，并向常驻来源守卫发送激活命令，然后才把事件交给 shell。
 
 采用原生监听器是因为文本 `logcat` 接到 shell 管道后在实机上出现约 0.4 秒块缓冲；反复以单事件模式启动 logcat 又会漏掉紧邻的 resumed 和动画完成事件。原生监听器只有一个连续读取进程，用 `write()` 逐条交给状态机，不注入 Launcher，也不修改系统日志配置。
 
 `module-src/bin/launcher-threadctl` 从 `native/launcher_threadctl.c` 构建。它在一个进程内枚举目标 TID，并直接批量设置 affinity/uclamp。旧 shell 实现一次动画需要启动约二十个工具进程，实测约 0.8 秒；原生批处理 apply/reset 各约 10 ms。
 
-`module-src/bin/source-affinityctl` 从 `native/source_affinityctl.c` 构建。它维护来源应用的短生命周期 affinity 事务，处理 Xiaomi UID 标记、新增 TID、不同目标切换和精确恢复。Sheng 上 74 个 Settings 线程的初次事务耗时 2.812 ms；无变化重复事件约 1.017 ms。监听器通过 Android `posix_spawn()` 启动控制器；71 线程游戏现场的完整原生入口事务为 16.877 ms。原生入口已经完整成功时，shell 状态机不再重复扫描和绑定来源应用线程；只有原生事务缺失或部分失败才进入修复路径。
+`module-src/bin/source-guard` 从 `native/source_guard.c` 构建。它常驻内存，维护唯一的来源事务，并订阅内核 `cgroup_attach_task` tracepoint。ActivityManager 把受保护 PID 改回 `top-app` 时，守卫在内核迁移事件到达后立即把整个进程移回专用组。tracepoint 只在 active 事务中启用，3.3 实机空闲 10 秒的守卫 CPU tick 增量为 0。257 线程合成进程的 arm 为 1.701 ms、activate 为 5.684 ms；真实 83 线程 Settings 的系统覆盖纠正为 663 us。cgroup 硬限制在入口监听器的两次 PID 写入后已经生效。
 
 `module-src/bin/systemui-threadctl` 从 `native/systemui_threadctl.c` 构建。它只枚举两类明确命名的 SystemUI 线程，原子记录亲和快照、应用转场放置并在结束时恢复，不轮询进程或帧状态。
 
 ## Xiaomi 标记回写与 ActivityManager
 
-ActivityManager 可以在转场期间把应用从 background 移到 foreground，但已经生效的显式 affinity 会保留。模块不再以 120/320 ms 定时任务反复抢写 cgroup。
+来源应用位于 `/dev/cpuset/hyperos4-source` 和 `/dev/cpuctl/hyperos4-source`。cpuset 提供硬 CPU 边界，`cpu.shares` 提供进程级退让，新线程自动继承。ActivityManager 的覆盖由内核 attach 事件直接驱动纠正；模块不轮询进程或 SurfaceFlinger，也不依赖较晚的 `activityResumed` 日志发现覆盖。稳定应用阶段关闭 tracepoint，不消费系统其它 cgroup 事件。
 
-Joyose 在应用恢复时可能重新写入 `minor_window_app`。重复的 Launcher 生命周期事件会检查该节点、新 TID 和实际 affinity；仅在发现变化时执行事件驱动 reassert，没有 20 ms 轮询。
+Joyose 在应用恢复时可能重新写入 `minor_window_app`。守卫激活时清除当前来源 UID 标记，恢复前保存在内存中的原值；nice 快照同样只存在于常驻进程内存。
 
 ## source 与目标应用
 
 `source-app` 保存进入 Launcher 前应用的 PID、UID 和完整包名，`pending-source-app` 保存离开 Launcher 时刚恢复的目标。pending PID 始终受保护，不会被策略当作 source 退避。
 
-目标应用收到 resumed 事件后，affinity 事务转移到目标，并保持到 Launcher 的卡片展开动画完成。`openingRemoteAnimationClose` 到来后，目标恢复原始 affinity 与 `top-app` cpuset/cpuctl；完成事件缺失时使用两秒安全兜底。进入稳定 `app` 后，pending 才提交为下一轮 source。
+目标应用收到 resumed 事件后，守卫转移到目标，并保持到 Launcher 的卡片展开动画完成。`openingRemoteAnimationClose` 到来后，目标恢复 `top-app`；完成事件缺失时使用默认两秒的应用转场完成超时。同一 pending 目标的重复 resumed 事件不会延长该超时。进入稳定 `app` 后，pending 才提交为下一轮 source。
 
-同一应用返回时复用原事务并吸收新 TID；打开不同应用时先恢复旧来源线程但不恢复旧来源的 Xiaomi UID 标记，再为目标创建事务，避免把后台游戏错误标回特殊场景。稳定 `app` 提交的最后一步再次落实恢复，避免快速连续操作把应用留在 background affinity。
+同一应用返回时沿用同一内存事务；打开不同应用时，旧来源被释放到系统 background，新目标进入专用组。稳定 `app` 提交的最后一步解除守卫并重新 arm 当前应用，为下一轮转场准备 nice 快照。
 
 ## 安装
 
@@ -134,8 +134,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v5.5.zip
-../output/HyperOS4-Launcher-Scheduling-v5.5.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v7.0.zip
+../output/HyperOS4-Launcher-Scheduling-v7.0.zip.sha256
 ```
 
 模块 ID 为 `hyperos4_recents_source_app_yield`，升级时原位覆盖现有版本。

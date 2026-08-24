@@ -4,6 +4,7 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/config.sh"
 . "$MODDIR/lib/runtime.sh"
 . "$MODDIR/lib/topology.sh"
+. "$MODDIR/lib/source-guard.sh"
 . "$MODDIR/lib/launcher-policy.sh"
 . "$MODDIR/lib/systemui-policy.sh"
 . "$MODDIR/lib/frequency-policy.sh"
@@ -12,8 +13,8 @@ MODDIR=${0%/*}
 read_first_line "$PID_FILE"
 [ -n "$READ_VALUE" ] && kill_process_tree "$READ_VALUE"
 restore_frequency_state_quiet
-[ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
-  "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
+stop_source_guard
+remove_source_groups
 restore_launcher_threads
 restore_systemui_threads uninstall
 restore_processes
@@ -22,8 +23,6 @@ rm -f "$LOG_FILE"
 rm -f "$MODE_FILE" "$SERIAL_FILE" "$EPOCH_FILE" "$PID_FILE"
 rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
 rm -f "$GESTURE_FILE" "$WALLPAPER_GROUP_FILE" "$MIMD_GROUP_FILE"
-rm -f "$SOURCE_AFFINITY_STATE" "$SOURCE_AFFINITY_STATE.tmp" "$SOURCE_AFFINITY_STATE.lock"
-rm -f "$SOURCE_AFFINITY_ACTIVE" "$SOURCE_AFFINITY_ACTIVE.tmp"
 rmdir "$SOURCE_RUNTIME_DIR" 2>/dev/null || true
 rm -f "$FREQ_STATE_FILE" "$FREQ_STATE_FILE.tmp" "$FREQ_INFO_FILE" "$FREQ_INFO_FILE.tmp"
 rm -f "$FREQ_SERIAL_FILE"

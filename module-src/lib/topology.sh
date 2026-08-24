@@ -47,6 +47,28 @@ cpulist_to_mask() {
   printf '%x' "$mask"
 }
 
+mask_to_cpulist() {
+  local value=$((0x$1)) cpu start=-1 last=-1 output=""
+  cpu=0
+  while [ "$cpu" -lt 32 ]; do
+    if [ $((value & (1 << cpu))) -ne 0 ]; then
+      [ "$start" -ge 0 ] || start=$cpu
+      last=$cpu
+    elif [ "$start" -ge 0 ]; then
+      [ -z "$output" ] || output="$output,"
+      if [ "$start" -eq "$last" ]; then output="$output$start"; else output="$output$start-$last"; fi
+      start=-1
+      last=-1
+    fi
+    cpu=$((cpu + 1))
+  done
+  if [ "$start" -ge 0 ]; then
+    [ -z "$output" ] || output="$output,"
+    if [ "$start" -eq "$last" ]; then output="$output$start"; else output="$output$start-$last"; fi
+  fi
+  printf '%s' "$output"
+}
+
 derive_launcher_masks() {
   local online_list top_list background_list topology_input previous_input
   local all_value top_value background_value perf_value mid_value prime_value

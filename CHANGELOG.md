@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.0
+
+- Replaced the per-event source affinity helper with one resident in-memory source guard.
+- Added dedicated source cpuset and cpu-controller groups; one `cgroup.procs` write now constrains the whole process and future threads.
+- Subscribed directly to the kernel `cgroup_attach_task` tracepoint and immediately reverses ActivityManager task-profile overwrites.
+- Moved source nice snapshots into the resident controller and removed all SAF state formats, disk parsing and compatibility paths.
+- Added process-level CPU shares while retaining reversible per-thread nice suppression.
+- Enable cgroup trace events only while a source transaction is active and validate PID, UID and process start time before every restore.
+- Treat repeated resumed events for the same pending target as idempotent so they cannot extend the application-transition completion timeout.
+
 ## 6.1
 
 - Store transient source-affinity transaction state on `/dev` tmpfs instead of persistent module storage.
