@@ -15,6 +15,6 @@ else
   echo 'Launcher scheduling policy enabled.'
 fi
 
-restart_daemon
+restart_daemon || { echo 'Failed to restart scheduling service.' >&2; exit 1; }
 echo
 tail -n 30 "$LOG_FILE" 2>/dev/null

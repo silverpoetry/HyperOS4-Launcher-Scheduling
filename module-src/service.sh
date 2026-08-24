@@ -14,8 +14,12 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/state-machine.sh"
 . "$MODDIR/lib/events.sh"
 
-initialize_configuration
+initialize_configuration || exit 1
+claim_service_instance || exit 0
+trap 'release_service_instance' EXIT HUP INT TERM
+promote_controller_process
 cleanup_stale_daemons
+echo $$ >"$PID_FILE"
 restore_frequency_state_quiet
 [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
   "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
@@ -29,7 +33,6 @@ exec >>"$LOG_FILE" 2>&1
 MODULE_VERSION="$(sed -n 's/^version=//p' "$MODDIR/module.prop" | head -n 1)"
 echo "=== HyperOS 4 Launcher Scheduling v${MODULE_VERSION:-unknown} ==="
 date 2>/dev/null || true
-echo $$ >"$PID_FILE"
 echo booting >"$MODE_FILE"
 echo 0 >"$SERIAL_FILE"
 echo 0 >"$EPOCH_FILE"
@@ -41,11 +44,6 @@ case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;
   *) echo "SKIP: HyperOS 4 is required"; exit 0 ;;
 esac
-
-# Keep the blocking controller responsive under source-app load. The native
-# watcher remains blocked in logd while idle; this does not create CPU work.
-echo $$ >/dev/cpuset/foreground/cgroup.procs 2>/dev/null
-echo $$ >/dev/cpuctl/foreground/cgroup.procs 2>/dev/null
 
 wait_for_boot() {
   local attempt=0

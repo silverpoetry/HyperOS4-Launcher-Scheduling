@@ -1,5 +1,9 @@
 # HyperOS 4 Launcher Scheduling
 
+[![CI](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/actions/workflows/ci.yml/badge.svg)](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/silverpoetry/HyperOS4-Launcher-Scheduling?display_name=tag)](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 这是一个 HyperOS 4 KernelSU 调度模块。Launcher 参与桌面、最近任务或应用转场时，模块把来源应用限制到设备定义的 background CPU 集，分配 Launcher 的关键线程，并在转场期把 SystemUI 渲染线程与 ART 维护线程分流，减少同一性能核心上的 runnable 竞争。
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
@@ -49,7 +53,7 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 Launcher 自身采用逐线程策略：
 
 ```text
-1.raster                         → render：prime + 最快非 prime 容量簇
+1.raster                         → prime
 1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合
 IplrVkResMgr                    → 去掉 prime 的 performance 集合
 IplrVkFenceWait                 → 去掉 prime 的 performance 集合
@@ -66,7 +70,7 @@ IplrVkFenceWait        → 不提升 uclamp
 
 提升持续时间默认 1 ms，之后只恢复 0/1024 uclamp；基础 affinity 覆盖 Launcher 线程的整个运行期。所有放置策略和四类 `uclamp.min` 均可在 WebUI 调整。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含设备固定编号。模块不改变 SurfaceFlinger affinity。
 
-SystemUI 只在 Launcher 转场期间分流：主线程、RenderThread、WMShell 与 GPU completion 默认使用 `render`，HeapTaskDaemon、Finalizer、ReferenceQueue 与 JIT 默认使用 `secondary`。转场完成或超时后由原生控制器按 TID 启动时间恢复原亲和，SystemUI 重启也不会把旧 TID 状态应用到新进程。
+SystemUI 只在 Launcher 转场期间分流：主线程、RenderThread、WMShell 与 GPU completion 默认使用非 prime 性能集合，HeapTaskDaemon、Finalizer、ReferenceQueue 与 JIT 默认使用 `secondary`。转场完成或超时后由原生控制器按 TID 启动时间恢复原亲和，SystemUI 重启也不会把旧 TID 状态应用到新进程。
 
 小核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态 `little` mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
 
@@ -102,23 +106,39 @@ Joyose 在应用恢复时可能重新写入 `minor_window_app`。重复的 Launc
 
 同一应用返回时复用原事务并吸收新 TID；打开不同应用时先恢复旧来源线程但不恢复旧来源的 Xiaomi UID 标记，再为目标创建事务，避免把后台游戏错误标回特殊场景。稳定 `app` 提交的最后一步再次落实恢复，避免快速连续操作把应用留在 background affinity。
 
+## 安装
+
+系统要求：
+
+- ARM64 Xiaomi HyperOS 4；
+- KernelSU，以及可用的模块挂载实现；
+- 能够在异常时通过 KernelSU 安全模式停用模块。
+
+从 [Releases](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases) 下载模块 ZIP
+和同名 `.sha256` 文件。校验完成后，在 KernelSU 管理器中安装 ZIP 并重启设备。首次进入系统后打开
+模块 WebUI，状态页应显示守护进程在线，并列出当前设备推导出的 CPU 集合。
+
+升级会保留 `/data/adb/hyperos4-launcher-scheduling` 中的设置。卸载模块后重启，安装脚本创建的配置、
+线程快照和临时频率状态会一并清理。
+
 ## 构建
 
-要求 Windows PowerShell、Android SDK 和包含 arm64 clang 的 NDK。构建脚本依次查找 `-AndroidSdk`、`ANDROID_SDK_ROOT`、`ANDROID_HOME`、`E:\Develop\Android\Sdk` 和本地默认 SDK 目录。
+要求 Windows PowerShell、Android SDK 和包含 arm64 clang 的 NDK。构建脚本依次读取 `-AndroidSdk`、
+`ANDROID_SDK_ROOT`、`ANDROID_HOME` 和当前用户的 Android SDK 默认目录。
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
-& .\build-module.ps1
+& .\build-module.ps1 -AndroidSdk 'C:\Android\Sdk'
 ```
 
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v5.3.zip
-../output/HyperOS4-Launcher-Scheduling-v5.3.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v5.5.zip
+../output/HyperOS4-Launcher-Scheduling-v5.5.zip.sha256
 ```
 
-安装需要 HyperOS 4、KernelSU 和可用的模块挂载实现。模块 ID 保持为 `hyperos4_recents_source_app_yield`，升级时会原位覆盖，不会并行启动另一份守护。
+模块 ID 为 `hyperos4_recents_source_app_yield`，升级时原位覆盖现有版本。
 
 ## 验证
 
@@ -151,7 +171,7 @@ module-src/lib/   配置、拓扑、线程、进程、频率、状态机与 WebU
 module-src/webroot/css/  Material 3 设计令牌、布局、卡片、控件与诊断样式
 module-src/webroot/js/   KernelSU 桥接、数据模型、导航及三个页面控制器
 native/           四个原生监听与线程控制工具的 C 源码
-../output/        Magisk 项目集合共用的正式 ZIP 与 SHA-256
+../output/        构建生成的 ZIP 与 SHA-256
 docs/             状态机和验证文档
 tools/            原生构建与短时验证脚本
 test-results/     A/B 数据与实机报告
@@ -160,3 +180,7 @@ VERSION           当前版本
 ```
 
 运行时分层、依赖方向和状态不变量见 [架构说明](docs/ARCHITECTURE.md)。
+
+## 许可证
+
+项目以 [Apache License 2.0](LICENSE) 发布。

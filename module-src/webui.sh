@@ -28,7 +28,7 @@ case "$1" in
     save_configuration "$@" || { echo 'invalid configuration' >&2; exit 2; }
     ;;
   restart)
-    restart_daemon
+    restart_daemon || { echo 'service restart failed' >&2; exit 1; }
     emit ok 1
     ;;
   clear-log)

@@ -52,7 +52,7 @@ reset_launcher_boost() {
   read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
   case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
   read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
-  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=4 ;; esac
   read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
   case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
@@ -130,7 +130,7 @@ apply_launcher_base_affinity() {
   read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
   case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
   read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
-  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=4 ;; esac
   read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
   case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
@@ -159,7 +159,7 @@ apply_launcher_uclamp_boost() {
   read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
   case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
   read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
-  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=4 ;; esac
   read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
   case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"

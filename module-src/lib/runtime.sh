@@ -25,6 +25,106 @@ kill_process_tree() {
   kill -9 "$target" 2>/dev/null || true
 }
 
+promote_controller_process() {
+  # WebUI commands can be launched from a background cgroup. Move only the
+  # short-lived controller (or the daemon itself) before taking lifecycle
+  # locks so heavy source-app load cannot delay a restart by several seconds.
+  printf '%s\n' "$$" >/dev/cpuset/foreground/cgroup.procs 2>/dev/null || true
+  printf '%s\n' "$$" >/dev/cpuctl/foreground/cgroup.procs 2>/dev/null || true
+}
+
+is_module_service_pid() {
+  local target="$1" command
+  case "$target" in ''|*[!0-9]*) return 1 ;; esac
+  [ -r "/proc/$target/cmdline" ] || return 1
+  command="$(tr '\000' ' ' <"/proc/$target/cmdline" 2>/dev/null)"
+  case "$command" in *"$MODDIR/service.sh"*) return 0 ;; *) return 1 ;; esac
+}
+
+find_active_service_pid() {
+  local candidate
+  ACTIVE_SERVICE_PID=""
+  read_first_line "$PID_FILE"; candidate="$READ_VALUE"
+  if is_module_service_pid "$candidate"; then
+    ACTIVE_SERVICE_PID="$candidate"
+    return 0
+  fi
+  read_first_line "$SERVICE_LOCK_OWNER"; candidate="$READ_VALUE"
+  if is_module_service_pid "$candidate"; then
+    ACTIVE_SERVICE_PID="$candidate"
+    return 0
+  fi
+  return 1
+}
+
+remove_owned_lock() {
+  local directory="$1" owner_file="$2" owner
+  read_first_line "$owner_file"; owner="$READ_VALUE"
+  [ "$owner" = "$$" ] || return 0
+  rm -f "$owner_file"
+  rmdir "$directory" 2>/dev/null || true
+}
+
+claim_service_instance() {
+  local owner
+  if mkdir "$SERVICE_LOCK_DIR" 2>/dev/null; then
+    printf '%s\n' "$$" >"$SERVICE_LOCK_OWNER"
+    return 0
+  fi
+  read_first_line "$SERVICE_LOCK_OWNER"; owner="$READ_VALUE"
+  is_module_service_pid "$owner" && return 1
+  # A competing instance may have created the directory but not its owner
+  # file yet. Give it one scheduling window before treating the lock as stale.
+  sleep 0.10
+  read_first_line "$SERVICE_LOCK_OWNER"; owner="$READ_VALUE"
+  is_module_service_pid "$owner" && return 1
+  rm -f "$SERVICE_LOCK_OWNER"
+  rmdir "$SERVICE_LOCK_DIR" 2>/dev/null || return 1
+  mkdir "$SERVICE_LOCK_DIR" 2>/dev/null || return 1
+  printf '%s\n' "$$" >"$SERVICE_LOCK_OWNER"
+}
+
+release_service_instance() {
+  remove_owned_lock "$SERVICE_LOCK_DIR" "$SERVICE_LOCK_OWNER"
+}
+
+acquire_restart_lock() {
+  local attempt=0 owner
+  RESTART_LOCK_ACQUIRED=0
+  while [ "$attempt" -lt 100 ]; do
+    if mkdir "$RESTART_LOCK_DIR" 2>/dev/null; then
+      printf '%s\n' "$$" >"$RESTART_LOCK_OWNER"
+      RESTART_LOCK_ACQUIRED=1
+      return 0
+    fi
+    read_first_line "$RESTART_LOCK_OWNER"; owner="$READ_VALUE"
+    if [ -z "$owner" ]; then
+      # mkdir and owner-file creation are two operations. Do not reclaim the
+      # directory while the winning process is between them.
+      sleep 0.10
+      read_first_line "$RESTART_LOCK_OWNER"; owner="$READ_VALUE"
+    fi
+    case "$owner" in ''|*[!0-9]*) owner=0 ;; esac
+    if [ ! -d "/proc/$owner" ]; then
+      rm -f "$RESTART_LOCK_OWNER"
+      rmdir "$RESTART_LOCK_DIR" 2>/dev/null || true
+    fi
+    sleep 0.10
+    # Configuration is read dynamically. If another valid restart completed
+    # while this caller was waiting, coalesce with it instead of killing the
+    # daemon that has just become ready and starting the whole cycle again.
+    if [ ! -d "$RESTART_LOCK_DIR" ] && find_active_service_pid; then
+      return 0
+    fi
+    attempt=$((attempt + 1))
+  done
+  return 1
+}
+
+release_restart_lock() {
+  remove_owned_lock "$RESTART_LOCK_DIR" "$RESTART_LOCK_OWNER"
+}
+
 cleanup_stale_daemons() {
   local pid args list
   list="$MODDIR/processes.$$"
@@ -40,15 +140,31 @@ cleanup_stale_daemons() {
 }
 
 restart_daemon() {
-  local daemon_pid watcher_pid
-  read_first_line "$PID_FILE"; daemon_pid="$READ_VALUE"
+  local daemon_pid watcher_pid started_pid attempt result=1
+  promote_controller_process
+  acquire_restart_lock || return 1
+  [ "$RESTART_LOCK_ACQUIRED" = 1 ] || return 0
+  find_active_service_pid && daemon_pid="$ACTIVE_SERVICE_PID"
   [ -n "$daemon_pid" ] && kill_process_tree "$daemon_pid"
   for watcher_pid in $(pidof launcher-logwatch 2>/dev/null); do
     kill -9 "$watcher_pid" 2>/dev/null || true
   done
-  sleep 1
+  rm -f "$PID_FILE"
   nohup /system/bin/sh "$MODDIR/service.sh" >/dev/null 2>&1 &
-  sleep 1
+  started_pid=$!
+  attempt=0
+  while [ "$attempt" -lt 50 ]; do
+    read_first_line "$PID_FILE"; daemon_pid="$READ_VALUE"
+    if is_module_service_pid "$daemon_pid"; then
+      result=0
+      break
+    fi
+    [ -d "/proc/$started_pid" ] || break
+    sleep 0.10
+    attempt=$((attempt + 1))
+  done
+  release_restart_lock
+  return "$result"
 }
 
 read_controller_group() {

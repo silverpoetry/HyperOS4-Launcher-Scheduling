@@ -129,7 +129,7 @@
                   <div><span class="card-kicker">PLACEMENT</span><h2>线程放置</h2></div>
                 </header>
                 <div class="field-grid">
-                  <label class="field wide"><span>Raster 线程</span><select id="rasterPlacement"><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>Raster 线程</span><select id="rasterPlacement"><option value="4">仅 Prime</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="5">小核集合</option></select></label>
                   <label class="field wide"><span>UI / Rust 线程</span><select id="launcherPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
                   <label class="field wide"><span>ResMgr 线程</span><select id="resmgrPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
                   <label class="field wide"><span>FenceWait 线程</span><select id="fencePlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
@@ -144,7 +144,7 @@
               <article class="card">
                 <header class="card-header"><div><span class="card-kicker">SYSTEMUI</span><h2>转场线程分流</h2></div></header>
                 <div class="field-grid">
-                  <label class="field wide"><span>主线程 / RenderThread / WMShell</span><select id="systemuiCriticalPlacement"><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>主线程 / RenderThread / WMShell</span><select id="systemuiCriticalPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
                   <label class="field wide"><span>GC / Finalizer / JIT</span><select id="systemuiMaintenancePlacement"><option value="6">次级性能集合</option><option value="2">非 Prime 性能集合</option><option value="1">性能集合</option><option value="3">渲染集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
                   <label class="field wide"><span>结束事件缺失兜底</span><div><input id="systemuiTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
                 </div>

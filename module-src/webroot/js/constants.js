@@ -3,7 +3,7 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "5.3",
+  version: "5.5",
   author: "github: silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
@@ -15,10 +15,10 @@ export const MOCK_STATUS = {
   frequency_timeout_ms: "1500",
   app_fallback_ms: "2000",
   launcher_placement: "2",
-  raster_placement: "3",
+  raster_placement: "4",
   resmgr_placement: "2",
   fence_placement: "2",
-  systemui_critical_placement: "3",
+  systemui_critical_placement: "2",
   systemui_maintenance_placement: "6",
   systemui_timeout_ms: "2000",
   boost_duration_ms: "1",

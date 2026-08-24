@@ -103,7 +103,7 @@ SurfaceFlinger/SystemUI 仍有少量正反向离群 jank，不能从这组样本
 
 2026-08-22 在恢复官方 cpuset 后重新测试。官方值为 `top-app=0-7`、`background=0-1,5-6`；3.0 基线仍推导出 `perf=9c`，但 Raster 在 CPU7 的 task-clock 占比只有约 6.5%–16.2%。原因是原 Raster uclamp 768 低于 CPU2-4 的 capacity 923，EAS 无需使用 capacity 1024 的 CPU7。
 
-先测试 Raster 动画期强绑动态 prime。CPU7 占比达到 85%–94%，但快回桌面和慢进最近任务中增加了 SurfaceFlinger Full/Partial jank，因此弃用。
+先测试 Raster 动画期强绑动态 prime。CPU7 占比达到 85%–94%，但快回桌面和慢进最近任务中增加了 SurfaceFlinger Full/Partial jank，因此当时的 3.1 候选未采用该默认值。本段保留该轮历史样本；v5.5 的默认放置以后续策略组合为准。
 
 最终策略保持 Raster 的 `perf` 迁移空间，将 Raster uclamp 设为 928；UI/Rust 动画期进入 `mid`，避免与 Raster 争 prime。三轮交替 A/B 结果：
 

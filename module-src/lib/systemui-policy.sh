@@ -46,7 +46,7 @@ apply_systemui_transition_policy() {
     restore_systemui_threads systemui-restarted
 
   derive_launcher_masks
-  read_systemui_placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3
+  read_systemui_placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2
   critical="$THREAD_FILE_VALUE"
   read_systemui_placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
   maintenance="$THREAD_FILE_VALUE"

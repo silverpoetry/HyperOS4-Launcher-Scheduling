@@ -57,6 +57,10 @@ SYSTEMUI_CRITICAL_PLACEMENT_FILE="$CONFIG_DIR/systemui-critical-placement"
 SYSTEMUI_MAINTENANCE_PLACEMENT_FILE="$CONFIG_DIR/systemui-maintenance-placement"
 SYSTEMUI_TIMEOUT_FILE="$CONFIG_DIR/systemui-timeout-ms"
 CONFIG_SCHEMA_FILE="$CONFIG_DIR/schema-version"
+SERVICE_LOCK_DIR="$CONFIG_DIR/service.lock"
+SERVICE_LOCK_OWNER="$SERVICE_LOCK_DIR/owner"
+RESTART_LOCK_DIR="$CONFIG_DIR/restart.lock"
+RESTART_LOCK_OWNER="$RESTART_LOCK_DIR/owner"
 
 write_default() {
   [ -f "$1" ] || printf '%s\n' "$2" >"$1"
@@ -110,7 +114,11 @@ migrate_placement_schema() {
 
 read_first_line() {
   READ_VALUE=""
-  [ -r "$1" ] && IFS= read -r READ_VALUE <"$1"
+  [ -r "$1" ] || return 0
+  # The file may disappear after the readability check when another process
+  # releases a lock. Redirect stderr before opening the input file so that
+  # this expected race is treated as an empty value instead of a shell error.
+  IFS= read -r READ_VALUE 2>/dev/null <"$1" || READ_VALUE=""
   return 0
 }
 
@@ -152,10 +160,10 @@ initialize_configuration() {
   write_default "$FREQ_TIMEOUT_FILE" 1500
   write_default "$APP_FALLBACK_MS_FILE" 2000
   write_default "$THREAD_PLACEMENT_FILE" 2
-  write_default "$THREAD_RASTER_PLACEMENT_FILE" 3
+  write_default "$THREAD_RASTER_PLACEMENT_FILE" 4
   write_default "$THREAD_RESMGR_PLACEMENT_FILE" 2
   write_default "$THREAD_FENCE_PLACEMENT_FILE" 2
-  write_default "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3
+  write_default "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2
   write_default "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
   write_default "$SYSTEMUI_TIMEOUT_FILE" 2000
   write_default "$THREAD_BOOST_MS_FILE" 1

@@ -63,8 +63,8 @@ print_status() {
   local source_pid source_uid source_name pending_pid pending_uid pending_name
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
-  read_first_line "$PID_FILE"; daemon_pid="$READ_VALUE"
-  daemon_alive=0; [ -n "$daemon_pid" ] && [ -d "/proc/$daemon_pid" ] && daemon_alive=1
+  daemon_pid=""; find_active_service_pid && daemon_pid="$ACTIVE_SERVICE_PID"
+  daemon_alive=0; [ -n "$daemon_pid" ] && daemon_alive=1
   read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
   [ -d "/proc/$launcher_pid" ] || launcher_pid=""
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
@@ -95,10 +95,10 @@ EOF
   emit frequency_timeout_ms "$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
   emit app_fallback_ms "$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
   emit launcher_placement "$(number_value "$THREAD_PLACEMENT_FILE" 2)"
-  emit raster_placement "$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 3)"
+  emit raster_placement "$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 4)"
   emit resmgr_placement "$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
   emit fence_placement "$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
-  emit systemui_critical_placement "$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3)"
+  emit systemui_critical_placement "$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2)"
   emit systemui_maintenance_placement "$(number_value "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6)"
   emit systemui_timeout_ms "$(number_value "$SYSTEMUI_TIMEOUT_FILE" 2000)"
   emit boost_duration_ms "$(number_value "$THREAD_BOOST_MS_FILE" 1)"

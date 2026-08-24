@@ -108,6 +108,29 @@ if ($events -notmatch 'finish_remote_transition to_home = false') {
     throw 'State machine must restore the source on same-app return completion'
 }
 
+$configuration = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\config.sh') -Raw
+if ($configuration -notmatch 'write_default "\$THREAD_RASTER_PLACEMENT_FILE" 4') {
+    throw 'Launcher Raster must default to the topology-derived prime mask'
+}
+if ($configuration -notmatch 'write_default "\$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2') {
+    throw 'SystemUI critical threads must default to the non-prime performance mask'
+}
+
+$runtime = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\runtime.sh') -Raw
+foreach ($requiredRuntimeFunction in @(
+    'claim_service_instance', 'acquire_restart_lock',
+    'is_module_service_pid', 'find_active_service_pid', 'release_restart_lock',
+    'promote_controller_process'
+)) {
+    if ($runtime -notmatch "(?m)^$requiredRuntimeFunction\(\)") {
+        throw "Missing service lifecycle function: $requiredRuntimeFunction"
+    }
+}
+if ($runtime -notmatch 'while \[ "\$attempt" -lt 50 \]' -or
+    $runtime -notmatch 'is_module_service_pid "\$daemon_pid"') {
+    throw 'Service restart must wait for and validate the new daemon PID'
+}
+
 $affinityController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_affinityctl.c') -Raw
 $yieldState = [regex]::Match(
     $affinityController,
