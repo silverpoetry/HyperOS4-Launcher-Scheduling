@@ -46,16 +46,21 @@ snapshot_launcher_thread() {
 }
 
 reset_launcher_boost() {
-  local launcher_pid="$1" placement fence_placement
+  local launcher_pid="$1" ui_placement raster_placement resmgr_placement fence_placement
   [ -x "$THREADCTL" ] || return 0
   derive_launcher_masks
-  read_thread_file "$THREAD_PLACEMENT_FILE"; placement="$THREAD_FILE_VALUE"
-  case "$placement" in 1|2) ;; *) placement=2 ;; esac
+  read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
+  case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
+  read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
+  case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
-  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
+  case "$fence_placement" in 1|2|3|4|5|6) ;; *) fence_placement=2 ;; esac
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" "$THREAD_PRIME_MASK" "$placement" "$fence_placement" \
-    0 0 0 0 >/dev/null 2>&1 ||
+    "$THREAD_LITTLE_MASK" "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" \
+    "$THREAD_SECONDARY_MASK" "$ui_placement" "$raster_placement" \
+    "$resmgr_placement" "$fence_placement" 0 0 0 0 >/dev/null 2>&1 ||
     thread_log "thread-boost-reset-failed launcher_pid=$launcher_pid"
 }
 
@@ -85,9 +90,7 @@ restore_launcher_threads() {
         done <"$THREAD_SNAPSHOT_FILE"
       fi
       [ "$found" -eq 0 ] || continue
-      mask="$THREAD_ALL_MASK"
-      case " $THREAD_RESMGR $THREAD_FENCE " in *" $tid "*) mask="$THREAD_LITTLE_MASK" ;; esac
-      "$TASKSET" -p "$mask" "$tid" >/dev/null 2>&1
+      "$TASKSET" -p "$THREAD_ALL_MASK" "$tid" >/dev/null 2>&1
       "$UCLAMPSET" -m -1 -M -1 -p "$tid" >/dev/null 2>&1
     done
   fi
@@ -114,7 +117,7 @@ snapshot_discovered_launcher_threads() {
 }
 
 apply_launcher_base_affinity() {
-  local launcher_pid="$1" placement fence_placement
+  local launcher_pid="$1" ui_placement raster_placement resmgr_placement fence_placement
   [ -x "$TASKSET" ] && [ -x "$THREADCTL" ] || return 0
   if ! thread_policy_enabled; then
     restore_launcher_threads
@@ -124,13 +127,18 @@ apply_launcher_base_affinity() {
   derive_launcher_masks
   refresh_launcher_threads "$launcher_pid" || return 0
   snapshot_discovered_launcher_threads "$launcher_pid"
-  read_thread_file "$THREAD_PLACEMENT_FILE"; placement="$THREAD_FILE_VALUE"
-  case "$placement" in 1|2) ;; *) placement=2 ;; esac
+  read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
+  case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
+  read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
+  case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
-  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
+  case "$fence_placement" in 1|2|3|4|5|6) ;; *) fence_placement=2 ;; esac
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" "$THREAD_PRIME_MASK" "$placement" "$fence_placement" \
-    0 0 0 0 >/dev/null 2>&1 ||
+    "$THREAD_LITTLE_MASK" "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" \
+    "$THREAD_SECONDARY_MASK" "$ui_placement" "$raster_placement" \
+    "$resmgr_placement" "$fence_placement" 0 0 0 0 >/dev/null 2>&1 ||
     thread_log "thread-affinity-batch-failed launcher_pid=$launcher_pid"
 }
 
@@ -146,16 +154,22 @@ read_uclamp_configuration() {
 }
 
 apply_launcher_uclamp_boost() {
-  local launcher_pid="$1" placement fence_placement
+  local launcher_pid="$1" ui_placement raster_placement resmgr_placement fence_placement
   apply_launcher_base_affinity "$launcher_pid"
-  read_thread_file "$THREAD_PLACEMENT_FILE"; placement="$THREAD_FILE_VALUE"
-  case "$placement" in 1|2) ;; *) placement=2 ;; esac
+  read_thread_file "$THREAD_PLACEMENT_FILE"; ui_placement="$THREAD_FILE_VALUE"
+  case "$ui_placement" in 1|2|3|4|5|6) ;; *) ui_placement=2 ;; esac
+  read_thread_file "$THREAD_RASTER_PLACEMENT_FILE"; raster_placement="$THREAD_FILE_VALUE"
+  case "$raster_placement" in 1|2|3|4|5|6) ;; *) raster_placement=3 ;; esac
+  read_thread_file "$THREAD_RESMGR_PLACEMENT_FILE"; resmgr_placement="$THREAD_FILE_VALUE"
+  case "$resmgr_placement" in 1|2|3|4|5|6) ;; *) resmgr_placement=2 ;; esac
   read_thread_file "$THREAD_FENCE_PLACEMENT_FILE"; fence_placement="$THREAD_FILE_VALUE"
-  case "$fence_placement" in 1|2) ;; *) fence_placement=2 ;; esac
+  case "$fence_placement" in 1|2|3|4|5|6) ;; *) fence_placement=2 ;; esac
   read_uclamp_configuration
   "$THREADCTL" apply "$launcher_pid" "$THREAD_PERF_MASK" "$THREAD_MID_MASK" \
-    "$THREAD_LITTLE_MASK" "$THREAD_PRIME_MASK" "$placement" "$fence_placement" \
-    "$THREAD_RASTER_MIN" "$THREAD_UI_MIN" "$THREAD_RUST_MIN" \
+    "$THREAD_LITTLE_MASK" "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" \
+    "$THREAD_SECONDARY_MASK" "$ui_placement" "$raster_placement" \
+    "$resmgr_placement" "$fence_placement" "$THREAD_RASTER_MIN" \
+    "$THREAD_UI_MIN" "$THREAD_RUST_MIN" \
     "$THREAD_RESMGR_MIN" >/dev/null 2>&1 ||
     thread_log "thread-boost-batch-failed launcher_pid=$launcher_pid"
 }

@@ -8,6 +8,7 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/runtime.sh"
 . "$MODDIR/lib/topology.sh"
 . "$MODDIR/lib/launcher-policy.sh"
+. "$MODDIR/lib/systemui-policy.sh"
 . "$MODDIR/lib/frequency-policy.sh"
 . "$MODDIR/lib/process-policy.sh"
 . "$MODDIR/lib/state-machine.sh"
@@ -19,6 +20,7 @@ restore_frequency_state_quiet
 [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
   "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
 restore_launcher_threads
+restore_systemui_threads startup
 
 : >"$LOG_FILE"
 chmod 0644 "$LOG_FILE" 2>/dev/null
@@ -75,6 +77,7 @@ run_daemon() {
     if [ "$READ_VALUE" != enabled ]; then
       set_mode app module-disabled
       restore_launcher_threads
+      restore_systemui_threads module-disabled
       sleep 2
       continue
     fi
@@ -83,6 +86,7 @@ run_daemon() {
     launcher_pid=${launcher_pid%% *}
     if [ -z "$launcher_pid" ]; then
       set_mode app launcher-not-running
+      restore_systemui_threads launcher-not-running
       sleep 1
       continue
     fi

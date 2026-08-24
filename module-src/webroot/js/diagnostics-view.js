@@ -8,7 +8,7 @@ export class DiagnosticsView {
     if (!lines.length) {
       const empty = document.createElement("p");
       empty.className = "empty-state";
-      empty.textContent = "未找到 Launcher 目标线程";
+      empty.textContent = "未找到受管线程";
       table.append(empty);
       return;
     }

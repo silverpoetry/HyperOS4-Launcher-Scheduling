@@ -10,7 +10,7 @@ handle_launcher_event() {
       if [ "$package" = com.miui.home ]; then
         rm -f "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
         increment_file "$SERIAL_FILE" >/dev/null
-        trigger_launcher_thread_boost "$LAUNCHER_PID" launcher-resumed
+        trigger_transition_thread_policies "$LAUNCHER_PID" launcher-resumed
         set_mode home launcher-resumed
         return 0
       fi
@@ -22,7 +22,7 @@ handle_launcher_event() {
           hold_resumed_target_for_animation
           serial="$(increment_file "$SERIAL_FILE")"
           apply_source_frequency app-resumed
-          trigger_launcher_thread_boost "$LAUNCHER_PID" app-resumed
+          trigger_transition_thread_policies "$LAUNCHER_PID" app-resumed
           set_mode leaving app-resumed
           schedule_app_fallback "$serial"
           ;;
@@ -32,7 +32,7 @@ handle_launcher_event() {
     *"onOverviewToggle is_home_and_overview_same=true"*|*"on_animation_start called type: CloseApp"*)
       increment_file "$SERIAL_FILE" >/dev/null
       apply_source_frequency launcher-transition-start
-      trigger_launcher_thread_boost "$LAUNCHER_PID" overview-toggle
+      trigger_transition_thread_policies "$LAUNCHER_PID" overview-toggle
       set_mode entering launcher-transition-start
       ;;
     *SceneTransitionDetectorService*SceneAnimationSignalType.gestureStart*)
@@ -52,25 +52,25 @@ handle_launcher_event() {
       esac
       : >"$GESTURE_FILE"
       increment_file "$SERIAL_FILE" >/dev/null
-      trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-start
+      trigger_transition_thread_policies "$LAUNCHER_PID" gesture-start
       set_mode entering launcher-transition-start
       ;;
     *SceneTransitionDetectorService*SceneAnimationSignalType.gestureToHome*)
       rm -f "$GESTURE_FILE"
       increment_file "$SERIAL_FILE" >/dev/null
-      trigger_launcher_thread_boost "$LAUNCHER_PID" gesture-to-home
+      trigger_transition_thread_policies "$LAUNCHER_PID" gesture-to-home
       set_mode home gesture-committed-home
       ;;
     *SceneTransitionDetectorService*enterOverviewState*)
       rm -f "$GESTURE_FILE"
       increment_file "$SERIAL_FILE" >/dev/null
-      trigger_launcher_thread_boost "$LAUNCHER_PID" overview-entered
+      trigger_transition_thread_policies "$LAUNCHER_PID" overview-entered
       set_mode recents overview-entered
       ;;
     *SceneTransitionDetectorService*exitOverviewState*|*SceneAnimationSignalType.openingRemoteAnimationOpen*)
       serial="$(increment_file "$SERIAL_FILE")"
       apply_source_frequency launcher-exit-start
-      trigger_launcher_thread_boost "$LAUNCHER_PID" launcher-exit-start
+      trigger_transition_thread_policies "$LAUNCHER_PID" launcher-exit-start
       set_mode leaving launcher-exit-start
       [ -r "$PENDING_SOURCE_FILE" ] && schedule_app_fallback "$serial"
       ;;

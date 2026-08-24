@@ -4,7 +4,9 @@ THREAD_ALL_MASK=""
 THREAD_PERF_MASK=""
 THREAD_MID_MASK=""
 THREAD_LITTLE_MASK=""
+THREAD_RENDER_MASK=""
 THREAD_PRIME_MASK=""
+THREAD_SECONDARY_MASK=""
 THREAD_FILE_VALUE=""
 
 read_thread_file() {
@@ -48,6 +50,7 @@ derive_launcher_masks() {
   local online_list top_list background_list topology_input previous_input
   local all_value top_value background_value perf_value mid_value prime_value
   local cpu bit capacity best_capacity prime_cpu lowest_capacity
+  local best_nonprime_capacity render_value secondary_value
   local little_value capacity_seen topology previous_topology
 
   read_thread_file /sys/devices/system/cpu/online; online_list="$THREAD_FILE_VALUE"
@@ -56,8 +59,9 @@ derive_launcher_masks() {
   topology_input="$online_list|$top_list|$background_list"
   read_thread_file "$THREAD_TOPOLOGY_INPUT_FILE"; previous_input="$THREAD_FILE_VALUE"
   if [ "$topology_input" = "$previous_input" ] && [ -r "$THREAD_TOPOLOGY_FILE" ]; then
-    read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK THREAD_PRIME_MASK <"$THREAD_TOPOLOGY_FILE"
-    [ -n "$THREAD_PRIME_MASK" ] && return 0
+    read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK \
+      THREAD_RENDER_MASK THREAD_PRIME_MASK THREAD_SECONDARY_MASK <"$THREAD_TOPOLOGY_FILE"
+    [ -n "$THREAD_SECONDARY_MASK" ] && return 0
   fi
 
   THREAD_ALL_MASK="$(cpulist_to_mask "$online_list")"
@@ -109,6 +113,32 @@ derive_launcher_masks() {
   [ "$mid_value" -ne 0 ] || mid_value=$perf_value
   prime_value=$perf_value
   [ "$prime_cpu" -lt 0 ] || prime_value=$((1 << prime_cpu))
+
+  # The render set combines prime with the fastest non-prime capacity tier.
+  # It lets latency-sensitive work migrate when prime is occupied, while the
+  # remaining performance tier can isolate maintenance work.
+  best_nonprime_capacity=-1
+  render_value=$prime_value
+  cpu=0
+  while [ "$cpu" -lt 32 ]; do
+    bit=$((1 << cpu))
+    if [ $((mid_value & bit)) -ne 0 ]; then
+      read_thread_file "/sys/devices/system/cpu/cpu$cpu/cpu_capacity"
+      capacity="$THREAD_FILE_VALUE"
+      case "$capacity" in ''|*[!0-9]*) capacity=0 ;; esac
+      if [ "$capacity" -gt "$best_nonprime_capacity" ]; then
+        best_nonprime_capacity=$capacity
+        render_value=$((prime_value | bit))
+      elif [ "$capacity" -eq "$best_nonprime_capacity" ]; then
+        render_value=$((render_value | bit))
+      fi
+    fi
+    cpu=$((cpu + 1))
+  done
+  render_value=$((render_value & perf_value))
+  [ "$render_value" -ne 0 ] || render_value=$perf_value
+  secondary_value=$((perf_value & ~render_value))
+  [ "$secondary_value" -ne 0 ] || secondary_value=$mid_value
   background_value=$((background_value & all_value))
   [ "$background_value" -ne 0 ] || background_value=$((all_value & ~perf_value))
   [ "$background_value" -ne 0 ] || background_value=$all_value
@@ -118,12 +148,14 @@ derive_launcher_masks() {
   THREAD_PERF_MASK="$(printf '%x' "$perf_value")"
   THREAD_MID_MASK="$(printf '%x' "$mid_value")"
   THREAD_LITTLE_MASK="$(printf '%x' "$little_value")"
+  THREAD_RENDER_MASK="$(printf '%x' "$render_value")"
   THREAD_PRIME_MASK="$(printf '%x' "$prime_value")"
-  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_PRIME_MASK"
+  THREAD_SECONDARY_MASK="$(printf '%x' "$secondary_value")"
+  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_RENDER_MASK $THREAD_PRIME_MASK $THREAD_SECONDARY_MASK"
   read_thread_file "$THREAD_TOPOLOGY_FILE"; previous_topology="$THREAD_FILE_VALUE"
   echo "$topology_input" >"$THREAD_TOPOLOGY_INPUT_FILE"
   if [ "$topology" != "$previous_topology" ]; then
     echo "$topology" >"$THREAD_TOPOLOGY_FILE"
-    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK little=$THREAD_LITTLE_MASK prime=$THREAD_PRIME_MASK"
+    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK little=$THREAD_LITTLE_MASK render=$THREAD_RENDER_MASK prime=$THREAD_PRIME_MASK secondary=$THREAD_SECONDARY_MASK"
   fi
 }

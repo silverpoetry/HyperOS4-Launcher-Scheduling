@@ -37,6 +37,8 @@ THREAD_LAUNCHER_PID_FILE="$MODDIR/launcher-thread-pid"
 THREAD_BOOST_SERIAL_FILE="$MODDIR/launcher-thread-boost.serial"
 THREAD_POLICY_STATE_FILE="$CONFIG_DIR/thread-policy.state"
 THREAD_PLACEMENT_FILE="$CONFIG_DIR/launcher-placement"
+THREAD_RASTER_PLACEMENT_FILE="$CONFIG_DIR/raster-placement"
+THREAD_RESMGR_PLACEMENT_FILE="$CONFIG_DIR/resmgr-placement"
 THREAD_FENCE_PLACEMENT_FILE="$CONFIG_DIR/fence-placement"
 THREAD_BOOST_MS_FILE="$CONFIG_DIR/boost-duration-ms"
 THREAD_RASTER_UCLAMP_FILE="$CONFIG_DIR/uclamp-raster"
@@ -45,6 +47,16 @@ THREAD_RUST_UCLAMP_FILE="$CONFIG_DIR/uclamp-rust"
 THREAD_RESMGR_UCLAMP_FILE="$CONFIG_DIR/uclamp-resmgr"
 THREAD_TOPOLOGY_FILE="$MODDIR/launcher-thread-topology"
 THREAD_TOPOLOGY_INPUT_FILE="$MODDIR/launcher-thread-topology.input"
+
+SYSTEMUI_THREADCTL="$MODDIR/bin/systemui-threadctl"
+SYSTEMUI_STATE_FILE="$MODDIR/systemui-thread-original"
+SYSTEMUI_PID_FILE="$MODDIR/systemui-thread-pid"
+SYSTEMUI_SERIAL_FILE="$MODDIR/systemui-thread.serial"
+SYSTEMUI_POLICY_STATE_FILE="$CONFIG_DIR/systemui-policy.state"
+SYSTEMUI_CRITICAL_PLACEMENT_FILE="$CONFIG_DIR/systemui-critical-placement"
+SYSTEMUI_MAINTENANCE_PLACEMENT_FILE="$CONFIG_DIR/systemui-maintenance-placement"
+SYSTEMUI_TIMEOUT_FILE="$CONFIG_DIR/systemui-timeout-ms"
+CONFIG_SCHEMA_FILE="$CONFIG_DIR/schema-version"
 
 write_default() {
   [ -f "$1" ] || printf '%s\n' "$2" >"$1"
@@ -71,12 +83,29 @@ migrate_legacy_configuration() {
   migrate_config_file app-fallback-ms "$APP_FALLBACK_MS_FILE"
   migrate_config_file thread-policy.state "$THREAD_POLICY_STATE_FILE"
   migrate_config_file launcher-placement "$THREAD_PLACEMENT_FILE"
+  migrate_config_file raster-placement "$THREAD_RASTER_PLACEMENT_FILE"
+  migrate_config_file resmgr-placement "$THREAD_RESMGR_PLACEMENT_FILE"
   migrate_config_file fence-placement "$THREAD_FENCE_PLACEMENT_FILE"
   migrate_config_file boost-duration-ms "$THREAD_BOOST_MS_FILE"
   migrate_config_file uclamp-raster "$THREAD_RASTER_UCLAMP_FILE"
   migrate_config_file uclamp-ui "$THREAD_UI_UCLAMP_FILE"
   migrate_config_file uclamp-rust "$THREAD_RUST_UCLAMP_FILE"
   migrate_config_file uclamp-resmgr "$THREAD_RESMGR_UCLAMP_FILE"
+  migrate_config_file systemui-policy.state "$SYSTEMUI_POLICY_STATE_FILE"
+  migrate_config_file systemui-critical-placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE"
+  migrate_config_file systemui-maintenance-placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE"
+  migrate_config_file systemui-timeout-ms "$SYSTEMUI_TIMEOUT_FILE"
+}
+
+migrate_placement_schema() {
+  local value
+  read_first_line "$CONFIG_SCHEMA_FILE"
+  [ "$READ_VALUE" = 2 ] && return 0
+  # In schema 1, fence-placement=1 meant little. All schema 2 placement
+  # fields use one shared enum, where little=5.
+  read_first_line "$THREAD_FENCE_PLACEMENT_FILE"; value="$READ_VALUE"
+  [ "$value" = 1 ] && printf '5\n' >"$THREAD_FENCE_PLACEMENT_FILE"
+  printf '2\n' >"$CONFIG_SCHEMA_FILE"
 }
 
 read_first_line() {
@@ -112,16 +141,23 @@ initialize_configuration() {
   mkdir -p "$CONFIG_DIR" || return 1
   chmod 0700 "$CONFIG_DIR" 2>/dev/null
   migrate_legacy_configuration || return 1
+  migrate_placement_schema || return 1
   write_default "$ENABLE_FILE" enabled
   write_default "$SOURCE_POLICY_FILE" enabled
   write_default "$AUX_POLICY_FILE" enabled
   write_default "$THREAD_POLICY_STATE_FILE" enabled
+  write_default "$SYSTEMUI_POLICY_STATE_FILE" enabled
   write_default "$FREQ_POLICY_FILE" disabled
   write_default "$FREQ_PERCENT_FILE" 78
   write_default "$FREQ_TIMEOUT_FILE" 1500
   write_default "$APP_FALLBACK_MS_FILE" 2000
   write_default "$THREAD_PLACEMENT_FILE" 2
+  write_default "$THREAD_RASTER_PLACEMENT_FILE" 3
+  write_default "$THREAD_RESMGR_PLACEMENT_FILE" 2
   write_default "$THREAD_FENCE_PLACEMENT_FILE" 2
+  write_default "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3
+  write_default "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
+  write_default "$SYSTEMUI_TIMEOUT_FILE" 2000
   write_default "$THREAD_BOOST_MS_FILE" 1
   write_default "$THREAD_RASTER_UCLAMP_FILE" 928
   write_default "$THREAD_UI_UCLAMP_FILE" 768

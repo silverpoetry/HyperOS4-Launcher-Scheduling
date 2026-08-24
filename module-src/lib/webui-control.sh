@@ -21,12 +21,18 @@ load_configuration_values() {
   CFG_SOURCE="$(state_value "$SOURCE_POLICY_FILE")"
   CFG_AUXILIARY="$(state_value "$AUX_POLICY_FILE")"
   CFG_LAUNCHER="$(state_value "$THREAD_POLICY_STATE_FILE")"
+  CFG_SYSTEMUI="$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
   CFG_FREQUENCY="$(state_value "$FREQ_POLICY_FILE" disabled)"
   CFG_FREQUENCY_PERCENT="$(number_value "$FREQ_PERCENT_FILE" 78)"
   CFG_FREQUENCY_TIMEOUT="$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
   CFG_APP_FALLBACK="$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
   CFG_LAUNCHER_PLACEMENT="$(number_value "$THREAD_PLACEMENT_FILE" 2)"
+  CFG_RASTER_PLACEMENT="$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 3)"
+  CFG_RESMGR_PLACEMENT="$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
   CFG_FENCE_PLACEMENT="$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
+  CFG_SYSTEMUI_CRITICAL_PLACEMENT="$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3)"
+  CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$(number_value "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6)"
+  CFG_SYSTEMUI_TIMEOUT="$(number_value "$SYSTEMUI_TIMEOUT_FILE" 2000)"
   CFG_BOOST_DURATION="$(number_value "$THREAD_BOOST_MS_FILE" 1)"
   CFG_UCLAMP_RASTER="$(number_value "$THREAD_RASTER_UCLAMP_FILE" 928)"
   CFG_UCLAMP_UI="$(number_value "$THREAD_UI_UCLAMP_FILE" 768)"
@@ -43,12 +49,18 @@ assign_configuration_value() {
     source) valid_state "$value" && CFG_SOURCE="$value" ;;
     auxiliary) valid_state "$value" && CFG_AUXILIARY="$value" ;;
     launcher) valid_state "$value" && CFG_LAUNCHER="$value" ;;
+    systemui) valid_state "$value" && CFG_SYSTEMUI="$value" ;;
     frequency) valid_state "$value" && CFG_FREQUENCY="$value" ;;
     frequency_percent) valid_number "$value" 40 100 && CFG_FREQUENCY_PERCENT="$value" ;;
     frequency_timeout_ms) valid_number "$value" 300 5000 && CFG_FREQUENCY_TIMEOUT="$value" ;;
     app_fallback_ms) valid_number "$value" 500 5000 && CFG_APP_FALLBACK="$value" ;;
-    launcher_placement) valid_number "$value" 1 2 && CFG_LAUNCHER_PLACEMENT="$value" ;;
-    fence_placement) valid_number "$value" 1 2 && CFG_FENCE_PLACEMENT="$value" ;;
+    launcher_placement) valid_number "$value" 1 6 && CFG_LAUNCHER_PLACEMENT="$value" ;;
+    raster_placement) valid_number "$value" 1 6 && CFG_RASTER_PLACEMENT="$value" ;;
+    resmgr_placement) valid_number "$value" 1 6 && CFG_RESMGR_PLACEMENT="$value" ;;
+    fence_placement) valid_number "$value" 1 6 && CFG_FENCE_PLACEMENT="$value" ;;
+    systemui_critical_placement) valid_number "$value" 1 6 && CFG_SYSTEMUI_CRITICAL_PLACEMENT="$value" ;;
+    systemui_maintenance_placement) valid_number "$value" 1 6 && CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$value" ;;
+    systemui_timeout_ms) valid_number "$value" 300 5000 && CFG_SYSTEMUI_TIMEOUT="$value" ;;
     boost_duration_ms) valid_number "$value" 1 1000 && CFG_BOOST_DURATION="$value" ;;
     uclamp_raster) valid_number "$value" 0 1024 && CFG_UCLAMP_RASTER="$value" ;;
     uclamp_ui) valid_number "$value" 0 1024 && CFG_UCLAMP_UI="$value" ;;
@@ -70,12 +82,18 @@ save_configuration() {
   write_atomic "$SOURCE_POLICY_FILE" "$CFG_SOURCE" &&
   write_atomic "$AUX_POLICY_FILE" "$CFG_AUXILIARY" &&
   write_atomic "$THREAD_POLICY_STATE_FILE" "$CFG_LAUNCHER" &&
+  write_atomic "$SYSTEMUI_POLICY_STATE_FILE" "$CFG_SYSTEMUI" &&
   write_atomic "$FREQ_POLICY_FILE" "$CFG_FREQUENCY" &&
   write_atomic "$FREQ_PERCENT_FILE" "$CFG_FREQUENCY_PERCENT" &&
   write_atomic "$FREQ_TIMEOUT_FILE" "$CFG_FREQUENCY_TIMEOUT" &&
   write_atomic "$APP_FALLBACK_MS_FILE" "$CFG_APP_FALLBACK" &&
   write_atomic "$THREAD_PLACEMENT_FILE" "$CFG_LAUNCHER_PLACEMENT" &&
+  write_atomic "$THREAD_RASTER_PLACEMENT_FILE" "$CFG_RASTER_PLACEMENT" &&
+  write_atomic "$THREAD_RESMGR_PLACEMENT_FILE" "$CFG_RESMGR_PLACEMENT" &&
   write_atomic "$THREAD_FENCE_PLACEMENT_FILE" "$CFG_FENCE_PLACEMENT" &&
+  write_atomic "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" "$CFG_SYSTEMUI_CRITICAL_PLACEMENT" &&
+  write_atomic "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" "$CFG_SYSTEMUI_MAINTENANCE_PLACEMENT" &&
+  write_atomic "$SYSTEMUI_TIMEOUT_FILE" "$CFG_SYSTEMUI_TIMEOUT" &&
   write_atomic "$THREAD_BOOST_MS_FILE" "$CFG_BOOST_DURATION" &&
   write_atomic "$THREAD_RASTER_UCLAMP_FILE" "$CFG_UCLAMP_RASTER" &&
   write_atomic "$THREAD_UI_UCLAMP_FILE" "$CFG_UCLAMP_UI" &&

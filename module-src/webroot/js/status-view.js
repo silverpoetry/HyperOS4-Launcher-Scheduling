@@ -26,6 +26,7 @@ export class StatusView {
     for (const [prefix, mask] of [
       ["all", status.all_mask], ["perf", status.perf_mask],
       ["mid", status.mid_mask], ["little", status.little_mask],
+      ["render", status.render_mask], ["secondary", status.secondary_mask],
     ]) {
       setText(`${prefix}Mask`, mask && mask !== "-" ? `0x${mask}` : "—");
       setText(`${prefix}List`, cpuList(mask));

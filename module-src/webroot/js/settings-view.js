@@ -4,8 +4,13 @@ const FIELD_SCHEMA = [
   ["frequencyPercent", "frequency_percent", 40, 100],
   ["frequencyTimeout", "frequency_timeout_ms", 300, 5000],
   ["appFallback", "app_fallback_ms", 500, 5000],
-  ["launcherPlacement", "launcher_placement", 1, 2],
-  ["fencePlacement", "fence_placement", 1, 2],
+  ["launcherPlacement", "launcher_placement", 1, 6],
+  ["rasterPlacement", "raster_placement", 1, 6],
+  ["resmgrPlacement", "resmgr_placement", 1, 6],
+  ["fencePlacement", "fence_placement", 1, 6],
+  ["systemuiCriticalPlacement", "systemui_critical_placement", 1, 6],
+  ["systemuiMaintenancePlacement", "systemui_maintenance_placement", 1, 6],
+  ["systemuiTimeout", "systemui_timeout_ms", 300, 5000],
   ["boostDuration", "boost_duration_ms", 1, 1000],
   ["uclampRaster", "uclamp_raster", 0, 1024],
   ["uclampUi", "uclamp_ui", 0, 1024],
@@ -18,6 +23,7 @@ const TOGGLE_SCHEMA = [
   ["sourceToggle", "source_policy", "source"],
   ["auxToggle", "auxiliary_policy", "auxiliary"],
   ["launcherToggle", "launcher_policy", "launcher"],
+  ["systemuiToggle", "systemui_policy", "systemui"],
   ["frequencyToggle", "frequency_policy", "frequency"],
 ];
 

@@ -9,6 +9,7 @@ $required = @(
     'service.sh', 'webui.sh', 'action.sh', 'uninstall.sh', 'module.prop',
     'lib\config.sh', 'lib\runtime.sh', 'lib\topology.sh',
     'lib\launcher-policy.sh', 'lib\frequency-policy.sh',
+    'lib\systemui-policy.sh',
     'lib\process-policy.sh', 'lib\state-machine.sh', 'lib\events.sh',
     'lib\webui-status.sh', 'lib\webui-control.sh',
     'webroot\index.html', 'webroot\js\main.js'
@@ -76,8 +77,9 @@ foreach ($match in $assetPattern.Matches($html)) {
 }
 
 $threadController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\launcher_threadctl.c') -Raw
-if ($threadController -notmatch 'CLASS_RASTER\) affinity_mask = prime_mask') {
-    throw 'Launcher Raster must use the topology-derived prime mask'
+if ($threadController -notmatch 'CLASS_RASTER[\s\S]*select_mask\(raster_placement' -or
+    $threadController -notmatch 'render_mask') {
+    throw 'Launcher Raster must use the configurable topology-derived placement mask'
 }
 
 $logWatcher = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\launcher_logwatch.c') -Raw
@@ -116,10 +118,28 @@ if (-not $yieldState.Success) {
     throw 'yield_state was not found in source_affinityctl'
 }
 $yieldStateBody = $yieldState.Groups['body'].Value
-$snapshotApply = $yieldStateBody.IndexOf('apply_state(pid, uid, path)')
-$backgroundMove = $yieldStateBody.IndexOf('write_pid(BACKGROUND_CPUSET_PROCS, pid)')
-if ($snapshotApply -lt 0 -or $backgroundMove -lt 0 -or $snapshotApply -gt $backgroundMove) {
-    throw 'Source affinity snapshot must precede background cgroup placement'
+if ($yieldStateBody -notmatch 'apply_state\(pid, uid, path, 1\)') {
+    throw 'Source yield must request the atomic snapshot-cgroup-affinity transaction'
+}
+$applyStart = $affinityController.IndexOf('static int apply_state(')
+$applyEnd = $affinityController.IndexOf('static int yield_state(', $applyStart + 1)
+if ($applyStart -lt 0 -or $applyEnd -le $applyStart) {
+    throw 'apply_state was not found in source_affinityctl'
+}
+$applyStateBody = $affinityController.Substring($applyStart, $applyEnd - $applyStart)
+$snapshotSave = $applyStateBody.IndexOf('save_state(path')
+$backgroundMove = $applyStateBody.LastIndexOf('write_pid(BACKGROUND_CPUSET_PROCS, pid)')
+$affinityBind = $applyStateBody.LastIndexOf('sched_setaffinity(records[i].tid')
+if ($snapshotSave -lt 0 -or $backgroundMove -lt 0 -or $affinityBind -lt 0 -or
+    $snapshotSave -gt $backgroundMove -or $backgroundMove -gt $affinityBind) {
+    throw 'Source transaction order must be snapshot, background cgroup, then affinity'
+}
+
+$systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw
+if ($systemUiController -notmatch 'HeapTaskDaemon' -or
+    $systemUiController -notmatch 'wmshell\.main' -or
+    $systemUiController -notmatch 'restore_policy') {
+    throw 'SystemUI controller must separate and restore render and maintenance threads'
 }
 
 Write-Output 'source_layout=passed'

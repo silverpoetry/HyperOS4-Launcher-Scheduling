@@ -384,7 +384,7 @@ static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
     return failed == 0 ? 0 : 7;
 }
 
-static int apply_state(pid_t pid, uid_t uid, const char *path) {
+static int apply_state(pid_t pid, uid_t uid, const char *path, int move_groups) {
     struct task_record *records = calloc(MAX_TASKS, sizeof(*records));
     size_t count = 0;
     size_t applied = 0;
@@ -396,6 +396,8 @@ static int apply_state(pid_t pid, uid_t uid, const char *path) {
     long long started_us = monotonic_us();
     long long collected_us;
     long long saved_us;
+    int cpuset_ok = 1;
+    int cpuctl_ok = 1;
     if (existing != NULL) {
         char magic[8];
         int active_pid;
@@ -409,6 +411,14 @@ static int apply_state(pid_t pid, uid_t uid, const char *path) {
         free(records);
         if (parsed == 6 && strcmp(magic, "SAF1") == 0 &&
             active_pid == pid && active_uid == uid) {
+            if (move_groups) {
+                cpuset_ok = write_pid(BACKGROUND_CPUSET_PROCS, pid) == 0;
+                cpuctl_ok = write_pid(BACKGROUND_CPUCTL_PROCS, pid) == 0;
+            }
+            if (!cpuset_ok || !cpuctl_ok) {
+                fclose(existing);
+                return 10;
+            }
             return reassert_state(path, existing, pid, uid, active_minor,
                                   active_mask, active_count);
         }
@@ -435,34 +445,29 @@ static int apply_state(pid_t pid, uid_t uid, const char *path) {
         free(records);
         return 6;
     }
+    if (move_groups) {
+        cpuset_ok = write_pid(BACKGROUND_CPUSET_PROCS, pid) == 0;
+        cpuctl_ok = write_pid(BACKGROUND_CPUCTL_PROCS, pid) == 0;
+    }
     mask_to_cpuset(target_mask, &target);
     for (size_t i = 0; i < count; ++i) {
         if (sched_setaffinity(records[i].tid, sizeof(target), &target) == 0) applied++;
         else if (errno != ESRCH) failed++;
     }
-    printf("apply pid=%d uid=%u tasks=%zu applied=%zu failed=%zu target=%llx minor_before=%ld minor_after=%ld collect_us=%lld save_us=%lld bind_us=%lld total_us=%lld\n",
+    printf("apply pid=%d uid=%u tasks=%zu applied=%zu failed=%zu target=%llx cpuset=%d cpuctl=%d minor_before=%ld minor_after=%ld collect_us=%lld save_us=%lld bind_us=%lld total_us=%lld\n",
            pid, uid, count, applied, failed, target_mask,
-           original_minor, read_number(MINOR_WINDOW_NODE),
+           cpuset_ok, cpuctl_ok, original_minor, read_number(MINOR_WINDOW_NODE),
            collected_us - started_us, saved_us - collected_us,
            monotonic_us() - saved_us, monotonic_us() - started_us);
     free(records);
+    if (!cpuset_ok || !cpuctl_ok) return 10;
     return failed == 0 ? 0 : 7;
 }
 
 static int yield_state(pid_t pid, uid_t uid, const char *path) {
-    int result = apply_state(pid, uid, path);
-    int cpuset_ok;
-    int cpuctl_ok;
-    if (result != 0) return result;
-
-    /* Capture affinity while the source still belongs to top-app.  If the
-       cgroup is moved first, sched_getaffinity() can only observe the little
-       cluster and the temporary mask is then saved as the restore baseline. */
-    cpuset_ok = write_pid(BACKGROUND_CPUSET_PROCS, pid) == 0;
-    cpuctl_ok = write_pid(BACKGROUND_CPUCTL_PROCS, pid) == 0;
-    printf("yield pid=%d uid=%u cpuset=%d cpuctl=%d\n",
-           pid, uid, cpuset_ok, cpuctl_ok);
-    return cpuset_ok && cpuctl_ok ? 0 : 10;
+    /* apply_state snapshots top-app masks, moves both cgroups, and only then
+       binds the saved TIDs. This ordering is one locked native transaction. */
+    return apply_state(pid, uid, path, 1);
 }
 
 static int verify_state(pid_t pid) {
@@ -516,10 +521,11 @@ int main(int argc, char **argv) {
     } else if (argc == 5 &&
                (strcmp(argv[1], "apply") == 0 ||
                 strcmp(argv[1], "replace") == 0 ||
+                strcmp(argv[1], "replace-yield") == 0 ||
                 strcmp(argv[1], "yield") == 0)) {
         state_path = argv[4];
     } else {
-        fprintf(stderr, "usage: %s apply|replace|yield PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
+        fprintf(stderr, "usage: %s apply|replace|yield|replace-yield PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
         return 1;
     }
 
@@ -530,24 +536,26 @@ int main(int argc, char **argv) {
         result = restore_state(argv[2], 1, 1);
     } else if (strcmp(argv[1], "restore-no-minor") == 0) {
         result = restore_state(argv[2], 1, 0);
-    } else if (strcmp(argv[1], "replace") == 0) {
+    } else if (strcmp(argv[1], "replace") == 0 ||
+               strcmp(argv[1], "replace-yield") == 0) {
         pid_t pid = (pid_t)atoi(argv[2]);
         uid_t uid = (uid_t)strtoul(argv[3], NULL, 10);
+        int move_groups = strcmp(argv[1], "replace-yield") == 0;
         if (state_matches(argv[4], pid, uid)) {
-            result = apply_state(pid, uid, argv[4]);
+            result = apply_state(pid, uid, argv[4], move_groups);
         } else {
             if (access(argv[4], F_OK) == 0)
                 result = restore_state(argv[4], 1, 0);
             else
                 result = 0;
-            if (result == 0) result = apply_state(pid, uid, argv[4]);
+            if (result == 0) result = apply_state(pid, uid, argv[4], move_groups);
         }
     } else if (strcmp(argv[1], "yield") == 0) {
         result = yield_state((pid_t)atoi(argv[2]),
                              (uid_t)strtoul(argv[3], NULL, 10), argv[4]);
     } else if (strcmp(argv[1], "apply") == 0) {
         result = apply_state((pid_t)atoi(argv[2]),
-                             (uid_t)strtoul(argv[3], NULL, 10), argv[4]);
+                             (uid_t)strtoul(argv[3], NULL, 10), argv[4], 0);
     }
 
     close(lock_fd);

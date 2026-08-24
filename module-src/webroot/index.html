@@ -78,6 +78,8 @@
                   <div><span>性能</span><strong id="perfMask">—</strong><small id="perfList">—</small></div>
                   <div><span>中核</span><strong id="midMask">—</strong><small id="midList">—</small></div>
                   <div><span>小核</span><strong id="littleMask">—</strong><small id="littleList">—</small></div>
+                  <div><span>渲染</span><strong id="renderMask">—</strong><small id="renderList">—</small></div>
+                  <div><span>次级性能</span><strong id="secondaryMask">—</strong><small id="secondaryList">—</small></div>
                 </div>
               </article>
 
@@ -118,6 +120,7 @@
                   <label class="setting-row"><span><strong>来源应用退避</strong><small>Affinity 与后台控制组</small></span><input id="sourceToggle" type="checkbox" role="switch" /><i></i></label>
                   <label class="setting-row"><span><strong>壁纸与 MIMD</strong><small>动画期间放入后台控制组</small></span><input id="auxToggle" type="checkbox" role="switch" /><i></i></label>
                   <label class="setting-row"><span><strong>Launcher 线程</strong><small>动态亲和与 uclamp</small></span><input id="launcherToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>SystemUI 转场线程</strong><small>渲染链与 ART 维护线程分流</small></span><input id="systemuiToggle" type="checkbox" role="switch" /><i></i></label>
                 </div>
               </article>
 
@@ -126,13 +129,24 @@
                   <div><span class="card-kicker">PLACEMENT</span><h2>线程放置</h2></div>
                 </header>
                 <div class="field-grid">
-                  <label class="field wide"><span>UI / Rust 线程</span><select id="launcherPlacement"><option value="2">中核集合</option><option value="1">性能集合</option></select></label>
-                  <label class="field wide"><span>FenceWait 线程</span><select id="fencePlacement"><option value="2">中核集合</option><option value="1">小核集合</option></select></label>
+                  <label class="field wide"><span>Raster 线程</span><select id="rasterPlacement"><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>UI / Rust 线程</span><select id="launcherPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>ResMgr 线程</span><select id="resmgrPlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>FenceWait 线程</span><select id="fencePlacement"><option value="2">非 Prime 性能集合</option><option value="3">渲染集合</option><option value="1">性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
                   <label class="field"><span>Boost 持续</span><div><input id="boostDuration" type="number" min="1" max="1000" step="1" /><em>ms</em></div></label>
                   <label class="field"><span>Raster min</span><input id="uclampRaster" type="number" min="0" max="1024" step="16" /></label>
                   <label class="field"><span>UI min</span><input id="uclampUi" type="number" min="0" max="1024" step="16" /></label>
                   <label class="field"><span>Rust min</span><input id="uclampRust" type="number" min="0" max="1024" step="16" /></label>
                   <label class="field"><span>ResMgr min</span><input id="uclampResmgr" type="number" min="0" max="1024" step="16" /></label>
+                </div>
+              </article>
+
+              <article class="card">
+                <header class="card-header"><div><span class="card-kicker">SYSTEMUI</span><h2>转场线程分流</h2></div></header>
+                <div class="field-grid">
+                  <label class="field wide"><span>主线程 / RenderThread / WMShell</span><select id="systemuiCriticalPlacement"><option value="3">渲染集合</option><option value="1">性能集合</option><option value="2">非 Prime 性能集合</option><option value="6">次级性能集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>GC / Finalizer / JIT</span><select id="systemuiMaintenancePlacement"><option value="6">次级性能集合</option><option value="2">非 Prime 性能集合</option><option value="1">性能集合</option><option value="3">渲染集合</option><option value="4">仅 Prime</option><option value="5">小核集合</option></select></label>
+                  <label class="field wide"><span>结束事件缺失兜底</span><div><input id="systemuiTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
                 </div>
               </article>
 
@@ -166,7 +180,7 @@
             <div class="page-scroller">
               <article class="card">
                 <header class="card-header">
-                  <div><span class="card-kicker">THREADS</span><h2>Launcher 线程</h2></div>
+                  <div><span class="card-kicker">THREADS</span><h2>受管线程</h2></div>
                   <button class="tonal-button compact-button" id="threadRefreshButton" type="button">刷新</button>
                 </header>
                 <div class="thread-table" id="threadTable"><p class="empty-state">尚未读取</p></div>

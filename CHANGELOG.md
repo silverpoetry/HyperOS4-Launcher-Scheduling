@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3
+
+- 将来源应用退避收敛为单个加锁的原生事务：先在 `top-app` 中保存逐 TID 原始亲和，再迁入 background cpuset/cpuctl，最后绑定 background CPU。返回时先恢复 `top-app` 控制组，再按 TID 启动时间恢复保存值。
+- 增加 SystemUI 转场线程管理。主线程、RenderThread、WMShell 与 GPU completion 使用可迁移的渲染集合；HeapTaskDaemon、Finalizer、ReferenceQueue 和 JIT 默认进入不含渲染集合的次级性能核，结束或超时后精确恢复原亲和。
+- CPU 拓扑增加 `render` 与 `secondary` 集合。`render` 由 prime 和最快非 prime 容量簇组成，`secondary` 使用其余性能核；集合完全按运行时 cpuset 与 `cpu_capacity` 推导。
+- Launcher Raster 不再强制独占 prime。Raster、UI/Rust、ResMgr、FenceWait 以及两类 SystemUI 线程的核心集合均可在 WebUI 独立配置。
+- SystemUI 管理只在 Launcher 转场中生效，稳定应用态立即恢复；桌面/最近任务缺少明确结束边时使用可配置超时兜底。诊断页同时显示 Launcher 与 SystemUI 受管线程。
+
 ## 5.2
 
 - 修正原生快速退避的快照顺序：在来源应用仍属于 `top-app` 时保存真实逐线程 affinity，再由同一个原生事务写入 background cpuset/cpuctl，避免把临时 CPU0–2 错记成恢复基准。

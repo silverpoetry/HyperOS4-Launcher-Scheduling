@@ -14,6 +14,7 @@ function applyMockConfiguration(tokens) {
     source: "source_policy",
     auxiliary: "auxiliary_policy",
     launcher: "launcher_policy",
+    systemui: "systemui_policy",
     frequency: "frequency_policy",
   };
   for (const token of tokens) {

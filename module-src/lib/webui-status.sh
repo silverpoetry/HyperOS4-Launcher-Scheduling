@@ -59,7 +59,7 @@ print_frequency_status() {
 
 print_status() {
   local mode daemon_pid daemon_alive launcher_pid topology
-  local all_mask perf_mask mid_mask little_mask prime_mask
+  local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask
   local source_pid source_uid source_name pending_pid pending_uid pending_name
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
@@ -68,14 +68,16 @@ print_status() {
   read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
   [ -d "/proc/$launcher_pid" ] || launcher_pid=""
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
-  read -r all_mask perf_mask mid_mask little_mask prime_mask <<EOF
+  read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask <<EOF
 $topology
 EOF
   [ -n "$all_mask" ] || all_mask=-
   [ -n "$perf_mask" ] || perf_mask=-
   [ -n "$mid_mask" ] || mid_mask=-
   [ -n "$little_mask" ] || little_mask=-
+  [ -n "$render_mask" ] || render_mask=-
   [ -n "$prime_mask" ] || prime_mask=-
+  [ -n "$secondary_mask" ] || secondary_mask=-
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
   pending_pid=""; pending_uid=""; pending_name=""
@@ -87,12 +89,18 @@ EOF
   emit source_policy "$(state_value "$SOURCE_POLICY_FILE")"
   emit auxiliary_policy "$(state_value "$AUX_POLICY_FILE")"
   emit launcher_policy "$(state_value "$THREAD_POLICY_STATE_FILE")"
+  emit systemui_policy "$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
   emit frequency_policy "$(state_value "$FREQ_POLICY_FILE" disabled)"
   emit frequency_percent "$(number_value "$FREQ_PERCENT_FILE" 78)"
   emit frequency_timeout_ms "$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
   emit app_fallback_ms "$(number_value "$APP_FALLBACK_MS_FILE" 2000)"
   emit launcher_placement "$(number_value "$THREAD_PLACEMENT_FILE" 2)"
+  emit raster_placement "$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 3)"
+  emit resmgr_placement "$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
   emit fence_placement "$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
+  emit systemui_critical_placement "$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 3)"
+  emit systemui_maintenance_placement "$(number_value "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6)"
+  emit systemui_timeout_ms "$(number_value "$SYSTEMUI_TIMEOUT_FILE" 2000)"
   emit boost_duration_ms "$(number_value "$THREAD_BOOST_MS_FILE" 1)"
   emit uclamp_raster "$(number_value "$THREAD_RASTER_UCLAMP_FILE" 928)"
   emit uclamp_ui "$(number_value "$THREAD_UI_UCLAMP_FILE" 768)"
@@ -108,7 +116,9 @@ EOF
   emit perf_mask "$perf_mask"
   emit mid_mask "$mid_mask"
   emit little_mask "$little_mask"
+  emit render_mask "$render_mask"
   emit prime_mask "$prime_mask"
+  emit secondary_mask "$secondary_mask"
   emit source_pid "$source_pid"
   emit source_uid "$source_uid"
   emit source_name "$source_name"
@@ -150,6 +160,29 @@ print_launcher_threads() {
     [ -r "$task/comm" ] || continue
     tid=${task##*/}; IFS= read -r name <"$task/comm"
     case "$name" in 1.raster|1.ui|rt-launcher-mai|IplrVkResMgr|IplrVkFenceWait) ;; *) continue ;; esac
+    allowed="$(read_allowed_list "$task/status")"
+    uclamp_min="$(awk '/^[[:space:]]*uclamp\.min[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    uclamp_max="$(awk '/^[[:space:]]*uclamp\.max[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    [ -n "$uclamp_min" ] || uclamp_min=-; [ -n "$uclamp_max" ] || uclamp_max=-
+    printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$tid" "$allowed" "$uclamp_min" "$uclamp_max"
+  done
+
+  local systemui_pid
+  systemui_pid="$(pidof com.android.systemui 2>/dev/null)"; systemui_pid=${systemui_pid%% *}
+  [ -n "$systemui_pid" ] && [ -d "/proc/$systemui_pid/task" ] || return 0
+  for task in /proc/"$systemui_pid"/task/*; do
+    [ -r "$task/comm" ] || continue
+    tid=${task##*/}; IFS= read -r name <"$task/comm"
+    if [ "$tid" = "$systemui_pid" ]; then
+      name=SystemUI/main
+    else
+      case "$name" in
+        RenderThread|wmshell.main|"GPU completion"|"RE Completion"|HeapTaskDaemon|FinalizerDaemon|FinalizerWatchd*|ReferenceQueueD*|"Jit thread pool"|"Profile Saver")
+          name="SystemUI/$name"
+          ;;
+        *) continue ;;
+      esac
+    fi
     allowed="$(read_allowed_list "$task/status")"
     uclamp_min="$(awk '/^[[:space:]]*uclamp\.min[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
     uclamp_max="$(awk '/^[[:space:]]*uclamp\.max[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"

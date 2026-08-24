@@ -48,6 +48,7 @@ foreach ($target in @(
     @{ Source = 'launcher_logwatch.c'; Output = 'launcher-logwatch'; Libraries = @('-ldl') },
     @{ Source = 'launcher_threadctl.c'; Output = 'launcher-threadctl'; Libraries = @() },
     @{ Source = 'source_affinityctl.c'; Output = 'source-affinityctl'; Libraries = @() }
+    @{ Source = 'systemui_threadctl.c'; Output = 'systemui-threadctl'; Libraries = @() }
 )) {
     $source = Join-Path $root (Join-Path 'native' $target.Source)
     $output = Join-Path $outputDirectory $target.Output

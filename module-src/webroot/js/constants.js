@@ -3,18 +3,24 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "5.1",
+  version: "5.3",
   author: "github: silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
   auxiliary_policy: "enabled",
   launcher_policy: "enabled",
+  systemui_policy: "enabled",
   frequency_policy: "disabled",
   frequency_percent: "78",
   frequency_timeout_ms: "1500",
   app_fallback_ms: "2000",
   launcher_placement: "2",
+  raster_placement: "3",
+  resmgr_placement: "2",
   fence_placement: "2",
+  systemui_critical_placement: "3",
+  systemui_maintenance_placement: "6",
+  systemui_timeout_ms: "2000",
   boost_duration_ms: "1",
   uclamp_raster: "928",
   uclamp_ui: "768",
@@ -29,7 +35,9 @@ export const MOCK_STATUS = {
   perf_mask: "f8",
   mid_mask: "78",
   little_mask: "7",
+  render_mask: "b8",
   prime_mask: "80",
+  secondary_mask: "40",
   source_pid: "9174",
   source_uid: "10341",
   source_name: "com.tencent.jkchess",
@@ -54,6 +62,8 @@ export const MOCK_THREADS = [
   "1.ui\t3060\t3-6\t0\t1024",
   "rt-launcher-mai\t3072\t3-6\t0\t1024",
   "IplrVkFenceWait\t3078\t3-6\t0\t1024",
+  "SystemUI/main\t4120\t3-7\t0\t1024",
+  "SystemUI/HeapTaskDaemon\t4142\t6\t0\t1024",
 ].join("\n");
 
 export const MOCK_LOG = [

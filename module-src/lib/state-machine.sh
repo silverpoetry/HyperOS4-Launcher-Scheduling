@@ -30,6 +30,7 @@ set_mode() {
   fi
 
   if [ "$next" = app ]; then
+    restore_systemui_threads "mode-$next"
     increment_file "$EPOCH_FILE" >/dev/null
     rm -f "$GESTURE_FILE"
     restore_processes

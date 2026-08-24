@@ -107,8 +107,7 @@ suppress_source() {
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
   is_protected_pid "$pid" && return 0
-  apply_source_affinity "$pid" "$uid" source-yield apply
-  move_pid_to_background "$pid"
+  apply_source_affinity "$pid" "$uid" source-yield yield
   log_state "source-yield pid=$pid uid=$uid name=$name"
 }
 
@@ -167,8 +166,7 @@ hold_resumed_target_for_animation() {
   read -r pid uid name <"$PENDING_SOURCE_FILE"
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
-  apply_source_affinity "$pid" "$uid" launcher-exit-animation replace
-  move_pid_to_background "$pid"
+  apply_source_affinity "$pid" "$uid" launcher-exit-animation replace-yield
   log_state "target-yield pid=$pid uid=$uid name=$name reason=launcher-exit-animation"
 }
 
