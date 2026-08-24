@@ -95,9 +95,21 @@ apply_source_affinity() {
   [ -x "$SOURCE_AFFINITYCTL" ] || return 0
   if "$SOURCE_AFFINITYCTL" "$operation" "$pid" "$uid" "$SOURCE_AFFINITY_STATE"; then
     log_state "source-affinity-applied pid=$pid uid=$uid reason=$reason operation=$operation"
+    return 0
   else
     log_state "source-affinity-apply-failed pid=$pid uid=$uid reason=$reason"
+    return 1
   fi
+}
+
+source_yield_active() {
+  local pid="$1" uid="$2" active_pid active_uid cpuset cpu
+  [ -r "$SOURCE_AFFINITY_ACTIVE" ] && [ -r "$SOURCE_AFFINITY_STATE" ] || return 1
+  read -r active_pid active_uid <"$SOURCE_AFFINITY_ACTIVE"
+  [ "$active_pid" = "$pid" ] && [ "$active_uid" = "$uid" ] || return 1
+  read_controller_group "$pid" cpuset; cpuset="$CGROUP_RESULT"
+  read_controller_group "$pid" cpu; cpu="$CGROUP_RESULT"
+  [ "$cpuset" = /background ] && [ "$cpu" = /background ]
 }
 
 suppress_source() {
@@ -108,20 +120,26 @@ suppress_source() {
   case "$pid" in ''|*[!0-9]*) return 0 ;; esac
   [ -d "/proc/$pid" ] || return 0
   is_protected_pid "$pid" && return 0
-  apply_source_affinity "$pid" "$uid" source-yield yield
-  log_state "source-yield pid=$pid uid=$uid name=$name"
+  source_yield_active "$pid" "$uid" && return 0
+  if apply_source_affinity "$pid" "$uid" source-yield yield; then
+    log_state "source-yield pid=$pid uid=$uid name=$name"
+  fi
 }
 
 restore_source_affinity() {
   local reason="$1" resumed_uid="$2"
   local magic active_pid active_uid original_minor target count operation
-  [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] || return 0
+  if [ ! -x "$SOURCE_AFFINITYCTL" ] || [ ! -r "$SOURCE_AFFINITY_STATE" ]; then
+    rm -f "$SOURCE_AFFINITY_ACTIVE"
+    return 0
+  fi
   operation=restore
   if [ -n "$resumed_uid" ]; then
     read -r magic active_pid active_uid original_minor target count <"$SOURCE_AFFINITY_STATE"
     [ "$magic" = SAF1 ] && [ "$active_uid" = "$resumed_uid" ] || operation=restore-no-minor
   fi
   if "$SOURCE_AFFINITYCTL" "$operation" "$SOURCE_AFFINITY_STATE"; then
+    rm -f "$SOURCE_AFFINITY_ACTIVE"
     log_state "source-affinity-restored reason=$reason operation=$operation resumed_uid=$resumed_uid"
   else
     log_state "source-affinity-restore-failed reason=$reason"

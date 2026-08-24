@@ -23,6 +23,7 @@ echo $$ >"$PID_FILE"
 restore_frequency_state_quiet
 [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_STATE" ] &&
   "$SOURCE_AFFINITYCTL" restore "$SOURCE_AFFINITY_STATE" >/dev/null 2>&1
+rm -f "$SOURCE_AFFINITY_ACTIVE"
 restore_launcher_threads
 restore_systemui_threads startup
 
@@ -38,7 +39,7 @@ echo 0 >"$SERIAL_FILE"
 echo 0 >"$EPOCH_FILE"
 echo 0 >"$FREQ_SERIAL_FILE"
 rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
-rm -f "$GESTURE_FILE"
+rm -f "$GESTURE_FILE" "$SOURCE_AFFINITY_ACTIVE"
 
 case "$(getprop ro.mi.os.version.name)" in
   OS4*) ;;

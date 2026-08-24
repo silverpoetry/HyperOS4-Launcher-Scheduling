@@ -21,6 +21,7 @@
 #define BACKGROUND_CPUCTL_PROCS "/dev/cpuctl/background/cgroup.procs"
 #define SOURCE_PLACEMENT_FILE "/data/adb/hyperos4-launcher-scheduling/source-placement"
 #define THREAD_TOPOLOGY_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/launcher-thread-topology"
+#define SOURCE_AFFINITY_ACTIVE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.active"
 #define MAX_TASKS 4096
 
 struct task_record {
@@ -28,6 +29,42 @@ struct task_record {
     unsigned long long start_time;
     unsigned long long original_mask;
 };
+
+static int task_identity_compare(const void *left, const void *right) {
+    const struct task_record *a = left;
+    const struct task_record *b = right;
+    if (a->tid < b->tid) return -1;
+    if (a->tid > b->tid) return 1;
+    if (a->start_time < b->start_time) return -1;
+    if (a->start_time > b->start_time) return 1;
+    return 0;
+}
+
+static int write_active_record(pid_t pid, uid_t uid) {
+    char temporary[512];
+    char value[64];
+    int fd;
+    ssize_t written;
+    int close_result;
+    int value_length = snprintf(value, sizeof(value), "%d %u\n", pid, uid);
+    int path_length = snprintf(temporary, sizeof(temporary), "%s.tmp", SOURCE_AFFINITY_ACTIVE);
+    if (value_length <= 0 || (size_t)value_length >= sizeof(value) ||
+        path_length <= 0 || (size_t)path_length >= sizeof(temporary)) return -1;
+    fd = open(temporary, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+    if (fd < 0) return -1;
+    written = write(fd, value, (size_t)value_length);
+    close_result = close(fd);
+    if (written != value_length || close_result != 0) {
+        unlink(temporary);
+        return -1;
+    }
+    if (rename(temporary, SOURCE_AFFINITY_ACTIVE) != 0) {
+        unlink(temporary);
+        return -1;
+    }
+    chmod(SOURCE_AFFINITY_ACTIVE, 0600);
+    return 0;
+}
 
 static long long monotonic_us(void) {
     struct timespec now;
@@ -316,6 +353,7 @@ static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
     struct task_record *saved = calloc(MAX_TASKS, sizeof(*saved));
     struct task_record *current = calloc(MAX_TASKS, sizeof(*current));
     size_t saved_count = 0;
+    size_t indexed_count = 0;
     size_t current_count = 0;
     size_t added = 0;
     size_t applied = 0;
@@ -344,6 +382,8 @@ static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
         saved_count++;
     }
     fclose(file);
+    indexed_count = saved_count;
+    qsort(saved, indexed_count, sizeof(*saved), task_identity_compare);
     if (collect_tasks(pid, current, &current_count) != 0) {
         free(saved);
         free(current);
@@ -351,14 +391,8 @@ static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
     }
     collected_us = monotonic_us();
     for (size_t i = 0; i < current_count; ++i) {
-        int found = 0;
-        for (size_t j = 0; j < saved_count; ++j) {
-            if (saved[j].tid == current[i].tid &&
-                saved[j].start_time == current[i].start_time) {
-                found = 1;
-                break;
-            }
-        }
+        int found = bsearch(&current[i], saved, indexed_count, sizeof(*saved),
+                            task_identity_compare) != NULL;
         if (!found) {
             if (saved_count >= MAX_TASKS) {
                 free(saved);
@@ -584,6 +618,16 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "apply") == 0) {
         result = apply_state((pid_t)atoi(argv[2]),
                              (uid_t)strtoul(argv[3], NULL, 10), argv[4], 0);
+    }
+
+    if (result == 0 &&
+        (strcmp(argv[1], "yield") == 0 || strcmp(argv[1], "replace-yield") == 0)) {
+        if (write_active_record((pid_t)atoi(argv[2]),
+                                (uid_t)strtoul(argv[3], NULL, 10)) != 0) result = 12;
+    } else if (result == 0 &&
+               (strcmp(argv[1], "restore") == 0 ||
+                strcmp(argv[1], "restore-no-minor") == 0)) {
+        unlink(SOURCE_AFFINITY_ACTIVE);
     }
 
     close(lock_fd);

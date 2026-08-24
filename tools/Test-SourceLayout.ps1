@@ -136,6 +136,21 @@ if ($processPolicy -notmatch 'cache_pid_record "\$pid" "\$destination" "\$packag
     $processPolicy -notmatch 'cache_pid_record "\$pid" "\$SOURCE_FILE" "\$resumed"') {
     throw 'Source records must retain the full Android package identity'
 }
+if ($processPolicy -notmatch '(?m)^source_yield_active\(\)' -or
+    $processPolicy -notmatch '\[ -r "\$SOURCE_AFFINITY_ACTIVE" \] && \[ -r "\$SOURCE_AFFINITY_STATE" \]' -or
+    $processPolicy -notmatch '\[ "\$cpuset" = /background \] && \[ "\$cpu" = /background \]') {
+    throw 'Repeated source events must use the active transaction fast path'
+}
+$stateMachine = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\state-machine.sh') -Raw
+if ($stateMachine -notmatch '\[ "\$current" = app \] && apply_policy' -or
+    ([regex]::Matches($stateMachine, 'apply_policy').Count -ne 1)) {
+    throw 'Full process policy must run only once when an app transition begins'
+}
+$systemUiPolicy = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\systemui-policy.sh') -Raw
+if ($systemUiPolicy -notmatch 'systemui-policy-extended' -or
+    $systemUiPolicy -notmatch '\[ "\$previous_pid" = "\$systemui_pid" \] && \[ -r "\$SYSTEMUI_STATE_FILE" \] && active=1') {
+    throw 'SystemUI policy must extend an active transaction without rescanning threads'
+}
 if ($configuration -notmatch 'write_default "\$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2') {
     throw 'SystemUI critical threads must default to the non-prime performance mask'
 }
@@ -163,6 +178,12 @@ if ($affinityController -notmatch 'read_source_target_mask' -or
     $affinityController -notmatch 'SOURCE_PLACEMENT_FILE' -or
     $affinityController -notmatch 'selected = placement == 5 \? little_mask : background_mask') {
     throw 'Source placement must distinguish the efficiency and system background sets'
+}
+if ($affinityController -notmatch 'SOURCE_AFFINITY_ACTIVE' -or
+    $affinityController -notmatch 'write_active_record' -or
+    $affinityController -notmatch 'unlink\(SOURCE_AFFINITY_ACTIVE\)' -or
+    $affinityController -notmatch 'bsearch\(&current\[i\]') {
+    throw 'Native source transactions must publish active state and use indexed reassert lookup'
 }
 $yieldState = [regex]::Match(
     $affinityController,

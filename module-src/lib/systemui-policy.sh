@@ -33,7 +33,7 @@ restore_systemui_threads() {
 }
 
 apply_systemui_transition_policy() {
-  local reason="$1" systemui_pid previous_pid critical maintenance serial timeout
+  local reason="$1" systemui_pid previous_pid critical maintenance serial timeout active=0
   if ! systemui_policy_enabled || [ ! -x "$SYSTEMUI_THREADCTL" ]; then
     restore_systemui_threads policy-disabled
     return 0
@@ -44,23 +44,30 @@ apply_systemui_transition_policy() {
   read_thread_file "$SYSTEMUI_PID_FILE"; previous_pid="$THREAD_FILE_VALUE"
   [ -z "$previous_pid" ] || [ "$previous_pid" = "$systemui_pid" ] ||
     restore_systemui_threads systemui-restarted
+  read_thread_file "$SYSTEMUI_PID_FILE"; previous_pid="$THREAD_FILE_VALUE"
+  [ "$previous_pid" = "$systemui_pid" ] && [ -r "$SYSTEMUI_STATE_FILE" ] && active=1
 
-  derive_launcher_masks
-  read_systemui_placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2
-  critical="$THREAD_FILE_VALUE"
-  read_systemui_placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
-  maintenance="$THREAD_FILE_VALUE"
-  if "$SYSTEMUI_THREADCTL" apply "$systemui_pid" "$SYSTEMUI_STATE_FILE" \
-      "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" \
-      "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" "$THREAD_SECONDARY_MASK" \
-      "$THREAD_BACKGROUND_MASK" \
-      "$critical" "$maintenance" >/dev/null 2>&1; then
-    printf '%s\n' "$systemui_pid" >"$SYSTEMUI_PID_FILE"
+  if [ "$active" = 1 ]; then
     serial="$(increment_systemui_serial)"
-    thread_log "systemui-policy serial=$serial reason=$reason critical=$critical maintenance=$maintenance"
+    thread_log "systemui-policy-extended serial=$serial reason=$reason"
   else
-    thread_log "systemui-policy-failed pid=$systemui_pid reason=$reason"
-    return 0
+    derive_launcher_masks
+    read_systemui_placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2
+    critical="$THREAD_FILE_VALUE"
+    read_systemui_placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
+    maintenance="$THREAD_FILE_VALUE"
+    if "$SYSTEMUI_THREADCTL" apply "$systemui_pid" "$SYSTEMUI_STATE_FILE" \
+        "$THREAD_PERF_MASK" "$THREAD_MID_MASK" "$THREAD_LITTLE_MASK" \
+        "$THREAD_RENDER_MASK" "$THREAD_PRIME_MASK" "$THREAD_SECONDARY_MASK" \
+        "$THREAD_BACKGROUND_MASK" \
+        "$critical" "$maintenance" >/dev/null 2>&1; then
+      printf '%s\n' "$systemui_pid" >"$SYSTEMUI_PID_FILE"
+      serial="$(increment_systemui_serial)"
+      thread_log "systemui-policy serial=$serial reason=$reason critical=$critical maintenance=$maintenance"
+    else
+      thread_log "systemui-policy-failed pid=$systemui_pid reason=$reason"
+      return 0
+    fi
   fi
 
   timeout="$(read_bounded_number "$SYSTEMUI_TIMEOUT_FILE" 2000 300 5000)"

@@ -18,6 +18,7 @@ MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 
 SOURCE_AFFINITYCTL="$MODDIR/bin/source-affinityctl"
 SOURCE_AFFINITY_STATE="$MODDIR/source-affinity.state"
+SOURCE_AFFINITY_ACTIVE="$MODDIR/source-affinity.active"
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
 SOURCE_PLACEMENT_FILE="$CONFIG_DIR/source-placement"
 AUX_POLICY_FILE="$CONFIG_DIR/aux-policy.state"

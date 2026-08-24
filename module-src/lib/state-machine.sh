@@ -19,8 +19,6 @@ set_mode() {
       resumed_uid=""
       [ -r "$SOURCE_FILE" ] && read -r resumed_pid resumed_uid resumed_name <"$SOURCE_FILE"
       restore_source_affinity stable-app-reassert "$resumed_uid"
-    else
-      apply_policy
     fi
     return 0
   fi
@@ -47,7 +45,9 @@ set_mode() {
     restore_source_affinity stable-app-commit "$resumed_uid"
   else
     echo "$next" >"$MODE_FILE"
-    apply_policy
+    # A source transaction and auxiliary placement belong to the transition,
+    # not to every Launcher phase reported during that transition.
+    [ "$current" = app ] && apply_policy
   fi
   log_state "mode=$next reason=$reason"
 }

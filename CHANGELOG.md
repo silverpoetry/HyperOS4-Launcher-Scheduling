@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.7
+
+- Publish a source-yield activity record from the same locked native transaction that saves affinity, moves cgroups and binds source threads.
+- Treat one Launcher entry as one process-policy transaction. Later `home`, `recents` and `leaving` phases keep the existing transaction instead of rescanning every source thread.
+- Extend an active SystemUI policy timeout without repeatedly enumerating and rewriting the same SystemUI threads.
+- Replace the quadratic saved-thread lookup used by source reassertion with an indexed lookup.
+
 ## 5.6
 
 - Preserve the full Android package name in source records instead of the 15-byte `/proc/Name` value.
