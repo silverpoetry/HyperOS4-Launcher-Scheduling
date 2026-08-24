@@ -36,27 +36,31 @@ Joyose 中的小窗命令最终映射到：
 
 实机上金铲铲的 UID 为 `10341`。当节点值为 `10341` 时，RenderThread 和 UnityMain 的 `Cpus_allowed_list` 为 `0-7`。直接执行 `taskset 7 <TID>` 虽返回成功，立即读回仍为 `ff`。先把该节点写为 `0`，同一次 `taskset` 后立即读回 `7`，`Cpus_allowed_list` 变为 `0-2`。
 
-该 affinity 在随后把线程从 `top-app` 移到 `foreground` 后仍保持 `0-2`。因此 ActivityManager 的后续 cgroup 迁移不会撤销已经生效的显式 affinity；旧方案失败的关键是 Xiaomi UID 特权仍在，而不是必须持续抢写 cgroup。
+单次 cgroup 迁移不会必然撤销已经生效的显式 affinity，但转场期间 Android 的 task profile 仍可能再次改写来源进程。2026-08-25 的实机记录中，第一次退避已在 `1426.14 s` 把来源限制到 CPU0–2；Launcher 恢复后，来源线程在 `1426.733 s` 首次逃到 CPU3，`1426.870 s` 又运行到 CPU7。也就是说，只在手势开始写一次并不足以覆盖完整转场，仍需在确定的 Launcher 状态事件上复核并补写。
 
 ## 原生 affinity 事务
 
-`source-affinityctl` 使用一个短生命周期状态文件记录：
+`source-affinityctl` 使用一个短生命周期状态记录：
 
 ```text
 PID、UID、原始 minor_window_app、目标掩码、TID、TID 启动时间、原始 affinity、原始 nice、本轮应用 nice
 ```
 
-状态文件通过临时文件加原子重命名更新。动画关键路径不调用同步落盘；设备突然重启会重新初始化调度参数，普通进程崩溃时状态文件仍可由服务启动恢复。
+从 v6.1 起，记录位于 `/dev/.hyperos4-launcher-scheduling`，即内存文件系统，不写入 `/data`。记录通过临时文件加原子重命名更新；同一次开机内服务重启仍可恢复，设备重启后由系统重新初始化调度状态，不保留旧事务。
 
 初次应用时，控制器枚举 `/proc/<PID>/task`，保存全部原始掩码和 nice，清除与来源 UID 相同的小窗标记，再统一绑定到 background CPU 集。nice 压制目标可设为 0–40 级，默认 40：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`。线程应用值为 `max(原值, 目标 nice)`，因此只降低高于目标的优先级，不改变已经低于目标的线程。线程创建会继承创建者 affinity；若后续事件发现新 TID，则把它加入状态。新线程已经继承后台掩码时，恢复掩码使用设备 `top-app` CPU 集，避免退出动画后永久留在小核。
 
 恢复 nice 时同时核对 TID 启动时间与当前值。只有当前 nice 仍等于状态文件记录的本轮应用值，控制器才恢复原值；系统或应用在动画期间主动改过的值由其继续管理。
 
-重复 Launcher 事件采用快路径：没有新 TID、没有线程逃逸、`minor_window_app` 也未回写时，只验证，不重复保存或绑定。若 Joyose 再次写回相同 UID，则清零该值并只重绑逃逸线程。
+v6.1 的准备状态格式为 `SAF4`，同时保存每个 TID 的启动时间、原始 affinity、原始 nice 和本轮应用 nice。准备阶段在动画前完整采集一次；手势开始的快路径先应用 nice，再移动 background cgroup，最后写入目标 affinity，避免先迁移后才把 CPU0–2 误存为“原始 affinity”。
+
+重复 Launcher 事件采用原生 `reassert` 快路径：没有新 TID、线程逃逸、优先级逃逸或 `minor_window_app` 回写时只验证；有变化时只处理变化项。该路径不重新建立基准，也不会覆盖真实的原始 affinity。
 
 ## 生命周期
 
-- `gestureStart`、按键最近任务或关闭应用远程动画开始：原生 logd 监听器直接发起 affinity 事务，然后执行兼容性的 background cgroup 放置。
+- 转场准备阶段：在来源仍处于 `top-app` 时采集真实 affinity 与 nice，建立 `SAF4` 事务。
+- `gestureStart`、按键最近任务或关闭应用远程动画开始：快路径依次应用 nice、background cgroup 和目标 affinity。
+- `launcher-resumed`、`overview-entered`：执行一次原生 `reassert`，覆盖实机已确认的 Android task-profile 后续改写。
 - 桌面和最近任务稳定显示：事务保持有效，来源应用不能占用性能核。
 - 上滑取消：先把来源进程恢复到 `top-app`，再恢复原始 affinity 和原始 Xiaomi 标记。
 - 从桌面或最近任务打开同一应用：保留同一事务，吸收新增线程和 Joyose 回写；在 Launcher 退出动画完成后恢复。
@@ -74,6 +78,8 @@ Sheng 上的控制器测试结果：
 - v4.0 控制器阶段耗时，Settings 74 个线程：初次事务 2.812 ms；无变化重复事件 1.017 ms；仅处理 Xiaomi 标记回写 0.904 ms。
 - 原生监听器使用 `posix_spawn()` 启动控制器；71 线程游戏的完整入口事务为 16.877 ms，原 `fork()+exec()` 路径为 29.294 ms。
 - 完整 Launcher 退出路径：76/76 个存活线程恢复，状态文件删除，目标回到 `cpuset/top-app` 和 `cpuctl/top-app`，相同 UID 的 `minor_window_app` 恢复。
+- v6.0 严重坏帧：Launcher `CALLBACK_ANIMATION` 为 300.254 ms，其中同步 Binder 等待 231.955 ms；system_server 回复耗时 222.012 ms，其中约 142 ms 睡眠、79 ms runnable 等待，实际执行仅约 0.57 ms。来源 UnityMain 当时调度优先级为 100，而 system_server Binder 线程为 120，来源在共享小核上反向压住了系统转场工作。
+- 上述坏帧还暴露出 `SAF3` 快路径遗漏 nice 应用。v6.1 的 `SAF4` 在同一原生事务中保存并应用 nice；合成测试中 `fast-yield` 完成 nice、cgroup 和 affinity 共耗时 197 us，后续无变化 `reassert` 为 77 us，恢复后 nice 回到原值。
 
 验收同时检查 `Cpus_allowed_list` 与控制器枚举结果。仅看到 cgroup 路径变化、`taskset` 返回成功或 CPU 时间小幅下降，都不能判定退避生效。
 
@@ -81,4 +87,4 @@ Sheng 上的控制器测试结果：
 
 nice 用于解决来源线程与 system_server、显示提交线程共享后台核心时的运行优先级竞争；affinity 与 cgroup 负责核心隔离。两者在同一个原生事务内保存、应用和恢复。
 
-控制器由转场事件驱动。20 ms、120 ms 或 200 ms 周期性重写 cgroup 会增加唤醒与竞态，不属于当前执行链路。
+控制器由转场事件驱动，只在 `launcher-resumed`、`overview-entered` 等已知改写点复核。20 ms、120 ms 或 200 ms 周期性重写 cgroup 会增加唤醒与竞态，不属于当前执行链路。

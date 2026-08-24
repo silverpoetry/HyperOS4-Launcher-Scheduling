@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.1
+
+- Store transient source-affinity transaction state on `/dev` tmpfs instead of persistent module storage.
+- Include original and applied nice values in prepared source state, and apply both affinity and nice in the first-frame native transaction.
+- Reassert the active source transaction when Launcher resumes and when Recents becomes active, covering Android task-profile rewrites during long transitions.
+
 ## 5.8
 
 - Add a configurable source-app nice target level of 0–40, defaulting to 40. The level maps from no suppression to `nice=19`; each thread moves directly to the target only when needed, and its original value is restored only while the module still owns the applied value.

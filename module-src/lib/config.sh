@@ -17,8 +17,9 @@ WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
 MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 
 SOURCE_AFFINITYCTL="$MODDIR/bin/source-affinityctl"
-SOURCE_AFFINITY_STATE="$MODDIR/source-affinity.state"
-SOURCE_AFFINITY_ACTIVE="$MODDIR/source-affinity.active"
+SOURCE_RUNTIME_DIR=/dev/.hyperos4-launcher-scheduling
+SOURCE_AFFINITY_STATE="$SOURCE_RUNTIME_DIR/source-affinity.state"
+SOURCE_AFFINITY_ACTIVE="$SOURCE_RUNTIME_DIR/source-affinity.active"
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
 SOURCE_PLACEMENT_FILE="$CONFIG_DIR/source-placement"
 SOURCE_NICE_SUPPRESSION_FILE="$CONFIG_DIR/source-nice-suppression"

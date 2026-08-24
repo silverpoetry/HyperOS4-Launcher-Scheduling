@@ -13,6 +13,7 @@ handle_launcher_event() {
       if [ "$package" = com.miui.home ]; then
         rm -f "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
         increment_file "$SERIAL_FILE" >/dev/null
+        reassert_active_source launcher-resumed
         trigger_transition_thread_policies "$LAUNCHER_PID" launcher-resumed
         set_mode home launcher-resumed
         return 0
@@ -66,6 +67,7 @@ handle_launcher_event() {
     *SceneTransitionDetectorService*enterOverviewState*)
       rm -f "$GESTURE_FILE"
       increment_file "$SERIAL_FILE" >/dev/null
+      reassert_active_source overview-entered
       trigger_transition_thread_policies "$LAUNCHER_PID" overview-entered
       set_mode recents overview-entered
       ;;

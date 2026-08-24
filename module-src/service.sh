@@ -17,6 +17,8 @@ MODDIR=${0%/*}
 initialize_configuration || exit 1
 claim_service_instance || exit 0
 trap 'release_service_instance' EXIT HUP INT TERM
+mkdir -p "$SOURCE_RUNTIME_DIR" || exit 1
+chmod 0700 "$SOURCE_RUNTIME_DIR" 2>/dev/null
 promote_controller_process
 cleanup_stale_daemons
 echo $$ >"$PID_FILE"

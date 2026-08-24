@@ -23,7 +23,7 @@
 #define SOURCE_PLACEMENT_FILE "/data/adb/hyperos4-launcher-scheduling/source-placement"
 #define SOURCE_NICE_SUPPRESSION_FILE "/data/adb/hyperos4-launcher-scheduling/source-nice-suppression"
 #define THREAD_TOPOLOGY_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/launcher-thread-topology"
-#define SOURCE_AFFINITY_ACTIVE "/data/adb/modules/hyperos4_recents_source_app_yield/source-affinity.active"
+#define SOURCE_AFFINITY_ACTIVE "/dev/.hyperos4-launcher-scheduling/source-affinity.active"
 #define MAX_TASKS 4096
 
 struct task_record {
@@ -35,11 +35,11 @@ struct task_record {
 };
 
 static int state_has_nice(const char *magic) {
-    return strcmp(magic, "SAF2") == 0;
+    return strcmp(magic, "SAF2") == 0 || strcmp(magic, "SAF4") == 0;
 }
 
 static int state_is_prepared(const char *magic) {
-    return strcmp(magic, "SAF3") == 0;
+    return strcmp(magic, "SAF3") == 0 || strcmp(magic, "SAF4") == 0;
 }
 
 static int state_magic_valid(const char *magic) {
@@ -322,43 +322,6 @@ static int collect_tasks(pid_t pid, struct task_record *records, size_t *count) 
     return used > 0 ? 0 : -1;
 }
 
-static int collect_affinity_tasks(pid_t pid, struct task_record *records,
-                                  size_t *count) {
-    char directory_path[64];
-    DIR *directory;
-    struct dirent *entry;
-    size_t used = 0;
-    snprintf(directory_path, sizeof(directory_path), "/proc/%d/task", pid);
-    directory = opendir(directory_path);
-    if (directory == NULL) return -1;
-    while ((entry = readdir(directory)) != NULL) {
-        char *end;
-        long parsed;
-        cpu_set_t affinity;
-        unsigned long long start;
-        if (entry->d_name[0] < '0' || entry->d_name[0] > '9') continue;
-        parsed = strtol(entry->d_name, &end, 10);
-        if (*end != '\0' || parsed <= 1 || parsed > INT32_MAX) continue;
-        if (used >= MAX_TASKS) {
-            closedir(directory);
-            return -1;
-        }
-        start = task_start_time((pid_t)parsed);
-        if (start == 0) continue;
-        if (sched_getaffinity((pid_t)parsed, sizeof(affinity), &affinity) != 0)
-            continue;
-        records[used].tid = (pid_t)parsed;
-        records[used].start_time = start;
-        records[used].original_mask = cpuset_to_mask(&affinity);
-        records[used].original_nice = 0;
-        records[used].applied_nice = 0;
-        used++;
-    }
-    closedir(directory);
-    *count = used;
-    return used > 0 ? 0 : -1;
-}
-
 static int apply_mask_to_tasks(pid_t pid, unsigned long long mask,
                                size_t *applied, size_t *failed) {
     char directory_path[64];
@@ -422,11 +385,12 @@ static int save_prepared_state(const char *path, pid_t pid, uid_t uid,
     if (length <= 0 || (size_t)length >= sizeof(temporary)) return -1;
     file = fopen(temporary, "we");
     if (file == NULL) return -1;
-    fprintf(file, "SAF3 %d %u %ld %llx %zu\n",
+    fprintf(file, "SAF4 %d %u %ld %llx %zu\n",
             pid, uid, minor, target_mask, count);
     for (size_t i = 0; i < count; ++i) {
-        fprintf(file, "%d %llu %llx\n", records[i].tid,
-                records[i].start_time, records[i].original_mask);
+        fprintf(file, "%d %llu %llx %d %d\n", records[i].tid,
+                records[i].start_time, records[i].original_mask,
+                records[i].original_nice, records[i].applied_nice);
     }
     if (fflush(file) != 0 || fclose(file) != 0) {
         unlink(temporary);
@@ -512,7 +476,7 @@ static int restore_state(const char *path, int remove_state, int restore_minor) 
 
 static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
                           long original_minor, unsigned long long target_mask,
-                          size_t expected, int has_nice) {
+                          size_t expected, int has_nice, int prepared) {
     struct task_record *saved = calloc(MAX_TASKS, sizeof(*saved));
     struct task_record *current = calloc(MAX_TASKS, sizeof(*current));
     size_t saved_count = 0;
@@ -601,12 +565,18 @@ static int reassert_state(const char *path, FILE *file, pid_t pid, uid_t uid,
         free(current);
         return 0;
     }
-    if ((added > 0 || upgrade_state) &&
-        save_state(path, pid, uid, original_minor, target_mask,
-                   saved, saved_count) != 0) {
-        free(saved);
-        free(current);
-        return 5;
+    if (added > 0 || upgrade_state) {
+        int save_result = prepared
+                              ? save_prepared_state(path, pid, uid,
+                                                    original_minor, target_mask,
+                                                    saved, saved_count)
+                              : save_state(path, pid, uid, original_minor,
+                                           target_mask, saved, saved_count);
+        if (save_result != 0) {
+            free(saved);
+            free(current);
+            return 5;
+        }
     }
     saved_us = monotonic_us();
     if (current_minor == (long)uid && write_number(MINOR_WINDOW_NODE, 0) != 0) {
@@ -687,7 +657,8 @@ static int apply_state(pid_t pid, uid_t uid, const char *path, int move_groups) 
                 return 10;
             }
             return reassert_state(path, existing, pid, uid, active_minor,
-                                  active_mask, active_count, state_has_nice(magic));
+                                  active_mask, active_count,
+                                  state_has_nice(magic), state_is_prepared(magic));
         }
         fclose(existing);
         fprintf(stderr, "active affinity transaction belongs to another process\n");
@@ -752,7 +723,7 @@ static int prepare_state(pid_t pid, uid_t uid, const char *path) {
     }
     if (access(path, F_OK) == 0)
         (void)restore_state(path, 1, 1);
-    if (collect_affinity_tasks(pid, records, &count) != 0) {
+    if (collect_tasks(pid, records, &count) != 0) {
         free(records);
         return 5;
     }
@@ -779,8 +750,44 @@ static int prepared_state_matches(const char *path, pid_t pid, uid_t uid) {
     parsed = fscanf(file, "%7s %d %u %ld %llx %zu", magic, &active_pid,
                     &active_uid, &minor, &mask, &count);
     fclose(file);
-    return parsed == 6 && state_is_prepared(magic) &&
+    return parsed == 6 && strcmp(magic, "SAF4") == 0 &&
            active_pid == pid && active_uid == uid;
+}
+
+static int apply_prepared_nice(const char *path, pid_t pid, uid_t uid,
+                               size_t *normalized, size_t *failed) {
+    FILE *file = fopen(path, "re");
+    char magic[8];
+    int active_pid;
+    unsigned int active_uid;
+    long original_minor;
+    unsigned long long target_mask;
+    size_t expected;
+    *normalized = 0;
+    if (file == NULL) return -1;
+    if (fscanf(file, "%7s %d %u %ld %llx %zu", magic, &active_pid,
+               &active_uid, &original_minor, &target_mask, &expected) != 6 ||
+        strcmp(magic, "SAF4") != 0 || active_pid != pid || active_uid != uid) {
+        fclose(file);
+        return -1;
+    }
+    for (size_t i = 0; i < expected; ++i) {
+        int tid;
+        int original_nice;
+        int applied_nice;
+        unsigned long long start;
+        unsigned long long mask;
+        if (fscanf(file, "%d %llu %llx %d %d", &tid, &start, &mask,
+                   &original_nice, &applied_nice) != 5) break;
+        if (original_nice == applied_nice || task_start_time((pid_t)tid) != start)
+            continue;
+        if (setpriority(PRIO_PROCESS, (id_t)tid, applied_nice) == 0)
+            (*normalized)++;
+        else if (errno != ESRCH)
+            (*failed)++;
+    }
+    fclose(file);
+    return 0;
 }
 
 static int fast_yield_state(pid_t pid, uid_t uid, const char *path) {
@@ -792,10 +799,13 @@ static int fast_yield_state(pid_t pid, uid_t uid, const char *path) {
     unsigned long long target_mask;
     size_t expected;
     size_t applied = 0;
+    size_t normalized = 0;
     size_t failed = 0;
+    size_t affinity_failed = 0;
     int cpuset_ok;
     int cpuctl_ok;
     long long started_us = monotonic_us();
+    long long nice_us;
     long long cgroup_us;
     if (!prepared_state_matches(path, pid, uid) &&
         prepare_state(pid, uid, path) != 0) return 5;
@@ -808,16 +818,20 @@ static int fast_yield_state(pid_t pid, uid_t uid, const char *path) {
         return 5;
     }
     fclose(file);
+    if (apply_prepared_nice(path, pid, uid, &normalized, &failed) != 0)
+        return 5;
+    nice_us = monotonic_us();
+    if (original_minor == (long)uid && write_number(MINOR_WINDOW_NODE, 0) != 0)
+        return 6;
     cpuset_ok = write_pid(BACKGROUND_CPUSET_PROCS, pid) == 0;
     cpuctl_ok = write_pid(BACKGROUND_CPUCTL_PROCS, pid) == 0;
     cgroup_us = monotonic_us();
-    if (original_minor == (long)uid && write_number(MINOR_WINDOW_NODE, 0) != 0)
-        return 6;
-    if (apply_mask_to_tasks(pid, target_mask, &applied, &failed) != 0)
+    if (apply_mask_to_tasks(pid, target_mask, &applied, &affinity_failed) != 0)
         return 7;
-    printf("fast-yield pid=%d uid=%u prepared=%zu applied=%zu failed=%zu target=%llx cpuset=%d cpuctl=%d cgroup_us=%lld bind_us=%lld total_us=%lld\n",
-           pid, uid, expected, applied, failed, target_mask,
-           cpuset_ok, cpuctl_ok, cgroup_us - started_us,
+    failed += affinity_failed;
+    printf("fast-yield pid=%d uid=%u prepared=%zu applied=%zu normalized=%zu failed=%zu target=%llx cpuset=%d cpuctl=%d nice_us=%lld cgroup_us=%lld bind_us=%lld total_us=%lld\n",
+           pid, uid, expected, applied, normalized, failed, target_mask,
+           cpuset_ok, cpuctl_ok, nice_us - started_us, cgroup_us - nice_us,
            monotonic_us() - cgroup_us, monotonic_us() - started_us);
     if (!cpuset_ok || !cpuctl_ok) return 10;
     return failed == 0 ? 0 : 7;
@@ -882,11 +896,12 @@ int main(int argc, char **argv) {
                (strcmp(argv[1], "apply") == 0 ||
                 strcmp(argv[1], "prepare") == 0 ||
                 strcmp(argv[1], "replace") == 0 ||
+                strcmp(argv[1], "reassert") == 0 ||
                 strcmp(argv[1], "replace-yield") == 0 ||
                 strcmp(argv[1], "yield") == 0)) {
         state_path = argv[4];
     } else {
-        fprintf(stderr, "usage: %s prepare|apply|replace|yield|replace-yield PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
+        fprintf(stderr, "usage: %s prepare|apply|replace|reassert|yield|replace-yield PID UID STATE | restore|restore-no-minor STATE | verify PID\n", argv[0]);
         return 1;
     }
 
@@ -931,6 +946,9 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "apply") == 0) {
         result = apply_state((pid_t)atoi(argv[2]),
                              (uid_t)strtoul(argv[3], NULL, 10), argv[4], 0);
+    } else if (strcmp(argv[1], "reassert") == 0) {
+        result = apply_state((pid_t)atoi(argv[2]),
+                             (uid_t)strtoul(argv[3], NULL, 10), argv[4], 1);
     }
 
     if (result == 0 &&

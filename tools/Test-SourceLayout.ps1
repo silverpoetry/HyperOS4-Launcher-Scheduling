@@ -142,6 +142,15 @@ if ($processPolicy -notmatch '(?m)^source_yield_active\(\)' -or
     $processPolicy -notmatch '\[ "\$cpuset" = /background \] && \[ "\$cpu" = /background \]') {
     throw 'Source events must use prepared affinity state and the active fast path'
 }
+if ($processPolicy -notmatch '(?m)^reassert_active_source\(\)' -or
+    $processPolicy -notmatch 'apply_source_affinity .* reassert') {
+    throw 'Source constraints must support event-driven reassertion'
+}
+$events = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\events.sh') -Raw
+if ($events -notmatch 'reassert_active_source launcher-resumed' -or
+    $events -notmatch 'reassert_active_source overview-entered') {
+    throw 'Launcher resume and overview events must reassert source constraints'
+}
 $stateMachine = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\state-machine.sh') -Raw
 if ($stateMachine -notmatch '\[ "\$current" = app \] && apply_policy' -or
     ([regex]::Matches($stateMachine, 'apply_policy').Count -ne 1)) {
@@ -211,12 +220,17 @@ $yieldStateBody = $yieldState.Groups['body'].Value
 if ($yieldStateBody -notmatch 'fast_yield_state\(pid, uid, path\)') {
     throw 'Source yield must use the prepared fast affinity transaction'
 }
-if ($affinityController -notmatch 'SAF3' -or
-    $affinityController -notmatch 'collect_affinity_tasks' -or
+if ($affinityController -notmatch 'SAF4' -or
+    $affinityController -notmatch 'collect_tasks' -or
     $affinityController -notmatch 'save_prepared_state' -or
     $affinityController -notmatch 'apply_mask_to_tasks' -or
+    $affinityController -notmatch 'apply_prepared_nice' -or
     $affinityController -notmatch 'prepare_state') {
-    throw 'Source affinity must prepare minimal restore state outside the transition'
+    throw 'Source affinity must prepare affinity and nice restore state outside the transition'
+}
+if ($configuration -notmatch 'SOURCE_RUNTIME_DIR=/dev/' -or
+    $configuration -notmatch 'SOURCE_AFFINITY_STATE="\$SOURCE_RUNTIME_DIR/') {
+    throw 'Transient source state must live on the /dev tmpfs'
 }
 
 $systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw

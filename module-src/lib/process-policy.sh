@@ -137,7 +137,7 @@ restore_source_affinity() {
   operation=restore
   if [ -n "$resumed_uid" ]; then
     read -r magic active_pid active_uid original_minor target count <"$SOURCE_AFFINITY_STATE"
-    case "$magic" in SAF1|SAF2) ;; *) active_uid= ;; esac
+    case "$magic" in SAF1|SAF2|SAF3|SAF4) ;; *) active_uid= ;; esac
     [ "$active_uid" = "$resumed_uid" ] || operation=restore-no-minor
   fi
   if "$SOURCE_AFFINITYCTL" "$operation" "$SOURCE_AFFINITY_STATE"; then
@@ -157,7 +157,7 @@ prepare_source_affinity_cache() {
   [ -d "/proc/$pid/task" ] || return 0
   if [ -r "$SOURCE_AFFINITY_STATE" ]; then
     read -r magic cached_pid cached_uid minor target count <"$SOURCE_AFFINITY_STATE"
-    [ "$magic" = SAF3 ] && [ "$cached_pid" = "$pid" ] &&
+    [ "$magic" = SAF4 ] && [ "$cached_pid" = "$pid" ] &&
       [ "$cached_uid" = "$uid" ] && return 0
   fi
   if "$SOURCE_AFFINITYCTL" prepare "$pid" "$uid" "$SOURCE_AFFINITY_STATE" \
@@ -166,6 +166,17 @@ prepare_source_affinity_cache() {
   else
     log_state "source-affinity-prepare-failed pid=$pid uid=$uid name=$name"
   fi
+}
+
+reassert_active_source() {
+  local reason="$1" pid uid
+  config_enabled "$SOURCE_POLICY_FILE" || return 0
+  [ -x "$SOURCE_AFFINITYCTL" ] && [ -r "$SOURCE_AFFINITY_ACTIVE" ] &&
+    [ -r "$SOURCE_AFFINITY_STATE" ] || return 0
+  read -r pid uid <"$SOURCE_AFFINITY_ACTIVE"
+  case "$pid:$uid" in *[!0-9:]*) return 0 ;; esac
+  [ -d "/proc/$pid/task" ] || return 0
+  apply_source_affinity "$pid" "$uid" "$reason" reassert
 }
 
 restore_source_after_cancel() {
