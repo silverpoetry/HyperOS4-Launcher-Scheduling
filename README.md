@@ -94,7 +94,7 @@ KernelSU 管理器可直接打开模块 WebUI。界面包括状态、设置和�
 
 shell 服务只负责启动、配置重载和退出恢复。转场热路径不执行 `pidof`、`dumpsys`、`taskset`、`uclampset`，不创建 shell 定时器，也不逐事件写状态文件。
 
-日志读取器只订阅 Launcher PID 的 main/system 记录。配置重载使用阻塞信号和统一退出路径，先停止事件提交，再恢复所有临时策略；重载发生在最近任务界面时会保留当前来源身份和场景。
+日志读取器只订阅 Launcher PID 的 main 记录。协调器主线程、计时线程和看门狗固定在效率核，日志读取线程固定在次级性能核，来源守卫固定在一颗次级性能核；这些约束只作用于模块自身。配置重载使用阻塞信号和统一退出路径，先停止事件提交，再恢复所有临时策略；重载发生在最近任务界面时会保留当前来源身份和场景。
 
 ## 安装
 
@@ -119,7 +119,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 
 1. 校验源码结构和配置不变量；
 2. 从 `launcher_logwatch.c`、`transition_policy.c` 和 `proc_control.c` 构建协调器；
-3. 从 `source_guard.c` 构建来源守卫；
+3. 从 `source_guard.c` 和共享的 `proc_control.c` 构建来源守卫；
 4. 生成模块 ZIP 和 SHA-256 文件。
 
 ## 验证

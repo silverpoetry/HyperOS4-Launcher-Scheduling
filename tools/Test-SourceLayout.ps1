@@ -97,7 +97,9 @@ foreach ($needle in @(
     'transition_policy_reassert', 'visual_quiet_ms', 'reassert_ms',
     'list_alloc(ANDROID_LOG_RDONLY, 1, coordinator->launcher_pid)',
     'pthread_mutex_t event_lock', 'sigwait(&termination_signals',
-    'target_unsuppressed', 'launcher-resumed-intermediate'
+    'target_unsuppressed', 'launcher-resumed-intermediate',
+    'proc_move_controller(getpid(), "/dev/cpuset", "/top-app")',
+    'uint64_t mask = config->masks[5]'
 )) {
     if (-not $watcher.Contains($needle)) {
         throw "Native coordinator invariant is missing: $needle"
@@ -113,7 +115,9 @@ foreach ($needle in @(
     'begin_transition', 'adopt_package', 'replace_current',
     'cgroup_attach_task', 'reassert_source(pid_t tid)', 'SOCK_DGRAM',
     'unsigned long long starttime', 'restore_nice(top_app)',
-    'release_source(state.pid, 0, 0)'
+    'release_source(state.pid, 0, 0)', 'capture_known_baseline()',
+    'if (!state.active) capture_known_baseline();', 'restore_affinity()',
+    'proc_set_affinity(record->tid, record->original_affinity)'
 )) {
     if (-not $guard.Contains($needle)) {
         throw "Source guard invariant is missing: $needle"
@@ -121,6 +125,15 @@ foreach ($needle in @(
 }
 if ($guard -match 'source_affinityctl|SOURCE_AFFINITY|SAF[1-4]') {
     throw 'Legacy source-affinity transactions must not be packaged'
+}
+$reassertStart = $guard.IndexOf('static void reassert_source(pid_t tid)')
+$reassertEnd = $guard.IndexOf('static int release_source(', $reassertStart)
+if ($reassertStart -lt 0 -or $reassertEnd -le $reassertStart) {
+    throw 'Source guard reassert function boundary is missing'
+}
+$reassertBody = $guard.Substring($reassertStart, $reassertEnd - $reassertStart)
+if ($reassertBody -match 'refresh_tasks\(\)|apply_nice\(\)') {
+    throw 'Cgroup overwrite correction must remain constant-time'
 }
 
 $policy = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\transition_policy.c') -Raw

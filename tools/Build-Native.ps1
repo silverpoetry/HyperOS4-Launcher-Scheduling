@@ -45,7 +45,7 @@ if (-not $compiler) {
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 foreach ($target in @(
     @{ Sources = @('launcher_logwatch.c', 'transition_policy.c', 'proc_control.c'); Output = 'launcher-logwatch'; Libraries = @('-ldl', '-pthread') },
-    @{ Sources = @('source_guard.c'); Output = 'source-guard'; Libraries = @() }
+    @{ Sources = @('source_guard.c', 'proc_control.c'); Output = 'source-guard'; Libraries = @() }
 )) {
     $sources = @($target.Sources | ForEach-Object { Join-Path $root (Join-Path 'native' $_) })
     $output = Join-Path $outputDirectory $target.Output

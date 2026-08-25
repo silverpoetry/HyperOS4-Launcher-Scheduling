@@ -183,9 +183,10 @@ static int record_alive(const struct policy_task *record) {
 }
 
 static void apply_record(struct transition_policy *policy,
-                         struct policy_task *record) {
+                         struct policy_task *record,
+                         int validate_identity) {
     int corrected = 0;
-    if (!record_alive(record)) return;
+    if (validate_identity && !record_alive(record)) return;
     if (record->affinity_managed &&
         proc_get_affinity(record->tid) != record->target_mask &&
         proc_set_affinity(record->tid, record->target_mask) == 0) {
@@ -373,7 +374,7 @@ int transition_policy_begin(struct transition_policy *policy) {
     }
     policy->active = 1;
     for (size_t i = 0; i < policy->task_count; ++i)
-        apply_record(policy, &policy->tasks[i]);
+        apply_record(policy, &policy->tasks[i], 1);
     if (!was_active && policy->config.auxiliary_enabled) {
         apply_auxiliary(policy, "com.miui.miwallpaper");
         apply_auxiliary(policy, "vendor.xiaomi.hardware.mimd@2.0-service");
@@ -385,7 +386,7 @@ int transition_policy_begin(struct transition_policy *policy) {
 void transition_policy_reassert(struct transition_policy *policy) {
     if (!policy->active) return;
     for (size_t i = 0; i < policy->task_count; ++i)
-        apply_record(policy, &policy->tasks[i]);
+        apply_record(policy, &policy->tasks[i], 0);
 }
 
 void transition_policy_complete(struct transition_policy *policy) {

@@ -16,7 +16,7 @@ launcher-logwatch
                     source-guard
                       ├─ 来源 PID、UID、starttime 与包名
                       ├─ 专用 cpuset / cpuctl
-                      ├─ nice 快照
+                      ├─ nice 与 affinity 快照
                       ├─ cgroup_attach_task 追踪
                       └─ 视觉稳定定时恢复
 ```
@@ -33,7 +33,9 @@ shell 服务只在启动和配置重载时执行以下操作：
 
 ## 转场协调器
 
-`launcher-logwatch` 直接使用 `liblog` 的阻塞流读取 Launcher PID 的 main/system 生命周期日志。原始日志先由状态机合并为逻辑转场，一次操作只产生一个转场 ID。读取线程与策略线程分离；退出时主线程先关闭事件提交，再等待正在处理的事件跨过屏障，最后统一恢复策略。
+`launcher-logwatch` 直接使用 `liblog` 的阻塞流读取 Launcher PID 的 main 生命周期日志。原始日志先由状态机合并为逻辑转场，一次操作只产生一个转场 ID。读取线程与策略线程分离；退出时主线程先关闭事件提交，再等待正在处理的事件跨过屏障，最后统一恢复策略。
+
+协调器使用 `top-app` cpuset 作为进程上限，再对自身线程做精确亲和：主线程、计时线程和看门狗固定在效率核，日志读取线程固定在次级性能核。来源守卫固定在一颗次级性能核。这样日志解析和 cgroup 纠正不会占用 Prime，也不会与受限来源一起堵在效率核。
 
 进入转场时，协调器完成以下工作：
 
@@ -53,7 +55,7 @@ shell 服务只在启动和配置重载时执行以下操作：
 
 - PID、UID、进程 starttime 和完整包名；
 - 当前已接受的转场 ID；
-- 每个已见线程的原始 nice；
+- 每个已见线程的原始 nice 与 affinity；
 - Xiaomi `minor_window_app` 原始值；
 - 当前约束与恢复定时器状态。
 
@@ -67,7 +69,7 @@ shell 服务只在启动和配置重载时执行以下操作：
 
 守卫拒绝小于当前转场 ID 的命令。旧日志、重复 resumed 事件和上一轮完成定时器不能覆盖新转场。PID、UID、进程 starttime 与每个已登记 TID 的 starttime 都参与恢复校验。
 
-进入专用 cpuset/cpuctl 时只写一次进程 PID，内核迁移现有线程，新线程继承控制组。ActivityManager 后续改写 task profile 时会触发 `cgroup_attach_task`；守卫只检查当前来源的相关 TID，并把离开专用组的线程写回。nice 目标在每次接管来源时读取一次，线程登记过程不反复读取配置文件。
+来源稳定前台时建立线程索引。每次从未激活状态进入退避前，只对已索引线程刷新一次 nice 与 affinity 基线，然后再移动控制组；同来源转场延续时禁止重采基线。进入专用 cpuset/cpuctl 时只写一次进程 PID，内核迁移现有线程，新线程继承控制组。ActivityManager 后续改写 task profile 时会触发 `cgroup_attach_task`；守卫按事件命中的 PID/TID 立即写回，不在纠正路径枚举全部线程。视觉转场完成后先回到 `top-app`，再恢复 affinity，最后恢复 nice，避免系统任务配置覆盖恢复值。
 
 ## 线程策略
 

@@ -12,13 +12,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
 
 #define LOG_ID_MAIN 0
-#define LOG_ID_SYSTEM 3
 #define ANDROID_LOG_RDONLY 1
 #define LOG_BUFFER_SIZE 65536
 #define PACKAGE_LENGTH 256
@@ -97,6 +97,9 @@ struct coordinator {
     pid_t launcher_pid;
     unsigned long long launcher_start_time;
     char source_package[PACKAGE_LENGTH];
+    uint64_t last_event_written_ns;
+    uint64_t last_event_received_ns;
+    uint64_t last_event_lag_us;
 };
 
 static int guard_socket_fd = -1;
@@ -104,6 +107,13 @@ static int guard_socket_fd = -1;
 static uint64_t monotonic_ns(void) {
     struct timespec value;
     clock_gettime(CLOCK_MONOTONIC, &value);
+    return (uint64_t)value.tv_sec * UINT64_C(1000000000) +
+           (uint64_t)value.tv_nsec;
+}
+
+static uint64_t realtime_ns(void) {
+    struct timespec value;
+    clock_gettime(CLOCK_REALTIME, &value);
     return (uint64_t)value.tv_sec * UINT64_C(1000000000) +
            (uint64_t)value.tv_nsec;
 }
@@ -174,7 +184,7 @@ static void publish_state_locked(struct coordinator *coordinator,
 }
 
 static void flush_state_locked(struct coordinator *coordinator) {
-    char status[1024];
+    char status[1280];
     char status_path[512];
     char reason[128];
     enum phase phase = coordinator->phase;
@@ -189,6 +199,9 @@ static void flush_state_locked(struct coordinator *coordinator) {
     unsigned long launcher_corrections = coordinator->policy.launcher_corrections;
     unsigned long systemui_corrections = coordinator->policy.systemui_corrections;
     unsigned long system_server_corrections = coordinator->policy.system_server_corrections;
+    uint64_t last_event_written_ns = coordinator->last_event_written_ns;
+    uint64_t last_event_received_ns = coordinator->last_event_received_ns;
+    uint64_t last_event_lag_us = coordinator->last_event_lag_us;
     snprintf(status_path, sizeof(status_path), "%s",
              coordinator->config.status_path);
     snprintf(reason, sizeof(reason), "%s", coordinator->status_reason);
@@ -196,12 +209,15 @@ static void flush_state_locked(struct coordinator *coordinator) {
     pthread_mutex_unlock(&coordinator->lock);
     int length = snprintf(
         status, sizeof(status),
-        "online=1\ncoordinator_pid=%d\nphase=%s\ntransaction=%s\ntransition_id=%llu\nsequence=%u\npolicy_active=%d\npolicy_deadline=%d\ncorrections=%lu\naffinity_corrections=%lu\nclamp_corrections=%lu\nlauncher_corrections=%lu\nsystemui_corrections=%lu\nsystem_server_corrections=%lu\nreason=%s\n",
+        "online=1\ncoordinator_pid=%d\nphase=%s\ntransaction=%s\ntransition_id=%llu\nsequence=%u\npolicy_active=%d\npolicy_deadline=%d\ncorrections=%lu\naffinity_corrections=%lu\nclamp_corrections=%lu\nlauncher_corrections=%lu\nsystemui_corrections=%lu\nsystem_server_corrections=%lu\nlast_event_written_ns=%llu\nlast_event_received_ns=%llu\nlast_event_lag_us=%llu\nreason=%s\n",
         getpid(), phase_name(phase), transaction_name(transaction_kind),
         (unsigned long long)transition_id, sequence,
         policy_active, policy_deadline, corrections, affinity_corrections,
         clamp_corrections, launcher_corrections, systemui_corrections,
-        system_server_corrections, reason);
+        system_server_corrections,
+        (unsigned long long)last_event_written_ns,
+        (unsigned long long)last_event_received_ns,
+        (unsigned long long)last_event_lag_us, reason);
     if (length > 0 && (size_t)length < sizeof(status))
         (void)write_atomic(status_path, status);
     pthread_mutex_lock(&coordinator->lock);
@@ -258,18 +274,24 @@ static void schedule_policy_completion_locked(struct coordinator *coordinator,
     pthread_cond_signal(&coordinator->condition);
 }
 
-static void begin_policy_locked(struct coordinator *coordinator,
-                                enum transaction_kind kind,
-                                enum phase next,
-                                const char *reason) {
+static void prepare_transition_locked(struct coordinator *coordinator,
+                                      enum transaction_kind kind,
+                                      enum phase next) {
     if (coordinator->transaction_kind != kind) {
         coordinator->transition_id = monotonic_ns();
         coordinator->sequence++;
     }
     coordinator->transaction_kind = kind;
     coordinator->policy_deadline_valid = 0;
-    (void)transition_policy_begin(&coordinator->policy);
     coordinator->phase = next;
+}
+
+static void begin_policy_locked(struct coordinator *coordinator,
+                                enum transaction_kind kind,
+                                enum phase next,
+                                const char *reason) {
+    prepare_transition_locked(coordinator, kind, next);
+    (void)transition_policy_begin(&coordinator->policy);
     publish_state_locked(coordinator, reason);
     pthread_cond_signal(&coordinator->condition);
 }
@@ -277,39 +299,44 @@ static void begin_policy_locked(struct coordinator *coordinator,
 static void start_entry(struct coordinator *coordinator, const char *reason) {
     pthread_mutex_lock(&coordinator->lock);
     coordinator->target_unsuppressed = 0;
-    begin_policy_locked(coordinator, TRANSACTION_ENTRY, PHASE_ENTERING, reason);
-    coordinator->policy_deadline = deadline_after(coordinator->config.fallback_ms);
-    coordinator->policy_deadline_valid = 1;
+    prepare_transition_locked(coordinator, TRANSACTION_ENTRY, PHASE_ENTERING);
     if (coordinator->config.source_enabled)
         (void)send_guard("enter %llu",
                          (unsigned long long)coordinator->transition_id);
+    (void)transition_policy_begin(&coordinator->policy);
+    coordinator->policy_deadline = deadline_after(coordinator->config.fallback_ms);
+    coordinator->policy_deadline_valid = 1;
     coordinator->gesture_active = 1;
+    publish_state_locked(coordinator, reason);
+    pthread_cond_signal(&coordinator->condition);
     pthread_mutex_unlock(&coordinator->lock);
 }
 
 static void start_leaving(struct coordinator *coordinator, const char *reason) {
     pthread_mutex_lock(&coordinator->lock);
     if (coordinator->transaction_kind != TRANSACTION_EXIT) {
-        begin_policy_locked(coordinator, TRANSACTION_EXIT, PHASE_LEAVING,
-                            reason);
+        prepare_transition_locked(coordinator, TRANSACTION_EXIT, PHASE_LEAVING);
         if (coordinator->config.source_enabled)
             (void)send_guard("enter %llu",
                              (unsigned long long)coordinator->transition_id);
+        (void)transition_policy_begin(&coordinator->policy);
     } else {
         (void)transition_policy_begin(&coordinator->policy);
     }
     coordinator->policy_deadline = deadline_after(coordinator->config.fallback_ms);
     coordinator->policy_deadline_valid = 1;
     publish_state_locked(coordinator, reason);
+    pthread_cond_signal(&coordinator->condition);
     pthread_mutex_unlock(&coordinator->lock);
 }
 
 static void start_home(struct coordinator *coordinator, const char *reason) {
     pthread_mutex_lock(&coordinator->lock);
-    begin_policy_locked(coordinator, TRANSACTION_HOME, PHASE_HOME, reason);
+    prepare_transition_locked(coordinator, TRANSACTION_HOME, PHASE_HOME);
     if (coordinator->config.source_enabled)
         (void)send_guard("enter %llu",
                          (unsigned long long)coordinator->transition_id);
+    (void)transition_policy_begin(&coordinator->policy);
     coordinator->gesture_active = 0;
     schedule_policy_completion_locked(coordinator,
                                       coordinator->config.visual_quiet_ms,
@@ -623,16 +650,28 @@ static void handle_event(struct coordinator *coordinator,
     }
 }
 
-static int is_relevant(const char *message) {
+static int is_relevant(const char *tag, const char *message) {
+    if (strcmp(tag, "flutter") == 0) {
+        if (strstr(message,
+                   "SceneTransitionDetectorService detectSceneTransition:") == NULL)
+            return 0;
+        return strstr(message, "SceneAnimationSignalType.gestureStart") != NULL ||
+               strstr(message, "SceneAnimationSignalType.gestureToHome") != NULL ||
+               strstr(message, "SceneAnimationSignalType.gestureToApp") != NULL ||
+               strstr(message, "SceneAnimationSignalType.enterOverviewState") != NULL ||
+               strstr(message, "SceneAnimationSignalType.exitOverviewState") != NULL ||
+               strstr(message, "SceneAnimationSignalType.openingRemoteAnimationOpen") != NULL ||
+               strstr(message, "SceneAnimationSignalType.openingRemoteAnimationClose") != NULL;
+    }
+    if (strcmp(tag, "hyper_launcher_app") != 0) return 0;
     return strstr(message, "activityResumed pkg=") != NULL ||
-           strstr(message, "SceneTransitionDetectorService") != NULL ||
            strstr(message, "finish_remote_transition to_home = false") != NULL ||
            strstr(message, "onOverviewToggle is_home_and_overview_same=true") != NULL ||
            strstr(message, "IRecentsAnimationRunnerImplForRemoteBack") != NULL;
 }
 
 static void move_to_foreground(void) {
-    (void)proc_move_controller(getpid(), "/dev/cpuset", "/foreground");
+    (void)proc_move_controller(getpid(), "/dev/cpuset", "/top-app");
     (void)proc_move_controller(getpid(), "/dev/cpuctl", "/foreground");
 }
 
@@ -641,6 +680,14 @@ static void pin_controller_to_efficiency_cpu(
     uint64_t mask = config->masks[POLICY_MASK_COUNT - 1];
     uint64_t single = mask & (~mask + 1);
     if (single != 0) (void)proc_set_affinity(getpid(), single);
+}
+
+static void pin_log_reader_to_secondary_cpu(
+    const struct transition_policy_config *config) {
+    uint64_t mask = config->masks[5];
+    pid_t tid = gettid();
+    if (mask != 0) (void)proc_set_affinity(tid, mask);
+    (void)setpriority(PRIO_PROCESS, (id_t)tid, -5);
 }
 
 static void *launcher_watchdog_main(void *argument) {
@@ -685,8 +732,7 @@ static int monitor_logs(struct coordinator *coordinator) {
         dlclose(library);
         return 12;
     }
-    if (logger_open(list, LOG_ID_MAIN) == NULL ||
-        logger_open(list, LOG_ID_SYSTEM) == NULL) {
+    if (logger_open(list, LOG_ID_MAIN) == NULL) {
         list_free(list);
         dlclose(library);
         return 12;
@@ -721,7 +767,19 @@ static int monitor_logs(struct coordinator *coordinator) {
         message = tag + tag_length + 1;
         limit = entry->len - tag_length - 2;
         if (strnlen(message, limit) >= limit ||
-            !is_relevant(message)) continue;
+            !is_relevant(tag, message)) continue;
+        {
+            uint64_t written_ns = (uint64_t)entry->sec * UINT64_C(1000000000) +
+                                  (uint64_t)entry->nsec;
+            uint64_t received_ns = realtime_ns();
+            pthread_mutex_lock(&coordinator->lock);
+            coordinator->last_event_written_ns = written_ns;
+            coordinator->last_event_received_ns = received_ns;
+            coordinator->last_event_lag_us =
+                received_ns >= written_ns ?
+                (received_ns - written_ns) / UINT64_C(1000) : 0;
+            pthread_mutex_unlock(&coordinator->lock);
+        }
         pthread_mutex_lock(&coordinator->event_lock);
         handle_event(coordinator, message);
         pthread_mutex_unlock(&coordinator->event_lock);
@@ -733,6 +791,7 @@ static int monitor_logs(struct coordinator *coordinator) {
 
 static void *log_reader_main(void *argument) {
     struct coordinator *coordinator = argument;
+    pin_log_reader_to_secondary_cpu(&coordinator->config.policy);
     int result = monitor_logs(coordinator);
     pthread_mutex_lock(&coordinator->lock);
     coordinator->monitor_result = result;
@@ -773,6 +832,7 @@ int main(int argc, char **argv) {
     coordinator.phase = coordinator.config.initial_phase;
     snprintf(coordinator.source_package, sizeof(coordinator.source_package),
              "%s", coordinator.config.initial_source);
+    move_to_foreground();
     pin_controller_to_efficiency_cpu(&coordinator.config.policy);
     transition_policy_initialize(&coordinator.policy, &coordinator.config.policy);
     if (coordinator.phase == PHASE_RECENTS &&
@@ -803,7 +863,6 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
     (void)pthread_detach(coordinator.reader_thread);
-    move_to_foreground();
     (void)sigwait(&termination_signals, &termination_signal);
     (void)termination_signal;
     pthread_mutex_lock(&coordinator.lock);

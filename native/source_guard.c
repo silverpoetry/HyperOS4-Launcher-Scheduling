@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 
+#include "proc_control.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -43,11 +45,13 @@
 #define PERF_PAGES 8
 #define PACKAGE_LENGTH 256
 
-struct task_nice {
+struct task_state {
     pid_t tid;
     unsigned long long starttime;
-    int original;
-    int applied;
+    int original_nice;
+    int applied_nice;
+    uint64_t original_affinity;
+    int affinity_valid;
 };
 
 struct guard_state {
@@ -59,9 +63,13 @@ struct guard_state {
     int original_minor_valid;
     long original_minor;
     unsigned long reassertions;
+    unsigned long affinity_restore_attempts;
+    unsigned long affinity_restore_successes;
+    unsigned long nice_restore_attempts;
+    unsigned long nice_restore_successes;
     char package[PACKAGE_LENGTH];
     int target_nice;
-    struct task_nice tasks[MAX_TASKS];
+    struct task_state tasks[MAX_TASKS];
     uint16_t task_slots[TASK_HASH_SIZE];
     size_t task_count;
 };
@@ -135,11 +143,6 @@ static void close_task_directory(void) {
 static void reset_guard_state(void) {
     close_task_directory();
     memset(&state, 0, sizeof(state));
-}
-
-static void reset_task_records(void) {
-    state.task_count = 0;
-    memset(state.task_slots, 0, sizeof(state.task_slots));
 }
 
 static void cancel_completion_timer(void) {
@@ -224,7 +227,7 @@ static size_t task_hash(pid_t tid) {
     return (size_t)value & (TASK_HASH_SIZE - 1);
 }
 
-static struct task_nice *find_task(pid_t tid) {
+static struct task_state *find_task(pid_t tid) {
     size_t slot = task_hash(tid);
     for (size_t probe = 0; probe < TASK_HASH_SIZE; ++probe) {
         uint16_t stored = state.task_slots[slot];
@@ -235,8 +238,8 @@ static struct task_nice *find_task(pid_t tid) {
     return NULL;
 }
 
-static struct task_nice *register_task(pid_t tid) {
-    struct task_nice *record = find_task(tid);
+static struct task_state *register_task(pid_t tid) {
+    struct task_state *record = find_task(tid);
     uid_t uid;
     unsigned long long starttime;
     int target = state.target_nice;
@@ -246,7 +249,9 @@ static struct task_nice *register_task(pid_t tid) {
         uid != state.uid)
         return NULL;
     if (record != NULL && record->starttime == starttime) {
-        record->applied = record->original < target ? target : record->original;
+        record->applied_nice = record->original_nice < target
+                                   ? target
+                                   : record->original_nice;
         return record;
     }
     errno = 0;
@@ -254,16 +259,20 @@ static struct task_nice *register_task(pid_t tid) {
     if (errno != 0) return NULL;
     if (record != NULL) {
         record->starttime = starttime;
-        record->original = original;
-        record->applied = original < target ? target : original;
+        record->original_nice = original;
+        record->applied_nice = original < target ? target : original;
+        record->original_affinity = state.active ? 0 : proc_get_affinity(tid);
+        record->affinity_valid = record->original_affinity != 0;
         return record;
     }
     if (state.task_count >= MAX_TASKS) return NULL;
     record = &state.tasks[state.task_count];
     record->tid = tid;
     record->starttime = starttime;
-    record->original = original;
-    record->applied = original < target ? target : original;
+    record->original_nice = original;
+    record->applied_nice = original < target ? target : original;
+    record->original_affinity = state.active ? 0 : proc_get_affinity(tid);
+    record->affinity_valid = record->original_affinity != 0;
     slot = task_hash(tid);
     for (size_t probe = 0; probe < TASK_HASH_SIZE; ++probe) {
         if (state.task_slots[slot] == 0) {
@@ -286,7 +295,7 @@ static int refresh_tasks(void) {
     while ((entry = readdir(directory)) != NULL) {
         char *end;
         long parsed;
-        struct task_nice *record;
+        struct task_state *record;
         if (entry->d_name[0] < '0' || entry->d_name[0] > '9') continue;
         parsed = strtol(entry->d_name, &end, 10);
         if (*end != '\0' || parsed <= 1 || parsed > INT32_MAX) continue;
@@ -300,7 +309,7 @@ static int refresh_tasks(void) {
     return state.task_count > 0 ? 0 : -1;
 }
 
-static int apply_task_nice(struct task_nice *record) {
+static int apply_task_nice(struct task_state *record) {
     uid_t uid;
     unsigned long long starttime;
     int current;
@@ -309,8 +318,11 @@ static int apply_task_nice(struct task_nice *record) {
         return 0;
     errno = 0;
     current = getpriority(PRIO_PROCESS, (id_t)record->tid);
-    if (errno != 0 || current == record->applied) return 0;
-    return setpriority(PRIO_PROCESS, (id_t)record->tid, record->applied) == 0 ? 1 : 0;
+    if (errno != 0 || current == record->applied_nice) return 0;
+    return setpriority(PRIO_PROCESS, (id_t)record->tid,
+                       record->applied_nice) == 0
+               ? 1
+               : 0;
 }
 
 static void apply_nice(void) {
@@ -319,52 +331,80 @@ static void apply_nice(void) {
     }
 }
 
+static void capture_known_baseline(void) {
+    int target = state.target_nice;
+    for (size_t i = 0; i < state.task_count; ++i) {
+        struct task_state *record = &state.tasks[i];
+        uint64_t affinity;
+        int current;
+        errno = 0;
+        current = getpriority(PRIO_PROCESS, (id_t)record->tid);
+        if (errno != 0) continue;
+        affinity = proc_get_affinity(record->tid);
+        if (affinity == 0) continue;
+        record->original_nice = current;
+        record->applied_nice = current < target ? target : current;
+        record->original_affinity = affinity;
+        record->affinity_valid = 1;
+    }
+}
+
 static void restore_nice(int force) {
     for (size_t i = 0; i < state.task_count; ++i) {
         uid_t uid;
         unsigned long long starttime;
         int current;
-        if (state.tasks[i].applied == state.tasks[i].original) continue;
+        if (state.tasks[i].applied_nice == state.tasks[i].original_nice)
+            continue;
         if (read_process_identity(state.tasks[i].tid, &uid, &starttime) != 0 ||
             uid != state.uid || starttime != state.tasks[i].starttime)
             continue;
         errno = 0;
         current = getpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid);
-        if (errno == 0 && (force || current == state.tasks[i].applied))
-            (void)setpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid,
-                              state.tasks[i].original);
+        if (errno == 0 && (force || current == state.tasks[i].applied_nice)) {
+            state.nice_restore_attempts++;
+            if (setpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid,
+                            state.tasks[i].original_nice) == 0)
+                state.nice_restore_successes++;
+        }
+    }
+}
+
+static void restore_affinity(void) {
+    for (size_t i = 0; i < state.task_count; ++i) {
+        struct task_state *record = &state.tasks[i];
+        uid_t uid;
+        unsigned long long starttime;
+        if (!record->affinity_valid ||
+            read_process_identity(record->tid, &uid, &starttime) != 0 ||
+            uid != state.uid || starttime != record->starttime)
+            continue;
+        state.affinity_restore_attempts++;
+        if (proc_set_affinity(record->tid, record->original_affinity) == 0)
+            state.affinity_restore_successes++;
     }
 }
 
 static void publish_status(const char *reason) {
     char temporary[256];
     FILE *file;
+    struct task_state *main_record = find_task(state.pid);
+    int main_original_nice = main_record == NULL ? 0 : main_record->original_nice;
+    unsigned long long main_original_affinity =
+        main_record == NULL ? 0 : main_record->original_affinity;
     snprintf(temporary, sizeof(temporary), "%s.tmp", STATUS_PATH);
     file = fopen(temporary, "we");
     if (file == NULL) return;
-    fprintf(file, "pid=%d\nuid=%u\npackage=%s\nstarttime=%llu\ntransition_id=%llu\ncompletion_pending=%d\narmed=%d\nactive=%d\ntrace_enabled=%d\ntasks=%zu\nreassertions=%lu\nreason=%s\n",
+    fprintf(file, "pid=%d\nuid=%u\npackage=%s\nstarttime=%llu\ntransition_id=%llu\ncompletion_pending=%d\narmed=%d\nactive=%d\ntrace_enabled=%d\ntasks=%zu\nreassertions=%lu\nmain_original_nice=%d\nmain_original_affinity=%llx\naffinity_restore_attempts=%lu\naffinity_restore_successes=%lu\nnice_restore_attempts=%lu\nnice_restore_successes=%lu\nreason=%s\n",
             state.pid, state.uid, state.package, state.starttime,
             (unsigned long long)accepted_transition_id,
             completion_transition_id != 0, state.armed, state.active,
-            trace_enabled, state.task_count, state.reassertions, reason);
+            trace_enabled, state.task_count, state.reassertions,
+            main_original_nice, main_original_affinity,
+            state.affinity_restore_attempts,
+            state.affinity_restore_successes,
+            state.nice_restore_attempts, state.nice_restore_successes, reason);
     if (fclose(file) == 0) (void)rename(temporary, STATUS_PATH);
-}
-
-static int task_in_source_groups(pid_t tid) {
-    char path[96];
-    char text[4096];
-    int cpuset = 0;
-    int cpu = 0;
-    char *line;
-    snprintf(path, sizeof(path), "/proc/%d/task/%d/cgroup", state.pid, tid);
-    if (read_text(path, text, sizeof(text)) != 0) return -1;
-    line = strtok(text, "\n");
-    while (line != NULL) {
-        if (strstr(line, ":cpuset:" SOURCE_GROUP) != NULL) cpuset = 1;
-        if (strstr(line, ":cpu:" SOURCE_GROUP) != NULL) cpu = 1;
-        line = strtok(NULL, "\n");
-    }
-    return cpuset && cpu;
 }
 
 static int move_source_group(pid_t pid) {
@@ -421,7 +461,7 @@ static int arm_source(pid_t pid, uid_t uid, const char *package) {
         snprintf(state.package, sizeof(state.package), "%s", package);
         state.target_nice = suppression_target();
     }
-    (void)refresh_tasks();
+    if (refresh_tasks() != 0) return -1;
     publish_status("armed");
     return 0;
 }
@@ -433,14 +473,12 @@ static int activate_source(pid_t pid, uid_t uid, const char *package,
     } else if (state.active) {
         (void)refresh_tasks();
     }
-    if (!source_identity_matches()) return -1;
-    if (!state.active) {
-        /* Capture the foreground baseline before either cgroup move or nice
-         * suppression. Rebuild the table for every logical transaction so
-         * stale and recycled thread IDs can never become restore targets. */
-        reset_task_records();
-        if (refresh_tasks() != 0) return -1;
-    }
+    if (!source_identity_matches() || state.task_count == 0) return -1;
+    /* Capture exactly once at the inactive -> active transaction boundary.
+     * A same-source handoff can arrive while the return animation is still
+     * suppressed; recapturing there would turn the suppressed state into the
+     * restoration baseline. */
+    if (!state.active) capture_known_baseline();
     state.active = 1;
     if (set_trace_enabled(1) != 0) {
         state.active = 0;
@@ -464,10 +502,11 @@ static int complete_source(uint64_t transition_id, const char *reason) {
     state.active = 0;
     (void)set_trace_enabled(0);
     if (source_identity_matches()) {
-        restore_nice(1);
-        restore_minor(1);
         (void)write_pid(TOP_CPUSET_PROCS, state.pid);
         (void)write_pid(TOP_CPUCTL_PROCS, state.pid);
+        restore_affinity();
+        restore_nice(1);
+        restore_minor(1);
     }
     publish_status(reason);
     return 0;
@@ -492,9 +531,8 @@ static int schedule_completion(uint64_t transition_id, unsigned delay_ms) {
 }
 
 static void reassert_source(pid_t tid) {
-    int group_state;
     int corrected = 0;
-    struct task_nice *record;
+    struct task_state *record;
     if (!state.active) return;
     if (!source_identity_matches()) {
         state.active = 0;
@@ -509,18 +547,14 @@ static void reassert_source(pid_t tid) {
         record = register_task(tid);
         if (record == NULL) return;
     }
-    group_state = task_in_source_groups(tid);
-    if (group_state < 0) return;
-    if (group_state == 0) {
-        if (tid == state.pid) {
-            (void)refresh_tasks();
-            if (move_source_group(state.pid) == 0) {
-                apply_nice();
-                corrected = 1;
-            }
-        } else if (move_source_task(tid) == 0) {
+    /* drain_ring only dispatches events whose destination is outside the
+     * source group, so no /proc cgroup read is needed here. */
+    if (tid == state.pid) {
+        if (move_source_group(state.pid) == 0) {
             corrected = 1;
         }
+    } else if (move_source_task(tid) == 0) {
+        corrected = 1;
     }
     if (apply_task_nice(record) > 0) corrected = 1;
     if (corrected) {
@@ -534,15 +568,16 @@ static int release_source(pid_t pid, int top_app, int preserve_minor) {
     state.active = 0;
     (void)set_trace_enabled(0);
     if (source_identity_matches()) {
-        restore_nice(top_app);
-        restore_minor(preserve_minor);
         if (top_app) {
             (void)write_pid(TOP_CPUSET_PROCS, pid);
             (void)write_pid(TOP_CPUCTL_PROCS, pid);
+            restore_affinity();
         } else {
             (void)write_pid(BACKGROUND_CPUSET_PROCS, pid);
             (void)write_pid(BACKGROUND_CPUCTL_PROCS, pid);
         }
+        restore_nice(top_app);
+        restore_minor(preserve_minor);
     }
     publish_status(top_app ? "restored-top" : "released-background");
     reset_guard_state();
@@ -915,7 +950,7 @@ static void handle_signal(int signal_number) {
     running = 0;
 }
 
-static void pin_controller_to_efficiency_cpu(void) {
+static void pin_controller_to_secondary_cpu(void) {
     char text[512];
     unsigned long long masks[9];
     cpu_set_t set;
@@ -926,7 +961,7 @@ static void pin_controller_to_efficiency_cpu(void) {
                &masks[0], &masks[1], &masks[2], &masks[3], &masks[4],
                &masks[5], &masks[6], &masks[7], &masks[8]) != 9)
         return;
-    selected = masks[8] & (~masks[8] + 1);
+    selected = masks[6] & (~masks[6] + 1);
     if (selected == 0) return;
     while (cpu < CPU_SETSIZE && cpu < 64 &&
            (selected & (1ULL << (unsigned)cpu)) == 0)
@@ -935,13 +970,14 @@ static void pin_controller_to_efficiency_cpu(void) {
     CPU_ZERO(&set);
     CPU_SET(cpu, &set);
     (void)sched_setaffinity(0, sizeof(set), &set);
+    (void)setpriority(PRIO_PROCESS, (id_t)getpid(), -10);
 }
 
 static int daemon_main(void) {
     struct pollfd pollfds[66];
     int socket_fd;
     setvbuf(stdout, NULL, _IOLBF, 0);
-    pin_controller_to_efficiency_cpu();
+    pin_controller_to_secondary_cpu();
     signal(SIGTERM, handle_signal);
     signal(SIGINT, handle_signal);
     socket_fd = create_socket();
