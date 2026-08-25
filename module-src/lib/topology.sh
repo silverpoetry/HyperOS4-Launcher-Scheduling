@@ -8,6 +8,7 @@ THREAD_RENDER_MASK=""
 THREAD_PRIME_MASK=""
 THREAD_SECONDARY_MASK=""
 THREAD_BACKGROUND_MASK=""
+THREAD_LITTLE_SPARE_MASK=""
 THREAD_FILE_VALUE=""
 
 read_thread_file() {
@@ -74,7 +75,8 @@ derive_launcher_masks() {
   local all_value top_value background_value perf_value mid_value prime_value
   local cpu bit capacity best_capacity prime_cpu lowest_capacity
   local best_nonprime_capacity render_value secondary_value
-  local little_value capacity_seen topology previous_topology
+  local little_value little_spare_value capacity_seen topology previous_topology
+  local little_count reserved_cpu
 
   read_thread_file /sys/devices/system/cpu/online; online_list="$THREAD_FILE_VALUE"
   read_thread_file /dev/cpuset/top-app/cpus; top_list="$THREAD_FILE_VALUE"
@@ -84,8 +86,8 @@ derive_launcher_masks() {
   if [ "$topology_input" = "$previous_input" ] && [ -r "$THREAD_TOPOLOGY_FILE" ]; then
     read -r THREAD_ALL_MASK THREAD_PERF_MASK THREAD_MID_MASK THREAD_LITTLE_MASK \
       THREAD_RENDER_MASK THREAD_PRIME_MASK THREAD_SECONDARY_MASK \
-      THREAD_BACKGROUND_MASK <"$THREAD_TOPOLOGY_FILE"
-    [ -n "$THREAD_BACKGROUND_MASK" ] && return 0
+      THREAD_BACKGROUND_MASK THREAD_LITTLE_SPARE_MASK <"$THREAD_TOPOLOGY_FILE"
+    [ -n "$THREAD_LITTLE_SPARE_MASK" ] && return 0
   fi
 
   THREAD_ALL_MASK="$(cpulist_to_mask "$online_list")"
@@ -169,6 +171,25 @@ derive_launcher_masks() {
   [ "$capacity_seen" -ne 0 ] || little_value=$background_value
   [ "$little_value" -ne 0 ] || little_value=$background_value
 
+  # Reserve the highest-numbered efficiency CPU for system background work.
+  # A single-CPU efficiency tier cannot be reduced without creating an empty
+  # cpuset, so it remains unchanged.
+  little_spare_value=$little_value
+  little_count=0
+  reserved_cpu=-1
+  cpu=0
+  while [ "$cpu" -lt 32 ]; do
+    bit=$((1 << cpu))
+    if [ $((little_value & bit)) -ne 0 ]; then
+      little_count=$((little_count + 1))
+      reserved_cpu=$cpu
+    fi
+    cpu=$((cpu + 1))
+  done
+  if [ "$little_count" -gt 1 ] && [ "$reserved_cpu" -ge 0 ]; then
+    little_spare_value=$((little_value & ~(1 << reserved_cpu)))
+  fi
+
   THREAD_PERF_MASK="$(printf '%x' "$perf_value")"
   THREAD_MID_MASK="$(printf '%x' "$mid_value")"
   THREAD_LITTLE_MASK="$(printf '%x' "$little_value")"
@@ -176,11 +197,12 @@ derive_launcher_masks() {
   THREAD_PRIME_MASK="$(printf '%x' "$prime_value")"
   THREAD_SECONDARY_MASK="$(printf '%x' "$secondary_value")"
   THREAD_BACKGROUND_MASK="$(printf '%x' "$background_value")"
-  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_RENDER_MASK $THREAD_PRIME_MASK $THREAD_SECONDARY_MASK $THREAD_BACKGROUND_MASK"
+  THREAD_LITTLE_SPARE_MASK="$(printf '%x' "$little_spare_value")"
+  topology="$THREAD_ALL_MASK $THREAD_PERF_MASK $THREAD_MID_MASK $THREAD_LITTLE_MASK $THREAD_RENDER_MASK $THREAD_PRIME_MASK $THREAD_SECONDARY_MASK $THREAD_BACKGROUND_MASK $THREAD_LITTLE_SPARE_MASK"
   read_thread_file "$THREAD_TOPOLOGY_FILE"; previous_topology="$THREAD_FILE_VALUE"
   echo "$topology_input" >"$THREAD_TOPOLOGY_INPUT_FILE"
   if [ "$topology" != "$previous_topology" ]; then
     echo "$topology" >"$THREAD_TOPOLOGY_FILE"
-    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK efficiency=$THREAD_LITTLE_MASK render=$THREAD_RENDER_MASK prime=$THREAD_PRIME_MASK secondary=$THREAD_SECONDARY_MASK background=$THREAD_BACKGROUND_MASK"
+    thread_log "thread-topology all=$THREAD_ALL_MASK perf=$THREAD_PERF_MASK mid=$THREAD_MID_MASK efficiency=$THREAD_LITTLE_MASK efficiency_spare=$THREAD_LITTLE_SPARE_MASK render=$THREAD_RENDER_MASK prime=$THREAD_PRIME_MASK secondary=$THREAD_SECONDARY_MASK background=$THREAD_BACKGROUND_MASK"
   fi
 }

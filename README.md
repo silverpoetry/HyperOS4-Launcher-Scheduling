@@ -8,7 +8,7 @@
 
 Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
 
-模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用默认使用 Android 的系统后台核心集合，也可以改为容量推导出的效率核集合。可选限频策略只处理完全位于效率核集合的调频策略；该功能默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
+模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用默认使用 Android 的系统后台核心集合，也可以选择任一动态拓扑集合；“效率核（预留一核）”会从最低容量核心中去掉最高编号的一颗，为系统后台工作保留调度余量。可选限频策略只处理完全位于效率核集合的调频策略；该功能默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
 
 ## 管理界面
 
@@ -48,7 +48,7 @@ MIMD（存在时）       → cpuset/background + cpuctl/background
 
 模块不移动当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复原始 cgroup，SystemUI 受管线程恢复逐 TID 原始亲和。
 
-来源应用位于模块专用的 cpuset 与 cpuctl。cpuset 的 CPU 列表取自本机 Android background 集合或容量推导的效率核集合，一次写入 `cgroup.procs` 即约束整个进程及后续新线程；cpuctl 的 `cpu.shares` 提供进程级退让。常驻守卫仅在内存中保存每个现有 TID 的原始 nice，并在 Xiaomi `minor_window_app` 等于来源 UID 时临时清除该标记。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`，默认 40。恢复前同时核对 PID、UID、进程 starttime 与当前 nice，避免覆盖系统或应用后来作出的调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
+来源应用位于模块专用的 cpuset 与 cpuctl。cpuset 的 CPU 列表可以取自 WebUI 展示的任一动态拓扑集合；“效率核（预留一核）”在效率核多于一颗时去掉最高编号核心，只有一颗时保持原集合，避免生成空 cpuset。一次写入 `cgroup.procs` 即约束整个进程及后续新线程；cpuctl 的 `cpu.shares` 提供进程级退让。常驻守卫仅在内存中保存每个现有 TID 的原始 nice，并在 Xiaomi `minor_window_app` 等于来源 UID 时临时清除该标记。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`，默认 40。恢复前同时核对 PID、UID、进程 starttime 与当前 nice，避免覆盖系统或应用后来作出的调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
 
 Launcher 自身采用逐线程策略：
 
@@ -134,8 +134,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v7.0.zip
-../output/HyperOS4-Launcher-Scheduling-v7.0.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v7.1.zip
+../output/HyperOS4-Launcher-Scheduling-v7.1.zip.sha256
 ```
 
 模块 ID 为 `hyperos4_recents_source_app_yield`，升级时原位覆盖现有版本。

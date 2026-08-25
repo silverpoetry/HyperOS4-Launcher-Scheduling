@@ -5,7 +5,7 @@ const FIELD_SCHEMA = [
   ["frequencyPercent", "frequency_percent", 40, 100],
   ["frequencyTimeout", "frequency_timeout_ms", 300, 5000],
   ["appCompletionTimeout", "app_completion_timeout_ms", 500, 5000],
-  ["sourcePlacement", "source_placement", 5, 7, [5, 7]],
+  ["sourcePlacement", "source_placement", 1, 8],
   ["sourceNiceSuppression", "source_nice_suppression", 0, 40],
   ["launcherPlacement", "launcher_placement", 1, 7],
   ["rasterPlacement", "raster_placement", 1, 7],
@@ -55,7 +55,7 @@ export class SettingsView {
     const options = placementOptions(status);
     for (const select of $$('select[data-placement]')) {
       const previous = select.value;
-      const allowed = select.dataset.placement === "source" ? new Set([5, 7]) : null;
+      const allowed = select.dataset.placement === "source" ? null : new Set([1, 2, 3, 4, 5, 6, 7]);
       select.replaceChildren(...options.filter((item) => !allowed || allowed.has(item.value)).map((item) => {
         const option = document.createElement("option");
         option.value = String(item.value);

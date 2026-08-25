@@ -44,6 +44,7 @@ export function placementOptions(status) {
     [5, "效率核", status.little_mask],
     [6, "次级性能核", status.secondary_mask],
     [7, "系统后台核", status.background_mask],
+    [8, "效率核（预留一核）", status.little_spare_mask],
   ].map(([value, label, mask]) => ({ value, label, mask, cpus: cpuList(mask) }));
 }
 

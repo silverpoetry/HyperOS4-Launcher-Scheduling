@@ -25,8 +25,14 @@ configure_source_groups() {
   derive_launcher_masks
   read_first_line "$SOURCE_PLACEMENT_FILE"; placement="$READ_VALUE"
   case "$placement" in
+    1) mask="$THREAD_PERF_MASK" ;;
+    2) mask="$THREAD_MID_MASK" ;;
+    3) mask="$THREAD_RENDER_MASK" ;;
+    4) mask="$THREAD_PRIME_MASK" ;;
     5) mask="$THREAD_LITTLE_MASK" ;;
+    6) mask="$THREAD_SECONDARY_MASK" ;;
     7) mask="$THREAD_BACKGROUND_MASK" ;;
+    8) mask="$THREAD_LITTLE_SPARE_MASK" ;;
     *) return 1 ;;
   esac
   cpus="$(mask_to_cpulist "$mask")"

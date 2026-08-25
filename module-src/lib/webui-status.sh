@@ -80,7 +80,7 @@ print_cluster_frequencies() {
 
 print_status() {
   local mode daemon_pid daemon_alive launcher_pid topology
-  local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask
+  local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask little_spare_mask
   local source_pid source_uid source_name pending_pid pending_uid pending_name
   local guard_active=0 guard_tasks=0 guard_reassertions=0 key value
 
@@ -90,7 +90,7 @@ print_status() {
   read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
   [ -d "/proc/$launcher_pid" ] || launcher_pid=""
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
-  read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask <<EOF
+  read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask little_spare_mask <<EOF
 $topology
 EOF
   [ -n "$all_mask" ] || all_mask=-
@@ -101,6 +101,7 @@ EOF
   [ -n "$prime_mask" ] || prime_mask=-
   [ -n "$secondary_mask" ] || secondary_mask=-
   [ -n "$background_mask" ] || background_mask=-
+  [ -n "$little_spare_mask" ] || little_spare_mask=-
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
   pending_pid=""; pending_uid=""; pending_name=""
@@ -154,6 +155,7 @@ EOF
   emit prime_mask "$prime_mask"
   emit secondary_mask "$secondary_mask"
   emit background_mask "$background_mask"
+  emit little_spare_mask "$little_spare_mask"
   emit source_pid "$source_pid"
   emit source_uid "$source_uid"
   emit source_name "$source_name"

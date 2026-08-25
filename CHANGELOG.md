@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.1
+
+- Allow source-app placement to use the complete topology-derived CPU vocabulary.
+- Add an efficiency-core placement that leaves one dynamically selected efficiency CPU available to system background work.
+- Report the reserved-efficiency mask in the WebUI without changing existing user placement settings during upgrade.
+
 ## 7.0
 
 - Replaced the per-event source affinity helper with one resident in-memory source guard.

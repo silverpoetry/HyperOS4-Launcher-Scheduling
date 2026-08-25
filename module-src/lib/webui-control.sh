@@ -49,7 +49,7 @@ assign_configuration_value() {
   case "$key" in
     master) valid_state "$value" && CFG_MASTER="$value" ;;
     source) valid_state "$value" && CFG_SOURCE="$value" ;;
-    source_placement) case "$value" in 5|7) CFG_SOURCE_PLACEMENT="$value" ;; *) return 2 ;; esac ;;
+    source_placement) valid_number "$value" 1 8 && CFG_SOURCE_PLACEMENT="$value" ;;
     source_nice_suppression) valid_number "$value" 0 40 && CFG_SOURCE_NICE_SUPPRESSION="$value" ;;
     auxiliary) valid_state "$value" && CFG_AUXILIARY="$value" ;;
     launcher) valid_state "$value" && CFG_LAUNCHER="$value" ;;

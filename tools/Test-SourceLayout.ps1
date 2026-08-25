@@ -210,6 +210,18 @@ if ($configuration -notmatch 'SOURCE_RUNTIME_DIR=/dev/' -or
     throw 'The source guard control plane must live on /dev tmpfs'
 }
 
+$topologyPolicy = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\topology.sh') -Raw
+$sourceGroupPolicy = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\source-guard.sh') -Raw
+$webUiControl = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\webui-control.sh') -Raw
+$webUiModel = Get-Content -LiteralPath (Join-Path $moduleRoot 'webroot\js\model.js') -Raw
+if ($topologyPolicy -notmatch 'THREAD_LITTLE_SPARE_MASK' -or
+    $topologyPolicy -notmatch 'little_value & ~\(1 << reserved_cpu\)' -or
+    $sourceGroupPolicy -notmatch '8\) mask="\$THREAD_LITTLE_SPARE_MASK"' -or
+    $webUiControl -notmatch 'source_placement\) valid_number "\$value" 1 8' -or
+    $webUiModel -notmatch '\[8, "效率核（预留一核）", status\.little_spare_mask\]') {
+    throw 'Source placement must expose the full topology plus the reserved-efficiency set'
+}
+
 $systemUiController = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\systemui_threadctl.c') -Raw
 if ($systemUiController -notmatch 'HeapTaskDaemon' -or
     $systemUiController -notmatch 'wmshell\.main' -or

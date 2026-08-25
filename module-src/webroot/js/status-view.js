@@ -30,6 +30,7 @@ export class StatusView {
       ["mid", status.mid_mask], ["little", status.little_mask],
       ["render", status.render_mask], ["prime", status.prime_mask],
       ["secondary", status.secondary_mask], ["background", status.background_mask],
+      ["littleSpare", status.little_spare_mask],
     ]) {
       setText(`${prefix}Mask`, mask && mask !== "-" ? `0x${mask}` : "—");
       setText(`${prefix}List`, cpuList(mask));
