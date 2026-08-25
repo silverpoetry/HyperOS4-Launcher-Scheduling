@@ -110,12 +110,6 @@ acquire_restart_lock() {
       rmdir "$RESTART_LOCK_DIR" 2>/dev/null || true
     fi
     sleep 0.10
-    # Configuration is read dynamically. If another valid restart completed
-    # while this caller was waiting, coalesce with it instead of killing the
-    # daemon that has just become ready and starting the whole cycle again.
-    if [ ! -d "$RESTART_LOCK_DIR" ] && find_active_service_pid; then
-      return 0
-    fi
     attempt=$((attempt + 1))
   done
   return 1
@@ -140,15 +134,28 @@ cleanup_stale_daemons() {
   rm -f "$list"
 }
 
-signal_daemon_reload() {
-  local daemon_pid="$1" child comm
-  [ -r "/proc/$daemon_pid/task/$daemon_pid/children" ] || return 0
-  for child in $(cat "/proc/$daemon_pid/task/$daemon_pid/children" 2>/dev/null); do
-    [ -r "/proc/$child/comm" ] || continue
-    IFS= read -r comm <"/proc/$child/comm"
-    [ "$comm" = launcher-logwatch ] || continue
-    kill "$child" 2>/dev/null || true
+find_daemon_logwatch_pid() {
+  local daemon_pid="$1" child key value rest parent
+  ACTIVE_LOGWATCH_PID=""
+  for child in $(pidof launcher-logwatch 2>/dev/null); do
+    parent=""
+    [ -r "/proc/$child/status" ] || continue
+    while read -r key value rest; do
+      [ "$key" = PPid: ] || continue
+      parent="$value"
+      break
+    done <"/proc/$child/status"
+    [ "$parent" = "$daemon_pid" ] || continue
+    ACTIVE_LOGWATCH_PID="$child"
+    return 0
   done
+}
+
+signal_daemon_reload() {
+  local daemon_pid="$1"
+  find_daemon_logwatch_pid "$daemon_pid"
+  [ -n "$ACTIVE_LOGWATCH_PID" ] || return 0
+  kill "$ACTIVE_LOGWATCH_PID" 2>/dev/null || true
 }
 
 acknowledge_reload() {
@@ -160,7 +167,7 @@ acknowledge_reload() {
 }
 
 restart_daemon() {
-  local daemon_pid serial attempt result=1
+  local daemon_pid watcher_pid current_pid serial attempt result=1
   promote_controller_process
   acquire_restart_lock || return 1
   [ "$RESTART_LOCK_ACQUIRED" = 1 ] || return 0
@@ -169,16 +176,27 @@ restart_daemon() {
     return 1
   fi
   daemon_pid="$ACTIVE_SERVICE_PID"
+  find_daemon_logwatch_pid "$daemon_pid"
+  watcher_pid="$ACTIVE_LOGWATCH_PID"
   serial="$(increment_file "$RELOAD_REQUEST_FILE")"
   signal_daemon_reload "$daemon_pid"
   attempt=0
   while [ "$attempt" -lt 50 ]; do
     read_first_line "$RELOAD_ACK_FILE"
-    if [ "$READ_VALUE" = "$serial" ] && is_module_service_pid "$daemon_pid"; then
+    if [ "$READ_VALUE" = "$serial" ] && find_active_service_pid; then
       result=0
       break
     fi
-    is_module_service_pid "$daemon_pid" || break
+    if is_module_service_pid "$daemon_pid" && [ -n "$watcher_pid" ]; then
+      find_daemon_logwatch_pid "$daemon_pid"
+      current_pid="$ACTIVE_LOGWATCH_PID"
+      if [ -n "$current_pid" ] && [ "$current_pid" != "$watcher_pid" ]; then
+        # The daemon refreshes configuration before starting the next watcher.
+        printf '%s\n' "$serial" >"$RELOAD_ACK_FILE"
+        result=0
+        break
+      fi
+    fi
     sleep 0.10
     attempt=$((attempt + 1))
   done

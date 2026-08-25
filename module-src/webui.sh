@@ -25,7 +25,13 @@ case "$1" in
   logs) print_logs "$2" ;;
   diagnostics) print_diagnostics ;;
   configure)
-    save_configuration "$@" || { echo 'invalid configuration' >&2; exit 2; }
+    save_configuration "$@"
+    result=$?
+    case "$result" in
+      0) ;;
+      2) echo 'invalid configuration' >&2; exit 2 ;;
+      *) echo 'configuration was saved, but the scheduling service did not reload' >&2; exit 1 ;;
+    esac
     ;;
   restart)
     restart_daemon || { echo 'service restart failed' >&2; exit 1; }

@@ -115,7 +115,7 @@ monitor_launcher() {
     read_first_line "$ENABLE_FILE"
     [ "$READ_VALUE" = enabled ] || continue
     handle_launcher_event "$line"
-  done
+  done || true
 
   set_mode app launcher-monitor-ended
 }

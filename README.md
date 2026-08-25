@@ -134,8 +134,8 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 输出：
 
 ```text
-../output/HyperOS4-Launcher-Scheduling-v7.1.zip
-../output/HyperOS4-Launcher-Scheduling-v7.1.zip.sha256
+../output/HyperOS4-Launcher-Scheduling-v7.1.1.zip
+../output/HyperOS4-Launcher-Scheduling-v7.1.1.zip.sha256
 ```
 
 模块 ID 为 `hyperos4_recents_source_app_yield`，升级时原位覆盖现有版本。

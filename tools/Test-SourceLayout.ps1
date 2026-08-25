@@ -171,10 +171,11 @@ if ($configuration -notmatch 'APP_COMPLETION_TIMEOUT_FILE=' -or
 }
 
 $runtime = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\runtime.sh') -Raw
+$events = Get-Content -LiteralPath (Join-Path $moduleRoot 'lib\events.sh') -Raw
 foreach ($requiredRuntimeFunction in @(
     'claim_service_instance', 'acquire_restart_lock',
     'is_module_service_pid', 'find_active_service_pid', 'release_restart_lock',
-    'promote_controller_process'
+    'promote_controller_process', 'find_daemon_logwatch_pid'
 )) {
     if ($runtime -notmatch "(?m)^$requiredRuntimeFunction\(\)") {
         throw "Missing service lifecycle function: $requiredRuntimeFunction"
@@ -184,8 +185,15 @@ if ($runtime -notmatch 'while \[ "\$attempt" -lt 50 \]' -or
     $runtime -notmatch 'is_module_service_pid "\$daemon_pid"' -or
     $runtime -match 'nohup /system/bin/sh "\$MODDIR/service\.sh"' -or
     $runtime -notmatch '(?m)^acknowledge_reload\(\)' -or
-    $runtime -notmatch 'signal_daemon_reload "\$daemon_pid"') {
+    $runtime -notmatch 'signal_daemon_reload "\$daemon_pid"' -or
+    $runtime -notmatch 'pidof launcher-logwatch' -or
+    $runtime -notmatch '\[ "\$key" = PPid: \]' -or
+    $runtime -notmatch 'current_pid.*watcher_pid' -or
+    $runtime -match 'coalesce with it') {
     throw 'Service reload must reuse and validate the existing daemon'
+}
+if ($events -notmatch '(?s)launcher-logwatch.*done \|\| true.*set_mode app launcher-monitor-ended') {
+    throw 'An intentional logwatch stop must remain a normal daemon reload path'
 }
 
 $sourceGuard = Get-Content -LiteralPath (Join-Path $RepositoryRoot 'native\source_guard.c') -Raw

@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.1.1
+
+- Locate the log listener through `pidof` plus verified parent PID, without depending on the optional procfs children node or the truncated task name.
+- Treat the listener shutdown used by an in-place reload as a successful monitor cycle.
+- Serialize consecutive saves and confirm that each configuration refresh reaches a newly started listener.
+- Report validation and runtime reload failures separately in the WebUI.
+
 ## 7.1
 
 - Allow source-app placement to use the complete topology-derived CPU vocabulary.
