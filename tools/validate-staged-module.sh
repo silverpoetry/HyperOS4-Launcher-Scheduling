@@ -5,9 +5,9 @@ ROOT=${1:?module root is required}
 
 for required in \
   service.sh webui.sh action.sh uninstall.sh module.prop \
-  lib/config.sh lib/runtime.sh lib/topology.sh lib/launcher-policy.sh \
-  lib/systemui-policy.sh \
-  lib/frequency-policy.sh lib/process-policy.sh lib/state-machine.sh lib/events.sh \
+  bin/launcher-logwatch bin/source-guard \
+  lib/config.sh lib/runtime.sh lib/topology.sh lib/source-guard.sh \
+  lib/process-policy.sh lib/coordinator.sh \
   lib/webui-status.sh lib/webui-control.sh \
   webroot/index.html webroot/js/main.js; do
   [ -f "$ROOT/$required" ] || { echo "missing=$required" >&2; exit 1; }

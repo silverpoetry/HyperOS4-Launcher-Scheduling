@@ -51,5 +51,6 @@ export function placementOptions(status) {
 export function serviceSummary(status) {
   if (status.daemon_alive !== "1") return { title: "服务离线", detail: "守护进程未运行" };
   if (status.master_policy === "disabled") return { title: "策略关闭", detail: `服务在线 · ${modeLabel(status.mode)}` };
+  if (status.coordinator_online !== "1") return { title: "服务启动中", detail: "正在等待桌面进程" };
   return { title: "运行中", detail: `PID ${status.daemon_pid || "—"} · ${modeLabel(status.mode)}` };
 }

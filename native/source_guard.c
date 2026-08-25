@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <linux/perf_event.h>
 #include <poll.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
+#include <sys/timerfd.h>
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
@@ -33,14 +35,17 @@
 #define BACKGROUND_CPUSET_PROCS "/dev/cpuset/background/cgroup.procs"
 #define BACKGROUND_CPUCTL_PROCS "/dev/cpuctl/background/cgroup.procs"
 #define NICE_FILE "/data/adb/hyperos4-launcher-scheduling/source-nice-suppression"
+#define TOPOLOGY_FILE "/data/adb/modules/hyperos4_recents_source_app_yield/launcher-thread-topology"
 #define MINOR_WINDOW_NODE "/sys/module/metis/parameters/minor_window_app"
 #define SOURCE_GROUP "/hyperos4-source"
 #define MAX_TASKS 4096
 #define TASK_HASH_SIZE 8192
 #define PERF_PAGES 8
+#define PACKAGE_LENGTH 256
 
 struct task_nice {
     pid_t tid;
+    unsigned long long starttime;
     int original;
     int applied;
 };
@@ -54,6 +59,8 @@ struct guard_state {
     int original_minor_valid;
     long original_minor;
     unsigned long reassertions;
+    char package[PACKAGE_LENGTH];
+    int target_nice;
     struct task_nice tasks[MAX_TASKS];
     uint16_t task_slots[TASK_HASH_SIZE];
     size_t task_count;
@@ -74,21 +81,11 @@ static int trace_enabled;
 static size_t trace_pid_offset;
 static size_t trace_path_loc_offset;
 static int task_directory_fd = -1;
+static int completion_timer_fd = -1;
+static uint64_t accepted_transition_id;
+static uint64_t completion_transition_id;
 
 static int set_trace_enabled(int enabled);
-
-static long long monotonic_us(void) {
-    struct timespec value;
-    clock_gettime(CLOCK_MONOTONIC, &value);
-    return (long long)value.tv_sec * 1000000LL + value.tv_nsec / 1000LL;
-}
-
-static void log_line(const char *action, long long elapsed_us) {
-    printf("source-guard action=%s pid=%d uid=%u active=%d tasks=%zu reassertions=%lu elapsed_us=%lld\n",
-           action, state.pid, state.uid, state.active, state.task_count,
-           state.reassertions, elapsed_us);
-    fflush(stdout);
-}
 
 static int read_text(const char *path, char *buffer, size_t size) {
     int fd = open(path, O_RDONLY | O_CLOEXEC);
@@ -138,6 +135,18 @@ static void close_task_directory(void) {
 static void reset_guard_state(void) {
     close_task_directory();
     memset(&state, 0, sizeof(state));
+}
+
+static void reset_task_records(void) {
+    state.task_count = 0;
+    memset(state.task_slots, 0, sizeof(state.task_slots));
+}
+
+static void cancel_completion_timer(void) {
+    struct itimerspec timer = {0};
+    completion_transition_id = 0;
+    if (completion_timer_fd >= 0)
+        (void)timerfd_settime(completion_timer_fd, 0, &timer, NULL);
 }
 
 static int open_task_directory(pid_t pid) {
@@ -228,19 +237,31 @@ static struct task_nice *find_task(pid_t tid) {
 
 static struct task_nice *register_task(pid_t tid) {
     struct task_nice *record = find_task(tid);
-    int target = suppression_target();
+    uid_t uid;
+    unsigned long long starttime;
+    int target = state.target_nice;
     size_t slot;
     int original;
-    if (record != NULL) {
+    if (read_process_identity(tid, &uid, &starttime) != 0 ||
+        uid != state.uid)
+        return NULL;
+    if (record != NULL && record->starttime == starttime) {
         record->applied = record->original < target ? target : record->original;
         return record;
     }
-    if (state.task_count >= MAX_TASKS) return NULL;
     errno = 0;
     original = getpriority(PRIO_PROCESS, (id_t)tid);
     if (errno != 0) return NULL;
+    if (record != NULL) {
+        record->starttime = starttime;
+        record->original = original;
+        record->applied = original < target ? target : original;
+        return record;
+    }
+    if (state.task_count >= MAX_TASKS) return NULL;
     record = &state.tasks[state.task_count];
     record->tid = tid;
+    record->starttime = starttime;
     record->original = original;
     record->applied = original < target ? target : original;
     slot = task_hash(tid);
@@ -280,7 +301,12 @@ static int refresh_tasks(void) {
 }
 
 static int apply_task_nice(struct task_nice *record) {
+    uid_t uid;
+    unsigned long long starttime;
     int current;
+    if (read_process_identity(record->tid, &uid, &starttime) != 0 ||
+        uid != state.uid || starttime != record->starttime)
+        return 0;
     errno = 0;
     current = getpriority(PRIO_PROCESS, (id_t)record->tid);
     if (errno != 0 || current == record->applied) return 0;
@@ -293,13 +319,18 @@ static void apply_nice(void) {
     }
 }
 
-static void restore_nice(void) {
+static void restore_nice(int force) {
     for (size_t i = 0; i < state.task_count; ++i) {
+        uid_t uid;
+        unsigned long long starttime;
         int current;
         if (state.tasks[i].applied == state.tasks[i].original) continue;
+        if (read_process_identity(state.tasks[i].tid, &uid, &starttime) != 0 ||
+            uid != state.uid || starttime != state.tasks[i].starttime)
+            continue;
         errno = 0;
         current = getpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid);
-        if (errno == 0 && current == state.tasks[i].applied)
+        if (errno == 0 && (force || current == state.tasks[i].applied))
             (void)setpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid,
                               state.tasks[i].original);
     }
@@ -311,8 +342,10 @@ static void publish_status(const char *reason) {
     snprintf(temporary, sizeof(temporary), "%s.tmp", STATUS_PATH);
     file = fopen(temporary, "we");
     if (file == NULL) return;
-    fprintf(file, "pid=%d\nuid=%u\nstarttime=%llu\narmed=%d\nactive=%d\ntrace_enabled=%d\ntasks=%zu\nreassertions=%lu\nreason=%s\n",
-            state.pid, state.uid, state.starttime, state.armed, state.active,
+    fprintf(file, "pid=%d\nuid=%u\npackage=%s\nstarttime=%llu\ntransition_id=%llu\ncompletion_pending=%d\narmed=%d\nactive=%d\ntrace_enabled=%d\ntasks=%zu\nreassertions=%lu\nreason=%s\n",
+            state.pid, state.uid, state.package, state.starttime,
+            (unsigned long long)accepted_transition_id,
+            completion_transition_id != 0, state.armed, state.active,
             trace_enabled, state.task_count, state.reassertions, reason);
     if (fclose(file) == 0) (void)rename(temporary, STATUS_PATH);
 }
@@ -353,8 +386,7 @@ static void restore_minor(int preserve) {
         (void)write_number(MINOR_WINDOW_NODE, 0);
 }
 
-static int arm_source(pid_t pid, uid_t uid) {
-    long long started = monotonic_us();
+static int arm_source(pid_t pid, uid_t uid, const char *package) {
     uid_t actual_uid;
     unsigned long long starttime;
     if (read_process_identity(pid, &actual_uid, &starttime) != 0 ||
@@ -364,7 +396,7 @@ static int arm_source(pid_t pid, uid_t uid) {
         state.active = 0;
         (void)set_trace_enabled(0);
         if (source_identity_matches()) {
-            restore_nice();
+            restore_nice(0);
             restore_minor(0);
             (void)write_pid(BACKGROUND_CPUSET_PROCS, state.pid);
             (void)write_pid(BACKGROUND_CPUCTL_PROCS, state.pid);
@@ -376,27 +408,39 @@ static int arm_source(pid_t pid, uid_t uid) {
         state.pid = pid;
         state.uid = uid;
         state.starttime = starttime;
+        state.target_nice = suppression_target();
+        if (package != NULL)
+            snprintf(state.package, sizeof(state.package), "%s", package);
         state.original_minor = read_number(MINOR_WINDOW_NODE);
         state.original_minor_valid = state.original_minor >= 0;
         state.armed = 1;
         if (open_task_directory(pid) != 0) return -1;
     } else if (task_directory_fd < 0 && open_task_directory(pid) != 0) {
         return -1;
+    } else if (package != NULL && package[0] != '\0') {
+        snprintf(state.package, sizeof(state.package), "%s", package);
+        state.target_nice = suppression_target();
     }
     (void)refresh_tasks();
     publish_status("armed");
-    log_line("arm", monotonic_us() - started);
     return 0;
 }
 
-static int activate_source(pid_t pid, uid_t uid, const char *reason) {
-    long long started = monotonic_us();
+static int activate_source(pid_t pid, uid_t uid, const char *package,
+                           const char *reason) {
     if (!state.armed || state.pid != pid || state.uid != uid) {
-        if (arm_source(pid, uid) != 0) return -1;
-    } else {
+        if (arm_source(pid, uid, package) != 0) return -1;
+    } else if (state.active) {
         (void)refresh_tasks();
     }
     if (!source_identity_matches()) return -1;
+    if (!state.active) {
+        /* Capture the foreground baseline before either cgroup move or nice
+         * suppression. Rebuild the table for every logical transaction so
+         * stale and recycled thread IDs can never become restore targets. */
+        reset_task_records();
+        if (refresh_tasks() != 0) return -1;
+    }
     state.active = 1;
     if (set_trace_enabled(1) != 0) {
         state.active = 0;
@@ -411,7 +455,39 @@ static int activate_source(pid_t pid, uid_t uid, const char *reason) {
     }
     apply_nice();
     publish_status(reason);
-    log_line("activate", monotonic_us() - started);
+    return 0;
+}
+
+static int complete_source(uint64_t transition_id, const char *reason) {
+    if (transition_id != accepted_transition_id || !state.armed) return 0;
+    cancel_completion_timer();
+    state.active = 0;
+    (void)set_trace_enabled(0);
+    if (source_identity_matches()) {
+        restore_nice(1);
+        restore_minor(1);
+        (void)write_pid(TOP_CPUSET_PROCS, state.pid);
+        (void)write_pid(TOP_CPUCTL_PROCS, state.pid);
+    }
+    publish_status(reason);
+    return 0;
+}
+
+static int schedule_completion(uint64_t transition_id, unsigned delay_ms) {
+    struct itimerspec timer = {0};
+    if (!state.active || transition_id != accepted_transition_id ||
+        completion_timer_fd < 0)
+        return -1;
+    if (delay_ms < 100) delay_ms = 100;
+    if (delay_ms > 5000) delay_ms = 5000;
+    timer.it_value.tv_sec = delay_ms / 1000;
+    timer.it_value.tv_nsec = (long)(delay_ms % 1000) * 1000000L;
+    completion_transition_id = transition_id;
+    if (timerfd_settime(completion_timer_fd, 0, &timer, NULL) != 0) {
+        completion_transition_id = 0;
+        return -1;
+    }
+    publish_status("completion-scheduled");
     return 0;
 }
 
@@ -453,12 +529,12 @@ static void reassert_source(pid_t tid) {
 }
 
 static int release_source(pid_t pid, int top_app, int preserve_minor) {
-    long long started = monotonic_us();
     if (!state.armed || state.pid != pid) return 0;
+    cancel_completion_timer();
     state.active = 0;
     (void)set_trace_enabled(0);
     if (source_identity_matches()) {
-        restore_nice();
+        restore_nice(top_app);
         restore_minor(preserve_minor);
         if (top_app) {
             (void)write_pid(TOP_CPUSET_PROCS, pid);
@@ -469,14 +545,115 @@ static int release_source(pid_t pid, int top_app, int preserve_minor) {
         }
     }
     publish_status(top_app ? "restored-top" : "released-background");
-    log_line(top_app ? "restore-top" : "release-background",
-             monotonic_us() - started);
     reset_guard_state();
     publish_status("idle");
     return 0;
 }
 
-static int parse_pid_uid(const char *text, pid_t *pid, uid_t *uid) {
+static int read_process_package(pid_t pid, char *package, size_t size) {
+    char path[64];
+    int fd;
+    ssize_t length;
+    snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+    fd = open(path, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) return -1;
+    length = read(fd, package, size - 1);
+    close(fd);
+    if (length <= 0) return -1;
+    package[length] = '\0';
+    return package[0] != '\0' ? 0 : -1;
+}
+
+static int find_package_process(const char *package, pid_t *pid, uid_t *uid) {
+    DIR *directory = opendir("/proc");
+    struct dirent *entry;
+    pid_t selected = 0;
+    uid_t selected_uid = 0;
+    if (directory == NULL || package == NULL || package[0] == '\0') return -1;
+    while ((entry = readdir(directory)) != NULL) {
+        char *end;
+        long parsed;
+        char live_package[PACKAGE_LENGTH];
+        uid_t live_uid;
+        unsigned long long starttime;
+        if (entry->d_name[0] < '0' || entry->d_name[0] > '9') continue;
+        errno = 0;
+        parsed = strtol(entry->d_name, &end, 10);
+        if (errno != 0 || *end != '\0' || parsed <= 1 || parsed > INT32_MAX)
+            continue;
+        if (read_process_package((pid_t)parsed, live_package,
+                                 sizeof(live_package)) != 0 ||
+            strcmp(live_package, package) != 0 ||
+            read_process_identity((pid_t)parsed, &live_uid, &starttime) != 0 ||
+            live_uid < 1000)
+            continue;
+        if (selected == 0 || parsed < selected) {
+            selected = (pid_t)parsed;
+            selected_uid = live_uid;
+        }
+    }
+    closedir(directory);
+    if (selected == 0) return -1;
+    *pid = selected;
+    *uid = selected_uid;
+    return 0;
+}
+
+static int parse_transition(const char *text, uint64_t *transition_id,
+                            const char **rest) {
+    char *end;
+    unsigned long long parsed;
+    errno = 0;
+    parsed = strtoull(text, &end, 10);
+    if (errno != 0 || end == text || parsed == 0) return -1;
+    while (*end == ' ') end++;
+    *transition_id = (uint64_t)parsed;
+    if (rest != NULL) *rest = end;
+    return 0;
+}
+
+static int begin_transition(uint64_t transition_id) {
+    if (!state.armed || transition_id < accepted_transition_id) return -1;
+    accepted_transition_id = transition_id;
+    cancel_completion_timer();
+    if (state.active) {
+        publish_status("transition-extended");
+        return 0;
+    }
+    return activate_source(state.pid, state.uid, state.package,
+                           "transition-active");
+}
+
+static int adopt_package(uint64_t transition_id, const char *package,
+                         int activate) {
+    pid_t pid;
+    uid_t uid;
+    if (transition_id < accepted_transition_id ||
+        find_package_process(package, &pid, &uid) != 0)
+        return -1;
+    if (!activate && state.active)
+        (void)release_source(state.pid, 0, 0);
+    accepted_transition_id = transition_id;
+    cancel_completion_timer();
+    if (state.armed && state.pid == pid && state.uid == uid &&
+        strcmp(state.package, package) == 0)
+        return activate ? activate_source(pid, uid, package, "handoff-same") : 0;
+    if (arm_source(pid, uid, package) != 0) return -1;
+    return activate ? activate_source(pid, uid, package, "handoff-active") : 0;
+}
+
+static int replace_current(pid_t pid, uid_t uid, const char *package) {
+    int was_active;
+    if (!state.armed || strcmp(state.package, package) != 0 || state.uid != uid)
+        return -1;
+    if (source_identity_matches() && state.pid != pid) return -1;
+    was_active = state.active;
+    if (arm_source(pid, uid, package) != 0) return -1;
+    return was_active ? activate_source(pid, uid, package, "process-replaced") : 0;
+}
+
+static int parse_pid_uid(const char *text, pid_t *pid, uid_t *uid,
+                         const char **rest) {
     char *end;
     unsigned long parsed_uid;
     long parsed_pid = strtol(text, &end, 10);
@@ -484,25 +661,46 @@ static int parse_pid_uid(const char *text, pid_t *pid, uid_t *uid) {
     while (*end == ' ') end++;
     parsed_uid = strtoul(end, &end, 10);
     if (parsed_uid < 1000 || parsed_uid > UINT32_MAX) return -1;
+    while (*end == ' ') end++;
     *pid = (pid_t)parsed_pid;
     *uid = (uid_t)parsed_uid;
+    if (rest != NULL) *rest = end;
     return 0;
 }
 
 static void handle_command(char *command) {
     pid_t pid;
     uid_t uid;
+    uint64_t transition_id;
+    const char *rest;
     char *arguments = strchr(command, ' ');
     if (arguments != NULL) {
         *arguments++ = '\0';
         while (*arguments == ' ') arguments++;
     }
     if (strcmp(command, "arm") == 0 && arguments != NULL &&
-        parse_pid_uid(arguments, &pid, &uid) == 0) {
-        (void)arm_source(pid, uid);
-    } else if (strcmp(command, "activate") == 0 && arguments != NULL &&
-               parse_pid_uid(arguments, &pid, &uid) == 0) {
-        (void)activate_source(pid, uid, "command");
+        parse_pid_uid(arguments, &pid, &uid, &rest) == 0 && rest[0] != '\0' &&
+        !state.active) {
+        (void)arm_source(pid, uid, rest);
+    } else if (strcmp(command, "enter") == 0 && arguments != NULL &&
+               parse_transition(arguments, &transition_id, NULL) == 0) {
+        (void)begin_transition(transition_id);
+    } else if (strcmp(command, "handoff") == 0 && arguments != NULL &&
+               parse_transition(arguments, &transition_id, &rest) == 0 &&
+               rest[0] != '\0') {
+        (void)adopt_package(transition_id, rest, 1);
+    } else if (strcmp(command, "adopt") == 0 && arguments != NULL &&
+               parse_transition(arguments, &transition_id, &rest) == 0 &&
+               rest[0] != '\0') {
+        (void)adopt_package(transition_id, rest, 0);
+    } else if (strcmp(command, "complete") == 0 && arguments != NULL &&
+               parse_transition(arguments, &transition_id, &rest) == 0) {
+        unsigned long delay = strtoul(rest, NULL, 10);
+        (void)schedule_completion(transition_id, (unsigned)delay);
+    } else if (strcmp(command, "replace-current") == 0 && arguments != NULL &&
+               parse_pid_uid(arguments, &pid, &uid, &rest) == 0 &&
+               rest[0] != '\0') {
+        (void)replace_current(pid, uid, rest);
     } else if (strcmp(command, "restore-top") == 0 && arguments != NULL) {
         pid = (pid_t)strtol(arguments, NULL, 10);
         (void)release_source(pid, 1, 1);
@@ -510,9 +708,13 @@ static void handle_command(char *command) {
         pid = (pid_t)strtol(arguments, NULL, 10);
         (void)release_source(pid, 0, 0);
     } else if (strcmp(command, "disable") == 0) {
-        if (state.armed) (void)release_source(state.pid, 0, 0);
+        if (state.armed) (void)release_source(state.pid, 1, 1);
+        accepted_transition_id = 0;
+    } else if (strcmp(command, "reset-top") == 0) {
+        if (state.armed) (void)release_source(state.pid, 1, 1);
+        accepted_transition_id = 0;
     } else if (strcmp(command, "stop") == 0) {
-        if (state.armed) (void)release_source(state.pid, 0, 0);
+        if (state.armed) (void)release_source(state.pid, 1, 1);
         running = 0;
     }
 }
@@ -713,31 +915,64 @@ static void handle_signal(int signal_number) {
     running = 0;
 }
 
+static void pin_controller_to_efficiency_cpu(void) {
+    char text[512];
+    unsigned long long masks[9];
+    cpu_set_t set;
+    unsigned long long selected;
+    int cpu = 0;
+    if (read_text(TOPOLOGY_FILE, text, sizeof(text)) != 0 ||
+        sscanf(text, "%llx %llx %llx %llx %llx %llx %llx %llx %llx",
+               &masks[0], &masks[1], &masks[2], &masks[3], &masks[4],
+               &masks[5], &masks[6], &masks[7], &masks[8]) != 9)
+        return;
+    selected = masks[8] & (~masks[8] + 1);
+    if (selected == 0) return;
+    while (cpu < CPU_SETSIZE && cpu < 64 &&
+           (selected & (1ULL << (unsigned)cpu)) == 0)
+        cpu++;
+    if (cpu >= CPU_SETSIZE || cpu >= 64) return;
+    CPU_ZERO(&set);
+    CPU_SET(cpu, &set);
+    (void)sched_setaffinity(0, sizeof(set), &set);
+}
+
 static int daemon_main(void) {
-    struct pollfd pollfds[65];
+    struct pollfd pollfds[66];
     int socket_fd;
     setvbuf(stdout, NULL, _IOLBF, 0);
+    pin_controller_to_efficiency_cpu();
     signal(SIGTERM, handle_signal);
     signal(SIGINT, handle_signal);
     socket_fd = create_socket();
     if (socket_fd < 0) return 10;
+    completion_timer_fd = timerfd_create(CLOCK_MONOTONIC,
+                                         TFD_CLOEXEC | TFD_NONBLOCK);
+    if (completion_timer_fd < 0) {
+        unlink(SOCKET_PATH);
+        close(socket_fd);
+        return 11;
+    }
     trace_ring_count = open_trace_rings(trace_rings, 64);
     if (trace_ring_count < 0) {
         unlink(SOCKET_PATH);
         close(socket_fd);
+        close(completion_timer_fd);
         fprintf(stderr, "source-guard: cgroup_attach_task tracepoint is unavailable\n");
-        return 11;
+        return 12;
     }
     pollfds[0].fd = socket_fd;
     pollfds[0].events = POLLIN;
+    pollfds[1].fd = completion_timer_fd;
+    pollfds[1].events = POLLIN;
     for (int i = 0; i < trace_ring_count; ++i) {
-        pollfds[i + 1].fd = trace_rings[i].fd;
-        pollfds[i + 1].events = POLLIN;
+        pollfds[i + 2].fd = trace_rings[i].fd;
+        pollfds[i + 2].events = POLLIN;
     }
     publish_status("idle");
     printf("source-guard ready trace_rings=%d\n", trace_ring_count);
     while (running) {
-        int ready = poll(pollfds, (nfds_t)trace_ring_count + 1, -1);
+        int ready = poll(pollfds, (nfds_t)trace_ring_count + 2, -1);
         if (ready < 0) {
             if (errno == EINTR) continue;
             break;
@@ -750,11 +985,21 @@ static int daemon_main(void) {
                 handle_command(command);
             }
         }
+        if ((pollfds[1].revents & POLLIN) != 0) {
+            uint64_t expirations;
+            if (read(completion_timer_fd, &expirations, sizeof(expirations)) ==
+                    (ssize_t)sizeof(expirations) &&
+                completion_transition_id == accepted_transition_id) {
+                uint64_t completed = completion_transition_id;
+                completion_transition_id = 0;
+                (void)complete_source(completed, "visual-complete");
+            }
+        }
         for (int i = 0; i < trace_ring_count; ++i) {
-            if ((pollfds[i + 1].revents & POLLIN) != 0) drain_ring(&trace_rings[i]);
+            if ((pollfds[i + 2].revents & POLLIN) != 0) drain_ring(&trace_rings[i]);
         }
     }
-    if (state.armed) (void)release_source(state.pid, 0, 0);
+    if (state.armed) (void)release_source(state.pid, 1, 1);
     for (int i = 0; i < trace_ring_count; ++i) {
         munmap(trace_rings[i].mapping, trace_rings[i].mapping_size);
         close(trace_rings[i].fd);
@@ -762,13 +1007,14 @@ static int daemon_main(void) {
     unlink(SOCKET_PATH);
     unlink(STATUS_PATH);
     close(socket_fd);
+    close(completion_timer_fd);
     return 0;
 }
 
 int main(int argc, char **argv) {
     if (argc == 2 && strcmp(argv[1], "daemon") == 0) return daemon_main();
     if (argc >= 2) return send_command(argc, argv);
-    fprintf(stderr, "usage: %s daemon | arm PID UID | activate PID UID | restore-top PID | release-background PID | disable | stop\n",
+    fprintf(stderr, "usage: %s daemon | arm PID UID PACKAGE | enter ID | handoff ID PACKAGE | adopt ID PACKAGE | complete ID DELAY_MS | replace-current PID UID PACKAGE | restore-top PID | release-background PID | reset-top | disable | stop\n",
             argv[0]);
     return 1;
 }

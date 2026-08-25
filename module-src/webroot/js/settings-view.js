@@ -3,18 +3,19 @@ import { placementOptions } from "./model.js";
 
 const FIELD_SCHEMA = [
   ["frequencyPercent", "frequency_percent", 40, 100],
-  ["frequencyTimeout", "frequency_timeout_ms", 300, 5000],
   ["appCompletionTimeout", "app_completion_timeout_ms", 500, 5000],
+  ["visualQuiet", "visual_quiet_ms", 200, 1000],
+  ["reassertInterval", "reassert_interval_ms", 10, 100],
   ["sourcePlacement", "source_placement", 1, 8],
   ["sourceNiceSuppression", "source_nice_suppression", 0, 40],
-  ["launcherPlacement", "launcher_placement", 1, 7],
-  ["rasterPlacement", "raster_placement", 1, 7],
-  ["resmgrPlacement", "resmgr_placement", 1, 7],
-  ["fencePlacement", "fence_placement", 1, 7],
-  ["systemuiCriticalPlacement", "systemui_critical_placement", 1, 7],
-  ["systemuiMaintenancePlacement", "systemui_maintenance_placement", 1, 7],
-  ["systemuiTimeout", "systemui_timeout_ms", 300, 5000],
-  ["boostDuration", "boost_duration_ms", 1, 1000],
+  ["launcherPlacement", "launcher_placement", 1, 8],
+  ["rasterPlacement", "raster_placement", 1, 8],
+  ["resmgrPlacement", "resmgr_placement", 1, 8],
+  ["fencePlacement", "fence_placement", 1, 8],
+  ["systemuiCriticalPlacement", "systemui_critical_placement", 1, 8],
+  ["systemuiMaintenancePlacement", "systemui_maintenance_placement", 1, 8],
+  ["systemServerCriticalPlacement", "system_server_critical_placement", 1, 8],
+  ["systemServerSnapshotPlacement", "system_server_snapshot_placement", 1, 8],
   ["uclampRaster", "uclamp_raster", 0, 1024],
   ["uclampUi", "uclamp_ui", 0, 1024],
   ["uclampRust", "uclamp_rust", 0, 1024],
@@ -27,6 +28,7 @@ const TOGGLE_SCHEMA = [
   ["auxToggle", "auxiliary_policy", "auxiliary"],
   ["launcherToggle", "launcher_policy", "launcher"],
   ["systemuiToggle", "systemui_policy", "systemui"],
+  ["systemServerToggle", "system_server_policy", "system_server"],
   ["frequencyToggle", "frequency_policy", "frequency"],
 ];
 
@@ -55,8 +57,7 @@ export class SettingsView {
     const options = placementOptions(status);
     for (const select of $$('select[data-placement]')) {
       const previous = select.value;
-      const allowed = select.dataset.placement === "source" ? null : new Set([1, 2, 3, 4, 5, 6, 7]);
-      select.replaceChildren(...options.filter((item) => !allowed || allowed.has(item.value)).map((item) => {
+      select.replaceChildren(...options.map((item) => {
         const option = document.createElement("option");
         option.value = String(item.value);
         option.textContent = `${item.label} · ${item.cpus}`;

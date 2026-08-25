@@ -3,7 +3,7 @@ export const WEBUI_COMMAND = `${MODULE_DIR}/webui.sh`;
 export const PAGE_NAMES = ["status", "settings", "diagnostics"];
 
 export const MOCK_STATUS = {
-  version: "7.1.1",
+  version: "8.0",
   author: "silverpoetry",
   master_policy: "enabled",
   source_policy: "enabled",
@@ -12,18 +12,20 @@ export const MOCK_STATUS = {
   auxiliary_policy: "enabled",
   launcher_policy: "enabled",
   systemui_policy: "enabled",
+  system_server_policy: "enabled",
   frequency_policy: "disabled",
   frequency_percent: "78",
-  frequency_timeout_ms: "1500",
   app_completion_timeout_ms: "2000",
+  visual_quiet_ms: "450",
+  reassert_interval_ms: "20",
   launcher_placement: "2",
   raster_placement: "4",
   resmgr_placement: "2",
   fence_placement: "2",
   systemui_critical_placement: "2",
   systemui_maintenance_placement: "6",
-  systemui_timeout_ms: "2000",
-  boost_duration_ms: "1",
+  system_server_critical_placement: "2",
+  system_server_snapshot_placement: "6",
   uclamp_raster: "928",
   uclamp_ui: "768",
   uclamp_rust: "512",
@@ -31,6 +33,7 @@ export const MOCK_STATUS = {
   mode: "recents",
   daemon_pid: "1842",
   daemon_alive: "1",
+  coordinator_online: "1",
   launcher_pid: "3021",
   transition_serial: "42",
   all_mask: "ff",
@@ -46,8 +49,8 @@ export const MOCK_STATUS = {
   source_uid: "10341",
   source_name: "com.tencent.jkchess",
   source_allowed: "0-2",
-  source_cpuset: "/background",
-  source_cpuctl: "/background",
+  source_cpuset: "/hyperos4-source",
+  source_cpuctl: "/hyperos4-source",
   frequency_active: "0",
   frequency_policy_name: "policy0",
   frequency_cpus: "0,1,2",
@@ -72,8 +75,7 @@ export const MOCK_THREADS = [
 ].join("\n");
 
 export const MOCK_LOG = [
-  "mode=entering reason=launcher-transition-start",
-  "source-yield pid=9174 uid=10341 name=com.tencent.jkchess",
-  "thread-boost serial=42 reason=gesture-start",
-  "mode=recents reason=overview-entered",
+  "=== HyperOS 4 Launcher Scheduling v8.0 ===",
+  "source-guard ready trace_rings=8",
+  "coordinator-start launcher_pid=3021",
 ].join("\n");

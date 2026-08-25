@@ -4,183 +4,144 @@
 [![Release](https://img.shields.io/github/v/release/silverpoetry/HyperOS4-Launcher-Scheduling?display_name=tag)](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-这是一个 HyperOS 4 KernelSU 调度模块。Launcher 参与桌面、最近任务或应用转场时，模块把来源应用限制到设备定义的 background CPU 集并临时提高其 nice 值，分配 Launcher 的关键线程，并在转场期把 SystemUI 渲染线程与 ART 维护线程分流，减少同一性能核心上的 runnable 竞争。
+这是一个用于 HyperOS 4 的 KernelSU 调度模块。它在桌面、最近任务和应用开关动画中约束来源应用，并为 Launcher、SystemUI 和 system_server 的关键线程分配明确的 CPU 集合，减少同一性能核心上的 runnable 竞争。
 
-Launcher 指 `com.miui.home`，包括桌面主屏、最近任务和 Quickstep 转场。应用仍是 ActivityManager 记录的 resumed Activity 时，Launcher 可能已经接管应用窗口并绘制桌面或卡片，因此不能只根据前台 Activity 判断策略时机。
+模块不替换系统框架或桌面 APK，不写死设备 CPU 编号，不修改 SurfaceFlinger、显示 HAL 或渲染后端。所有核心集合都从当前在线 CPU、系统 cpuset 和 `cpu_capacity` 推导。
 
-模块不替换框架或桌面 APK，不写死 CPU 编号，不读取 blur 半径，也不轮询前台应用。来源应用默认使用 Android 的系统后台核心集合，也可以选择任一动态拓扑集合；“效率核（预留一核）”会从最低容量核心中去掉最高编号的一颗，为系统后台工作保留调度余量。可选限频策略只处理完全位于效率核集合的调频策略；该功能默认关闭，动画提交、取消、超时、服务重载和卸载都会按记录恢复原值。
+## 工作方式
+
+Launcher 接管应用窗口时，ActivityManager 仍可能把原应用标为 resumed。目标应用恢复 resumed 后，最近任务卡片也可能仍在展开。因此模块使用 Launcher 的真实生命周期日志判断可见转场，不把 resumed Activity 当作动画边界。
+
+一次逻辑转场包含以下步骤：
+
+1. 原生协调器读取 Launcher 事件并创建单调转场 ID；
+2. 来源应用进入专用 cpuset/cpuctl，线程 nice 调整到配置目标；
+3. Launcher、SystemUI 和 system_server 的目标线程应用 affinity/uclamp；
+4. 活动转场内按缓存 TID 复核亲和，系统覆盖后默认在 20 ms 内修正；
+5. 协议完成后继续等待默认 450 ms 的视觉稳定时间；
+6. 返回原卡片时在视觉稳定后恢复来源应用；打开另一张卡片时旧来源留在 background，目标应用始终保持系统分配的 top-app。
+
+来源守卫只接受当前或更新的转场 ID。延迟日志、重复事件和上一轮完成定时器不能覆盖新事务。
+
+详细设计见 [运行架构](docs/ARCHITECTURE.md) 和 [转场状态机](docs/STATE-MACHINE.md)。
+
+## 默认策略
+
+来源应用：
+
+- 使用 Android 当前的系统后台 CPU 集合；
+- 使用独立 cpuset 和 cpuctl，现有线程整体迁移，新线程自动继承；
+- `cpu.shares` 根据压制等级设置；
+- nice 压制默认 40，对应目标 `nice=19`；
+- ActivityManager 改写 task profile 后由 `cgroup_attach_task` 事件定点纠正。
+
+Launcher：
+
+- Raster 默认使用 Prime 核；
+- UI 和 Rust 默认使用非 Prime 性能核；
+- ResMgr 和 FenceWait 默认使用非 Prime 性能核；
+- uclamp 覆盖完整视觉转场，结束后恢复原值。
+
+SystemUI：
+
+- 主线程、RenderThread、`wmshell.main` 和 GPU 完成线程默认使用非 Prime 性能核；
+- GC、终结器、JIT 和 Profile Saver 默认使用次级性能核。
+
+system_server：
+
+- `android.anim` 和 `android.display` 默认使用非 Prime 性能核；
+- `TaskSnapshotPersister` 默认使用次级性能核；
+- Binder 线程不统一固定，SurfaceFlinger 保持系统调度策略。
+
+辅助策略：
+
+- 转场期间可把 MIUI 壁纸和 MIMD 移入 background；
+- 可选效率核限频默认关闭；
+- 服务重载、关闭和卸载均按记录恢复。
+
+## CPU 集合
+
+所有可配置放置使用同一组枚举：
+
+1. 性能核；
+2. 非 Prime 性能核；
+3. 渲染核；
+4. Prime 核；
+5. 效率核；
+6. 次级性能核；
+7. 系统后台核；
+8. 效率核（预留一核）。
+
+“效率核（预留一核）”从最低容量核心中保留最高编号的一颗给系统后台任务。效率核只有一颗时不缩减，避免空 cpuset。
 
 ## 管理界面
 
-KernelSU 管理器可直接打开模块 WebUI。界面按 Material 3 的标题卡片、信息卡片和底部导航组织为状态、设置和诊断三页，支持跟手横向滑动切换，并适配系统动态配色、深色模式与安全区。
+KernelSU 管理器可直接打开模块 WebUI。界面包括状态、设置和诊断三页。
 
-- 状态页每五秒读取一次模块已有的轻量状态文件，仅在页面可见时刷新；慢请求尚未结束时不会叠加下一轮读取；
-- 日志页只在打开或手动刷新时读取 Launcher 关键线程与最近事件；
-- 设置页可分别控制来源应用、壁纸/MIMD、Launcher、SystemUI 和效率核限频，并独立调整来源退避核心、nice 压制目标、Raster、UI/Rust、ResMgr、FenceWait、SystemUI 渲染链及 ART 维护线程的核心集合；
-- 所有写操作都映射到 `webui.sh configure` 的固定命名参数；前端和后端分别校验键、枚举及数值范围，不提供任意 Shell 执行入口；
-- 配置仅在内容发生变化时显示保存操作，保存后一次性重载服务，页面轮询不会覆盖尚未保存的表单。
+- 状态页显示当前阶段、来源应用、守卫状态、动态 CPU 拓扑和各集群频率；
+- 设置页控制来源、Launcher、SystemUI、system_server、辅助进程和限频策略；
+- 所有放置项使用相同的八类 CPU 集合；
+- 视觉稳定时间、亲和复核间隔、来源完成兜底和 uclamp 均可调整；
+- 配置保存在 `/data/adb/hyperos4-launcher-scheduling`，升级时保留，卸载时清除；
+- 前后端都校验固定参数，不提供任意 shell 执行入口。
 
-关闭 WebUI 后不会留下额外采样器或日志进程。界面控制的是现有模块策略，不会停用 KernelSU 模块，也不会修改系统调度器配置。用户设置保存在 `/data/adb/hyperos4-launcher-scheduling`，与 KernelSU 会替换的模块程序目录分离，升级时会保留；卸载模块时一并清除。
+## 运行进程
 
-## 生命周期
+模块只有两个常驻原生进程：
 
-```text
-app
-  → entering   Launcher 接管应用到桌面/最近任务的手势
-  → home       桌面稳定显示
-  → recents    最近任务稳定显示
-  → leaving    Launcher 正在打开目标应用
-  → app        Launcher 退出动画完成
-```
+- `launcher-logwatch`：读取 logd、合并转场事件、维护内存状态机并执行线程策略；
+- `source-guard`：维护当前来源身份、专用控制组、nice 快照、覆盖纠正和定时恢复。
 
-策略在 `entering`、`home`、`recents` 和 `leaving` 中持续生效，只在稳定 `app` 状态解除。事件映射、手势会话和状态不变量见 [docs/STATE-MACHINE.md](docs/STATE-MACHINE.md)。
+shell 服务只负责启动、配置重载和退出恢复。转场热路径不执行 `pidof`、`dumpsys`、`taskset`、`uclampset`，不创建 shell 定时器，也不逐事件写状态文件。
 
-## 调度策略
-
-Launcher 活跃期间：
-
-```text
-上一前台应用          → 专用 background cpuset + 专用 cpuctl shares + nice
-com.miui.miwallpaper → cpuset/background + cpuctl/background
-MIMD（存在时）       → cpuset/background + cpuctl/background
-效率核 cpufreq policy → 可选地临时限制 scaling_max_freq，默认关闭
-```
-
-模块不移动当前输入法、SurfaceFlinger 或 Display HAL。稳定应用态下，壁纸和 MIMD 恢复原始 cgroup，SystemUI 受管线程恢复逐 TID 原始亲和。
-
-来源应用位于模块专用的 cpuset 与 cpuctl。cpuset 的 CPU 列表可以取自 WebUI 展示的任一动态拓扑集合；“效率核（预留一核）”在效率核多于一颗时去掉最高编号核心，只有一颗时保持原集合，避免生成空 cpuset。一次写入 `cgroup.procs` 即约束整个进程及后续新线程；cpuctl 的 `cpu.shares` 提供进程级退让。常驻守卫仅在内存中保存每个现有 TID 的原始 nice，并在 Xiaomi `minor_window_app` 等于来源 UID 时临时清除该标记。nice 压制目标为 0–40 级：0 不压制，20 对应 `nice=0`，40 对应 `nice=19`，默认 40。恢复前同时核对 PID、UID、进程 starttime 与当前 nice，避免覆盖系统或应用后来作出的调整。详细链路见 [来源应用退避根因](docs/SOURCE-APP-YIELD-ROOT-CAUSE.md)。
-
-Launcher 自身采用逐线程策略：
-
-```text
-1.raster                         → prime
-1.ui / rt-launcher-mai          → 去掉 prime 的 performance 集合
-IplrVkResMgr                    → 去掉 prime 的 performance 集合
-IplrVkFenceWait                 → 去掉 prime 的 performance 集合
-```
-
-转场事件到来后只进行短时 uclamp 提升：
-
-```text
-1.raster                → uclamp minimum 928
-1.ui / rt-launcher-mai → uclamp minimum 768/512
-IplrVkResMgr           → uclamp minimum 384
-IplrVkFenceWait        → 不提升 uclamp
-```
-
-提升持续时间默认 1 ms，之后只恢复 0/1024 uclamp；基础 affinity 覆盖 Launcher 线程的整个运行期。所有放置策略和四类 `uclamp.min` 均可在 WebUI 调整。CPU 集合来自设备当前 cpuset 和 `cpu_capacity`，不包含设备固定编号。模块不改变 SurfaceFlinger affinity。
-
-SystemUI 只在 Launcher 转场期间分流：主线程、RenderThread、WMShell 与 GPU completion 默认使用非 Prime 性能核，HeapTaskDaemon、Finalizer、ReferenceQueue 与 JIT 默认使用次级性能核。转场完成或超时后由原生控制器按 TID 启动时间恢复原亲和，SystemUI 重启也不会把旧 TID 状态应用到新进程。
-
-效率核限频默认关闭。手动开启后，只选择 CPU 集合完全落在动态效率核 mask 内的 cpufreq policy，默认取硬件上限的 78%，并向下选择驱动公开的最近可用频点。当前上限已经低于目标值时不再继续下压，因此重复事件和第三方调度不会叠乘比例。恢复时仅当当前上限仍等于模块写入值才回写原值，避免覆盖用户调度器在动画期间做出的新设置；默认 1500 ms 的独立超时用于兜底丢失的结束事件。
-
-Settings 轻载场景按“关闭、开启、开启、关闭”完成两组交叉 A/B。限频后 Launcher Full jank 合计从 4 增至 8，SurfaceFlinger Full jank 从 11 增至 24，Launcher 最大帧均值从 26.08 ms 增至 37.46 ms。轻载来源应用没有足够的性能核争用可供限频缓解，压低其收尾、Buffer 交接和快照工作只会增加等待；完整数据见 [轻载小核限频 A/B](docs/FREQUENCY-LIMIT-LIGHT-LOAD-AB.md)。
-
-Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移到 CPU3-6 后，线程运行时间下降 83.0%，runnable 等待下降 64.0%，Launcher Full jank 从 30 降到 14。由于它在 Vulkan fence 链上承担实际工作，默认不再与被限频的来源应用共享小核；完整数据见 [FenceWait 与小核限频 A/B](docs/FENCEWAIT-FREQUENCY-AB.md)。
-
-当前 8 Gen 3 调度配置实测推导为 `perf=fc (CPU2-7)`、`render=9c (CPU2-4,7)`、`secondary=60 (CPU5-6)`、`little=03 (CPU0-1)`。不同设备与第三方调度改变 cpuset 时会按同一规则重新计算。
-
-## 事件监听
-
-`module-src/bin/launcher-logwatch` 是一个从 `native/launcher_logwatch.c` 构建的 arm64 小程序。它通过系统 `liblog` 直接读取 logd 的 main 与 system buffer，输出状态机使用的 Launcher 生命周期消息。动画入口上，它直接把已缓存来源 PID 写入模块专用 cpuset/cpuctl，并向常驻来源守卫发送激活命令，然后才把事件交给 shell。
-
-采用原生监听器是因为文本 `logcat` 接到 shell 管道后在实机上出现约 0.4 秒块缓冲；反复以单事件模式启动 logcat 又会漏掉紧邻的 resumed 和动画完成事件。原生监听器只有一个连续读取进程，用 `write()` 逐条交给状态机，不注入 Launcher，也不修改系统日志配置。
-
-`module-src/bin/launcher-threadctl` 从 `native/launcher_threadctl.c` 构建。它在一个进程内枚举目标 TID，并直接批量设置 affinity/uclamp。旧 shell 实现一次动画需要启动约二十个工具进程，实测约 0.8 秒；原生批处理 apply/reset 各约 10 ms。
-
-`module-src/bin/source-guard` 从 `native/source_guard.c` 构建。它常驻内存，维护唯一的来源事务，并订阅内核 `cgroup_attach_task` tracepoint。入口仍以一次 `cgroup.procs` 写入移动整个来源进程；之后 Android 或厂商 task profile 单独移动某个工作线程时，守卫根据事件携带的 TID 直接纠正该线程的 cpuset、cpu cgroup 与 nice。已知 TID 使用内存索引，未知 TID 只在已打开的来源 task 目录中验证一次，不重新扫描整个进程。守卫解析事件目标路径并忽略自己写回产生的 attach 事件，热路径不写状态文件或标准输出。tracepoint 只在 active 事务中启用，稳定应用阶段不处理系统其它 cgroup 事件。
-
-`module-src/bin/systemui-threadctl` 从 `native/systemui_threadctl.c` 构建。它只枚举两类明确命名的 SystemUI 线程，原子记录亲和快照、应用转场放置并在结束时恢复，不轮询进程或帧状态。
-
-## Xiaomi 标记回写与 ActivityManager
-
-来源应用位于 `/dev/cpuset/hyperos4-source` 和 `/dev/cpuctl/hyperos4-source`。cpuset 提供硬 CPU 边界，`cpu.shares` 提供进程级退让，新线程自动继承。进程级覆盖通过 `cgroup.procs` 纠正，逐线程覆盖通过对应控制器的 `tasks` 节点纠正；模块不轮询进程或 SurfaceFlinger，也不依赖较晚的 `activityResumed` 日志发现覆盖。稳定应用阶段关闭 tracepoint，不消费系统其它 cgroup 事件。
-
-Joyose 在应用恢复时可能重新写入 `minor_window_app`。守卫激活时清除当前来源 UID 标记，恢复前保存在内存中的原值；nice 快照同样只存在于常驻进程内存。
-
-## source 与目标应用
-
-`source-app` 保存进入 Launcher 前应用的 PID、UID 和完整包名，`pending-source-app` 保存离开 Launcher 时刚恢复的目标。pending PID 始终受保护，不会被策略当作 source 退避。
-
-目标应用收到 resumed 事件后，守卫转移到目标，并保持到 Launcher 的卡片展开动画完成。`openingRemoteAnimationClose` 到来后，目标恢复 `top-app`；完成事件缺失时使用默认两秒的应用转场完成超时。同一 pending 目标的重复 resumed 事件不会延长该超时。进入稳定 `app` 后，pending 才提交为下一轮 source。
-
-同一应用返回时沿用同一内存事务；打开不同应用时，旧来源被释放到系统 background，新目标进入专用组。稳定 `app` 提交的最后一步解除守卫并重新 arm 当前应用，为下一轮转场准备 nice 快照。
+日志读取器只订阅 Launcher PID 的 main/system 记录。配置重载使用阻塞信号和统一退出路径，先停止事件提交，再恢复所有临时策略；重载发生在最近任务界面时会保留当前来源身份和场景。
 
 ## 安装
 
-系统要求：
+要求：
 
 - ARM64 Xiaomi HyperOS 4；
-- KernelSU，以及可用的模块挂载实现；
-- 能够在异常时通过 KernelSU 安全模式停用模块。
+- KernelSU 和可用的模块挂载实现；
+- 异常时能够使用 KernelSU 安全模式停用模块。
 
-从 [Releases](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases) 下载模块 ZIP
-和同名 `.sha256` 文件。校验完成后，在 KernelSU 管理器中安装 ZIP 并重启设备。首次进入系统后打开
-模块 WebUI，状态页应显示守护进程在线，并列出当前设备推导出的 CPU 集合。
-
-升级会保留 `/data/adb/hyperos4-launcher-scheduling` 中的设置。卸载模块后重启，安装脚本创建的配置、
-线程快照和临时频率状态会一并清理。
+从 [Releases](https://github.com/silverpoetry/HyperOS4-Launcher-Scheduling/releases) 下载 ZIP 和同名 `.sha256`，校验后在 KernelSU 管理器中安装并重启。
 
 ## 构建
 
-要求 Windows PowerShell、Android SDK 和包含 arm64 clang 的 NDK。构建脚本依次读取 `-AndroidSdk`、
-`ANDROID_SDK_ROOT`、`ANDROID_HOME` 和当前用户的 Android SDK 默认目录。
+要求 Windows PowerShell、Android SDK 和包含 arm64 clang 的 NDK。
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
 & .\build-module.ps1 -AndroidSdk 'C:\Android\Sdk'
 ```
 
-输出：
+构建脚本会：
 
-```text
-../output/HyperOS4-Launcher-Scheduling-v7.1.1.zip
-../output/HyperOS4-Launcher-Scheduling-v7.1.1.zip.sha256
-```
-
-模块 ID 为 `hyperos4_recents_source_app_yield`，升级时原位覆盖现有版本。
+1. 校验源码结构和配置不变量；
+2. 从 `launcher_logwatch.c`、`transition_policy.c` 和 `proc_control.c` 构建协调器；
+3. 从 `source_guard.c` 构建来源守卫；
+4. 生成模块 ZIP 和 SHA-256 文件。
 
 ## 验证
 
-生命周期状态机已在 Sheng HyperOS 4 实机完成：
+仓库包含设备侧部署、手势回放和 Perfetto 分析脚本。发布前至少验证：
 
-- 快滑回桌面；
-- 慢滑进入最近任务；
-- 上滑后取消；
-- 从桌面打开应用；
-- 从最近任务打开同一应用；
-- source、目标、壁纸、MIMD 和 Launcher 的实际 cpuset/cpuctl 与 `Cpus_allowed_list` 检查；
-- 单守护、单原生监听器检查。
-- 文件管理连续快速返回、取消、回桌面和重新打开组合；稳定 `app` 状态保持 `top-app`/CPU `0-7`。
+- 应用快速进入最近任务；
+- 慢滑、半程取消和连续往返；
+- 桌面或最近任务打开不同应用；
+- 高负载来源应用的来源守卫身份、允许 CPU 和 nice；
+- 转场结束后 Launcher uclamp、SystemUI/system_server 亲和与来源 top-app 恢复；
+- 服务重载、模块关闭和卸载恢复。
 
-逐线程策略已在 Shennong HyperOS 4 实机完成隔离 A/B：
+历史 A/B 和根因记录位于 [docs](docs)。
 
-- 快滑回桌面、慢滑进入最近任务、上滑半程取消；
-- 从桌面打开应用、从最近任务打开应用；
-- 目标线程按 CPU 的 `task-clock`；
-- 轻量 SurfaceFlinger FrameTimeline；
-- 禁用后的亲和/uclamp 恢复和重新启用。
+## 贡献与许可
 
-验证结果见 [docs/VALIDATION.md](docs/VALIDATION.md)、[5.1 轻载对照](docs/PRIME-RASTER-EARLY-YIELD-LIGHT-LOAD-AB.md)、[来源应用 affinity 性能 A/B](docs/SOURCE-AFFINITY-PERFORMANCE-AB.md)、[Sheng 高负载 A/B](docs/SHENG-HIGH-LOAD-VALIDATION.md)、[Sheng 生命周期报告](test-results/sheng-20260822-v2.8/REPORT.md)、[Sheng 快速操作恢复竞态](test-results/sheng-source-return-v3.2/REPORT.md) 和 [Shennong 逐线程 A/B 报告](test-results/shennong-thread-policy-v3.0/REPORT.md)。
+提交修改前请运行：
 
-## 项目结构
-
-```text
-module-src/       KernelSU 模块入口、WebUI 和构建后的 arm64 工具
-module-src/lib/   配置、拓扑、线程、进程、频率、状态机与 WebUI 后端
-module-src/webroot/css/  Material 3 设计令牌、布局、卡片、控件与诊断样式
-module-src/webroot/js/   KernelSU 桥接、数据模型、导航及三个页面控制器
-native/           四个原生监听与线程控制工具的 C 源码
-../output/        构建生成的 ZIP 与 SHA-256
-docs/             状态机和验证文档
-tools/            原生构建与短时验证脚本
-test-results/     A/B 数据与实机报告
-CHANGELOG.md      版本变更记录
-VERSION           当前版本
+```powershell
+& .\tools\Test-SourceLayout.ps1
+& .\build-module.ps1
 ```
 
-运行时分层、依赖方向和状态不变量见 [架构说明](docs/ARCHITECTURE.md)。
-
-## 许可证
-
-项目以 [Apache License 2.0](LICENSE) 发布。
+贡献说明见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)。项目采用 [Apache License 2.0](LICENSE)。

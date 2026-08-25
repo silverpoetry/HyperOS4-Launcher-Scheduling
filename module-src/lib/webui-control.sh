@@ -24,18 +24,20 @@ load_configuration_values() {
   CFG_AUXILIARY="$(state_value "$AUX_POLICY_FILE")"
   CFG_LAUNCHER="$(state_value "$THREAD_POLICY_STATE_FILE")"
   CFG_SYSTEMUI="$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
+  CFG_SYSTEM_SERVER="$(state_value "$SYSTEM_SERVER_POLICY_STATE_FILE")"
   CFG_FREQUENCY="$(state_value "$FREQ_POLICY_FILE" disabled)"
   CFG_FREQUENCY_PERCENT="$(number_value "$FREQ_PERCENT_FILE" 78)"
-  CFG_FREQUENCY_TIMEOUT="$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
   CFG_APP_COMPLETION_TIMEOUT="$(number_value "$APP_COMPLETION_TIMEOUT_FILE" 2000)"
+  CFG_VISUAL_QUIET="$(number_value "$VISUAL_QUIET_TIMEOUT_FILE" 450)"
+  CFG_REASSERT_INTERVAL="$(number_value "$POLICY_REASSERT_INTERVAL_FILE" 20)"
   CFG_LAUNCHER_PLACEMENT="$(number_value "$THREAD_PLACEMENT_FILE" 2)"
   CFG_RASTER_PLACEMENT="$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 4)"
   CFG_RESMGR_PLACEMENT="$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
   CFG_FENCE_PLACEMENT="$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
   CFG_SYSTEMUI_CRITICAL_PLACEMENT="$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2)"
   CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$(number_value "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6)"
-  CFG_SYSTEMUI_TIMEOUT="$(number_value "$SYSTEMUI_TIMEOUT_FILE" 2000)"
-  CFG_BOOST_DURATION="$(number_value "$THREAD_BOOST_MS_FILE" 1)"
+  CFG_SYSTEM_SERVER_CRITICAL_PLACEMENT="$(number_value "$SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE" 2)"
+  CFG_SYSTEM_SERVER_SNAPSHOT_PLACEMENT="$(number_value "$SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE" 6)"
   CFG_UCLAMP_RASTER="$(number_value "$THREAD_RASTER_UCLAMP_FILE" 928)"
   CFG_UCLAMP_UI="$(number_value "$THREAD_UI_UCLAMP_FILE" 768)"
   CFG_UCLAMP_RUST="$(number_value "$THREAD_RUST_UCLAMP_FILE" 512)"
@@ -54,18 +56,20 @@ assign_configuration_value() {
     auxiliary) valid_state "$value" && CFG_AUXILIARY="$value" ;;
     launcher) valid_state "$value" && CFG_LAUNCHER="$value" ;;
     systemui) valid_state "$value" && CFG_SYSTEMUI="$value" ;;
+    system_server) valid_state "$value" && CFG_SYSTEM_SERVER="$value" ;;
     frequency) valid_state "$value" && CFG_FREQUENCY="$value" ;;
     frequency_percent) valid_number "$value" 40 100 && CFG_FREQUENCY_PERCENT="$value" ;;
-    frequency_timeout_ms) valid_number "$value" 300 5000 && CFG_FREQUENCY_TIMEOUT="$value" ;;
     app_completion_timeout_ms) valid_number "$value" 500 5000 && CFG_APP_COMPLETION_TIMEOUT="$value" ;;
-    launcher_placement) valid_number "$value" 1 7 && CFG_LAUNCHER_PLACEMENT="$value" ;;
-    raster_placement) valid_number "$value" 1 7 && CFG_RASTER_PLACEMENT="$value" ;;
-    resmgr_placement) valid_number "$value" 1 7 && CFG_RESMGR_PLACEMENT="$value" ;;
-    fence_placement) valid_number "$value" 1 7 && CFG_FENCE_PLACEMENT="$value" ;;
-    systemui_critical_placement) valid_number "$value" 1 7 && CFG_SYSTEMUI_CRITICAL_PLACEMENT="$value" ;;
-    systemui_maintenance_placement) valid_number "$value" 1 7 && CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$value" ;;
-    systemui_timeout_ms) valid_number "$value" 300 5000 && CFG_SYSTEMUI_TIMEOUT="$value" ;;
-    boost_duration_ms) valid_number "$value" 1 1000 && CFG_BOOST_DURATION="$value" ;;
+    visual_quiet_ms) valid_number "$value" 200 1000 && CFG_VISUAL_QUIET="$value" ;;
+    reassert_interval_ms) valid_number "$value" 10 100 && CFG_REASSERT_INTERVAL="$value" ;;
+    launcher_placement) valid_number "$value" 1 8 && CFG_LAUNCHER_PLACEMENT="$value" ;;
+    raster_placement) valid_number "$value" 1 8 && CFG_RASTER_PLACEMENT="$value" ;;
+    resmgr_placement) valid_number "$value" 1 8 && CFG_RESMGR_PLACEMENT="$value" ;;
+    fence_placement) valid_number "$value" 1 8 && CFG_FENCE_PLACEMENT="$value" ;;
+    systemui_critical_placement) valid_number "$value" 1 8 && CFG_SYSTEMUI_CRITICAL_PLACEMENT="$value" ;;
+    systemui_maintenance_placement) valid_number "$value" 1 8 && CFG_SYSTEMUI_MAINTENANCE_PLACEMENT="$value" ;;
+    system_server_critical_placement) valid_number "$value" 1 8 && CFG_SYSTEM_SERVER_CRITICAL_PLACEMENT="$value" ;;
+    system_server_snapshot_placement) valid_number "$value" 1 8 && CFG_SYSTEM_SERVER_SNAPSHOT_PLACEMENT="$value" ;;
     uclamp_raster) valid_number "$value" 0 1024 && CFG_UCLAMP_RASTER="$value" ;;
     uclamp_ui) valid_number "$value" 0 1024 && CFG_UCLAMP_UI="$value" ;;
     uclamp_rust) valid_number "$value" 0 1024 && CFG_UCLAMP_RUST="$value" ;;
@@ -89,18 +93,20 @@ save_configuration() {
   write_atomic "$AUX_POLICY_FILE" "$CFG_AUXILIARY" &&
   write_atomic "$THREAD_POLICY_STATE_FILE" "$CFG_LAUNCHER" &&
   write_atomic "$SYSTEMUI_POLICY_STATE_FILE" "$CFG_SYSTEMUI" &&
+  write_atomic "$SYSTEM_SERVER_POLICY_STATE_FILE" "$CFG_SYSTEM_SERVER" &&
   write_atomic "$FREQ_POLICY_FILE" "$CFG_FREQUENCY" &&
   write_atomic "$FREQ_PERCENT_FILE" "$CFG_FREQUENCY_PERCENT" &&
-  write_atomic "$FREQ_TIMEOUT_FILE" "$CFG_FREQUENCY_TIMEOUT" &&
   write_atomic "$APP_COMPLETION_TIMEOUT_FILE" "$CFG_APP_COMPLETION_TIMEOUT" &&
+  write_atomic "$VISUAL_QUIET_TIMEOUT_FILE" "$CFG_VISUAL_QUIET" &&
+  write_atomic "$POLICY_REASSERT_INTERVAL_FILE" "$CFG_REASSERT_INTERVAL" &&
   write_atomic "$THREAD_PLACEMENT_FILE" "$CFG_LAUNCHER_PLACEMENT" &&
   write_atomic "$THREAD_RASTER_PLACEMENT_FILE" "$CFG_RASTER_PLACEMENT" &&
   write_atomic "$THREAD_RESMGR_PLACEMENT_FILE" "$CFG_RESMGR_PLACEMENT" &&
   write_atomic "$THREAD_FENCE_PLACEMENT_FILE" "$CFG_FENCE_PLACEMENT" &&
   write_atomic "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" "$CFG_SYSTEMUI_CRITICAL_PLACEMENT" &&
   write_atomic "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" "$CFG_SYSTEMUI_MAINTENANCE_PLACEMENT" &&
-  write_atomic "$SYSTEMUI_TIMEOUT_FILE" "$CFG_SYSTEMUI_TIMEOUT" &&
-  write_atomic "$THREAD_BOOST_MS_FILE" "$CFG_BOOST_DURATION" &&
+  write_atomic "$SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE" "$CFG_SYSTEM_SERVER_CRITICAL_PLACEMENT" &&
+  write_atomic "$SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE" "$CFG_SYSTEM_SERVER_SNAPSHOT_PLACEMENT" &&
   write_atomic "$THREAD_RASTER_UCLAMP_FILE" "$CFG_UCLAMP_RASTER" &&
   write_atomic "$THREAD_UI_UCLAMP_FILE" "$CFG_UCLAMP_UI" &&
   write_atomic "$THREAD_RUST_UCLAMP_FILE" "$CFG_UCLAMP_RUST" &&

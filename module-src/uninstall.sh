@@ -5,29 +5,16 @@ MODDIR=${0%/*}
 . "$MODDIR/lib/runtime.sh"
 . "$MODDIR/lib/topology.sh"
 . "$MODDIR/lib/source-guard.sh"
-. "$MODDIR/lib/launcher-policy.sh"
-. "$MODDIR/lib/systemui-policy.sh"
-. "$MODDIR/lib/frequency-policy.sh"
-. "$MODDIR/lib/process-policy.sh"
 
 read_first_line "$PID_FILE"
 [ -n "$READ_VALUE" ] && kill_process_tree "$READ_VALUE"
-restore_frequency_state_quiet
 stop_source_guard
 remove_source_groups
-restore_launcher_threads
-restore_systemui_threads uninstall
-restore_processes
 
-rm -f "$LOG_FILE"
-rm -f "$MODE_FILE" "$SERIAL_FILE" "$EPOCH_FILE" "$PID_FILE"
-rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$PENDING_SOURCE_FILE" "$PENDING_SOURCE_FILE.tmp"
-rm -f "$GESTURE_FILE" "$WALLPAPER_GROUP_FILE" "$MIMD_GROUP_FILE"
-rmdir "$SOURCE_RUNTIME_DIR" 2>/dev/null || true
-rm -f "$FREQ_STATE_FILE" "$FREQ_STATE_FILE.tmp" "$FREQ_INFO_FILE" "$FREQ_INFO_FILE.tmp"
-rm -f "$FREQ_SERIAL_FILE"
-rm -f "$SYSTEMUI_STATE_FILE" "$SYSTEMUI_STATE_FILE.lock" "$SYSTEMUI_CACHE_FILE" "$SYSTEMUI_CACHE_FILE.lock" "$SYSTEMUI_PID_FILE" "$SYSTEMUI_SERIAL_FILE"
+rm -f "$LOG_FILE" "$MODE_FILE" "$SERIAL_FILE" "$PID_FILE"
+rm -f "$SOURCE_FILE" "$SOURCE_FILE.tmp" "$COORDINATOR_CONFIG" \
+  "$COORDINATOR_CONFIG.tmp" "$COORDINATOR_STATUS"
 rm -f "$SERVICE_LOCK_OWNER" "$RESTART_LOCK_OWNER"
-rmdir "$SERVICE_LOCK_DIR" "$RESTART_LOCK_DIR" 2>/dev/null || true
+rmdir "$SERVICE_LOCK_DIR" "$RESTART_LOCK_DIR" "$SOURCE_RUNTIME_DIR" 2>/dev/null || true
 
 [ "$CONFIG_DIR" = /data/adb/hyperos4-launcher-scheduling ] && rm -rf "$CONFIG_DIR"

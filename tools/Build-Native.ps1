@@ -44,14 +44,13 @@ if (-not $compiler) {
 }
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 foreach ($target in @(
-    @{ Source = 'launcher_logwatch.c'; Output = 'launcher-logwatch'; Libraries = @('-ldl') },
-    @{ Source = 'launcher_threadctl.c'; Output = 'launcher-threadctl'; Libraries = @() },
-    @{ Source = 'source_guard.c'; Output = 'source-guard'; Libraries = @() }
-    @{ Source = 'systemui_threadctl.c'; Output = 'systemui-threadctl'; Libraries = @() }
+    @{ Sources = @('launcher_logwatch.c', 'transition_policy.c', 'proc_control.c'); Output = 'launcher-logwatch'; Libraries = @('-ldl', '-pthread') },
+    @{ Sources = @('source_guard.c'); Output = 'source-guard'; Libraries = @() }
 )) {
-    $source = Join-Path $root (Join-Path 'native' $target.Source)
+    $sources = @($target.Sources | ForEach-Object { Join-Path $root (Join-Path 'native' $_) })
     $output = Join-Path $outputDirectory $target.Output
-    & $compiler -fPIE -pie -Oz '-Wl,--strip-all' @($target.Libraries) -o $output $source
+    & $compiler -std=gnu17 -Wall -Wextra -Werror -fPIE -pie -Oz `
+        '-Wl,--strip-all' @($target.Libraries) -o $output @sources
     if ($LASTEXITCODE -ne 0) {
         throw "NDK compiler failed to build $($target.Output): $LASTEXITCODE"
     }

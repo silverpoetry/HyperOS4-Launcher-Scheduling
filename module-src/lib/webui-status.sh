@@ -36,25 +36,13 @@ read_allowed_list() {
 }
 
 print_frequency_status() {
-  local active policy related current maximum original applied
-  active=0; policy=""; related=""; current=""; maximum=""; original=""; applied=""
-  if [ -r "$FREQ_STATE_FILE" ]; then
-    active=1
-    read -r policy original applied <"$FREQ_STATE_FILE"
-    [ -r "$policy/related_cpus" ] && IFS= read -r related <"$policy/related_cpus"
-    [ -r "$policy/scaling_max_freq" ] && IFS= read -r current <"$policy/scaling_max_freq"
-    [ -r "$policy/cpuinfo_max_freq" ] && IFS= read -r maximum <"$policy/cpuinfo_max_freq"
-  elif [ -r "$FREQ_INFO_FILE" ]; then
-    read -r policy related current maximum <"$FREQ_INFO_FILE"
-    [ -r "$policy/scaling_max_freq" ] && IFS= read -r current <"$policy/scaling_max_freq"
+  local active=0 key value
+  if config_enabled "$FREQ_POLICY_FILE" && [ -r "$COORDINATOR_STATUS" ]; then
+    while IFS='=' read -r key value; do
+      [ "$key" = policy_active ] && active="$value"
+    done <"$COORDINATOR_STATUS"
   fi
   emit frequency_active "$active"
-  emit frequency_policy_name "${policy##*/}"
-  emit frequency_cpus "$related"
-  emit frequency_current_khz "$current"
-  emit frequency_max_khz "$maximum"
-  emit frequency_original_khz "$original"
-  emit frequency_applied_khz "$applied"
 }
 
 print_cluster_frequencies() {
@@ -79,16 +67,16 @@ print_cluster_frequencies() {
 }
 
 print_status() {
-  local mode daemon_pid daemon_alive launcher_pid topology
+  local mode daemon_pid daemon_alive launcher_pid topology coordinator_online=0 corrections=0 transition_serial
   local all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask little_spare_mask
-  local source_pid source_uid source_name pending_pid pending_uid pending_name
+  local source_pid source_uid source_name
   local guard_active=0 guard_tasks=0 guard_reassertions=0 key value
 
   read_first_line "$MODE_FILE"; mode="$READ_VALUE"; [ -n "$mode" ] || mode=unknown
+  transition_serial="$(number_value "$SERIAL_FILE" 0)"
   daemon_pid=""; find_active_service_pid && daemon_pid="$ACTIVE_SERVICE_PID"
   daemon_alive=0; [ -n "$daemon_pid" ] && daemon_alive=1
-  read_first_line "$THREAD_LAUNCHER_PID_FILE"; launcher_pid="$READ_VALUE"
-  [ -d "/proc/$launcher_pid" ] || launcher_pid=""
+  launcher_pid="$(pidof com.miui.home 2>/dev/null)"; launcher_pid=${launcher_pid%% *}
   read_first_line "$THREAD_TOPOLOGY_FILE"; topology="$READ_VALUE"
   read -r all_mask perf_mask mid_mask little_mask render_mask prime_mask secondary_mask background_mask little_spare_mask <<EOF
 $topology
@@ -104,16 +92,27 @@ EOF
   [ -n "$little_spare_mask" ] || little_spare_mask=-
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
-  pending_pid=""; pending_uid=""; pending_name=""
-  [ -r "$PENDING_SOURCE_FILE" ] && read -r pending_pid pending_uid pending_name <"$PENDING_SOURCE_FILE"
   if [ -r "$SOURCE_GUARD_STATUS" ]; then
     while IFS='=' read -r key value; do
       case "$key" in
+        pid) source_pid="$value" ;;
+        uid) source_uid="$value" ;;
+        package) source_name="$value" ;;
         active) guard_active="$value" ;;
         tasks) guard_tasks="$value" ;;
         reassertions) guard_reassertions="$value" ;;
       esac
     done <"$SOURCE_GUARD_STATUS"
+  fi
+  if [ -r "$COORDINATOR_STATUS" ]; then
+    while IFS='=' read -r key value; do
+      case "$key" in
+        online) coordinator_online="$value" ;;
+        phase) mode="$value" ;;
+        sequence) transition_serial="$value" ;;
+        corrections) corrections="$value" ;;
+      esac
+    done <"$COORDINATOR_STATUS"
   fi
 
   emit version "$(module_version)"
@@ -125,25 +124,28 @@ EOF
   emit auxiliary_policy "$(state_value "$AUX_POLICY_FILE")"
   emit launcher_policy "$(state_value "$THREAD_POLICY_STATE_FILE")"
   emit systemui_policy "$(state_value "$SYSTEMUI_POLICY_STATE_FILE")"
+  emit system_server_policy "$(state_value "$SYSTEM_SERVER_POLICY_STATE_FILE")"
   emit frequency_policy "$(state_value "$FREQ_POLICY_FILE" disabled)"
   emit frequency_percent "$(number_value "$FREQ_PERCENT_FILE" 78)"
-  emit frequency_timeout_ms "$(number_value "$FREQ_TIMEOUT_FILE" 1500)"
   emit app_completion_timeout_ms "$(number_value "$APP_COMPLETION_TIMEOUT_FILE" 2000)"
+  emit visual_quiet_ms "$(number_value "$VISUAL_QUIET_TIMEOUT_FILE" 450)"
+  emit reassert_interval_ms "$(number_value "$POLICY_REASSERT_INTERVAL_FILE" 20)"
   emit launcher_placement "$(number_value "$THREAD_PLACEMENT_FILE" 2)"
   emit raster_placement "$(number_value "$THREAD_RASTER_PLACEMENT_FILE" 4)"
   emit resmgr_placement "$(number_value "$THREAD_RESMGR_PLACEMENT_FILE" 2)"
   emit fence_placement "$(number_value "$THREAD_FENCE_PLACEMENT_FILE" 2)"
   emit systemui_critical_placement "$(number_value "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2)"
   emit systemui_maintenance_placement "$(number_value "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6)"
-  emit systemui_timeout_ms "$(number_value "$SYSTEMUI_TIMEOUT_FILE" 2000)"
-  emit boost_duration_ms "$(number_value "$THREAD_BOOST_MS_FILE" 1)"
+  emit system_server_critical_placement "$(number_value "$SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE" 2)"
+  emit system_server_snapshot_placement "$(number_value "$SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE" 6)"
   emit uclamp_raster "$(number_value "$THREAD_RASTER_UCLAMP_FILE" 928)"
   emit uclamp_ui "$(number_value "$THREAD_UI_UCLAMP_FILE" 768)"
   emit uclamp_rust "$(number_value "$THREAD_RUST_UCLAMP_FILE" 512)"
   emit uclamp_resmgr "$(number_value "$THREAD_RESMGR_UCLAMP_FILE" 384)"
   emit mode "$mode"
-  emit epoch "$(number_value "$EPOCH_FILE" 0)"
-  emit transition_serial "$(number_value "$SERIAL_FILE" 0)"
+  emit transition_serial "$transition_serial"
+  emit coordinator_online "$coordinator_online"
+  emit policy_corrections "$corrections"
   emit daemon_pid "$daemon_pid"
   emit daemon_alive "$daemon_alive"
   emit launcher_pid "$launcher_pid"
@@ -162,17 +164,19 @@ EOF
   emit source_guard_active "$guard_active"
   emit source_guard_tasks "$guard_tasks"
   emit source_guard_reassertions "$guard_reassertions"
-  emit pending_pid "$pending_pid"
-  emit pending_uid "$pending_uid"
-  emit pending_name "$pending_name"
   print_frequency_status
   print_cluster_frequencies
 }
 
 print_device_info() {
-  local source_pid source_uid source_name
+  local source_pid source_uid source_name key value
   source_pid=""; source_uid=""; source_name=""
   [ -r "$SOURCE_FILE" ] && read -r source_pid source_uid source_name <"$SOURCE_FILE"
+  if [ -r "$SOURCE_GUARD_STATUS" ]; then
+    while IFS='=' read -r key value; do
+      [ "$key" = pid ] && source_pid="$value"
+    done <"$SOURCE_GUARD_STATUS"
+  fi
   emit device "$(getprop ro.product.device)"
   emit model "$(getprop ro.product.model)"
   emit os "$(getprop ro.mi.os.version.name)"
@@ -229,6 +233,20 @@ print_launcher_threads() {
     uclamp_max="$(awk '/^[[:space:]]*uclamp\.max[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
     [ -n "$uclamp_min" ] || uclamp_min=-; [ -n "$uclamp_max" ] || uclamp_max=-
     printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$tid" "$allowed" "$uclamp_min" "$uclamp_max"
+  done
+
+  local system_server_pid
+  system_server_pid="$(pidof system_server 2>/dev/null)"; system_server_pid=${system_server_pid%% *}
+  [ -n "$system_server_pid" ] && [ -d "/proc/$system_server_pid/task" ] || return 0
+  for task in /proc/"$system_server_pid"/task/*; do
+    [ -r "$task/comm" ] || continue
+    tid=${task##*/}; IFS= read -r name <"$task/comm"
+    case "$name" in android.anim|android.display|TaskSnapshotPers*) ;; *) continue ;; esac
+    allowed="$(read_allowed_list "$task/status")"
+    uclamp_min="$(awk '/^[[:space:]]*uclamp\.min[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    uclamp_max="$(awk '/^[[:space:]]*uclamp\.max[[:space:]]*:/ { print $3; exit }' "$task/sched" 2>/dev/null)"
+    [ -n "$uclamp_min" ] || uclamp_min=-; [ -n "$uclamp_max" ] || uclamp_max=-
+    printf 'system_server/%s\t%s\t%s\t%s\t%s\n' "$name" "$tid" "$allowed" "$uclamp_min" "$uclamp_max"
   done
 }
 

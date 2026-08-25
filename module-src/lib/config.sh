@@ -9,18 +9,16 @@ PID_FILE="$MODDIR/daemon.pid"
 ENABLE_FILE="$CONFIG_DIR/state"
 MODE_FILE="$MODDIR/launcher-mode"
 SERIAL_FILE="$MODDIR/transition.serial"
-EPOCH_FILE="$MODDIR/policy.epoch"
 SOURCE_FILE="$MODDIR/source-app"
-PENDING_SOURCE_FILE="$MODDIR/pending-source-app"
-GESTURE_FILE="$MODDIR/gesture.active"
-WALLPAPER_GROUP_FILE="$MODDIR/wallpaper-groups"
-MIMD_GROUP_FILE="$MODDIR/mimd-groups"
 
 SOURCE_RUNTIME_DIR=/dev/.hyperos4-launcher-scheduling
 SOURCE_GUARD="$MODDIR/bin/source-guard"
 SOURCE_GUARD_PID_FILE="$SOURCE_RUNTIME_DIR/source-guard.pid"
 SOURCE_GUARD_SOCKET="$SOURCE_RUNTIME_DIR/source-guard.sock"
 SOURCE_GUARD_STATUS="$SOURCE_RUNTIME_DIR/source-guard.status"
+COORDINATOR="$MODDIR/bin/launcher-logwatch"
+COORDINATOR_CONFIG="$SOURCE_RUNTIME_DIR/coordinator.config"
+COORDINATOR_STATUS="$SOURCE_RUNTIME_DIR/coordinator.status"
 SOURCE_CPUSET_DIR=/dev/cpuset/hyperos4-source
 SOURCE_CPUCTL_DIR=/dev/cpuctl/hyperos4-source
 SOURCE_POLICY_FILE="$CONFIG_DIR/source-policy.state"
@@ -30,24 +28,15 @@ AUX_POLICY_FILE="$CONFIG_DIR/aux-policy.state"
 
 FREQ_POLICY_FILE="$CONFIG_DIR/frequency-policy.state"
 FREQ_PERCENT_FILE="$CONFIG_DIR/frequency-limit-percent"
-FREQ_TIMEOUT_FILE="$CONFIG_DIR/frequency-timeout-ms"
-FREQ_STATE_FILE="$MODDIR/frequency-limit.active"
-FREQ_INFO_FILE="$MODDIR/frequency-info"
-FREQ_SERIAL_FILE="$MODDIR/frequency.serial"
 APP_COMPLETION_TIMEOUT_FILE="$CONFIG_DIR/app-completion-timeout-ms"
+VISUAL_QUIET_TIMEOUT_FILE="$CONFIG_DIR/visual-quiet-ms"
+POLICY_REASSERT_INTERVAL_FILE="$CONFIG_DIR/reassert-interval-ms"
 
-TASKSET=/system/bin/taskset
-UCLAMPSET=/system/bin/uclampset
-THREADCTL="$MODDIR/bin/launcher-threadctl"
-THREAD_SNAPSHOT_FILE="$MODDIR/launcher-thread-original"
-THREAD_LAUNCHER_PID_FILE="$MODDIR/launcher-thread-pid"
-THREAD_BOOST_SERIAL_FILE="$MODDIR/launcher-thread-boost.serial"
 THREAD_POLICY_STATE_FILE="$CONFIG_DIR/thread-policy.state"
 THREAD_PLACEMENT_FILE="$CONFIG_DIR/launcher-placement"
 THREAD_RASTER_PLACEMENT_FILE="$CONFIG_DIR/raster-placement"
 THREAD_RESMGR_PLACEMENT_FILE="$CONFIG_DIR/resmgr-placement"
 THREAD_FENCE_PLACEMENT_FILE="$CONFIG_DIR/fence-placement"
-THREAD_BOOST_MS_FILE="$CONFIG_DIR/boost-duration-ms"
 THREAD_RASTER_UCLAMP_FILE="$CONFIG_DIR/uclamp-raster"
 THREAD_UI_UCLAMP_FILE="$CONFIG_DIR/uclamp-ui"
 THREAD_RUST_UCLAMP_FILE="$CONFIG_DIR/uclamp-rust"
@@ -55,15 +44,12 @@ THREAD_RESMGR_UCLAMP_FILE="$CONFIG_DIR/uclamp-resmgr"
 THREAD_TOPOLOGY_FILE="$MODDIR/launcher-thread-topology"
 THREAD_TOPOLOGY_INPUT_FILE="$MODDIR/launcher-thread-topology.input"
 
-SYSTEMUI_THREADCTL="$MODDIR/bin/systemui-threadctl"
-SYSTEMUI_STATE_FILE="$MODDIR/systemui-thread-original"
-SYSTEMUI_CACHE_FILE="$MODDIR/systemui-thread-cache"
-SYSTEMUI_PID_FILE="$MODDIR/systemui-thread-pid"
-SYSTEMUI_SERIAL_FILE="$MODDIR/systemui-thread.serial"
 SYSTEMUI_POLICY_STATE_FILE="$CONFIG_DIR/systemui-policy.state"
 SYSTEMUI_CRITICAL_PLACEMENT_FILE="$CONFIG_DIR/systemui-critical-placement"
 SYSTEMUI_MAINTENANCE_PLACEMENT_FILE="$CONFIG_DIR/systemui-maintenance-placement"
-SYSTEMUI_TIMEOUT_FILE="$CONFIG_DIR/systemui-timeout-ms"
+SYSTEM_SERVER_POLICY_STATE_FILE="$CONFIG_DIR/system-server-policy.state"
+SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE="$CONFIG_DIR/system-server-critical-placement"
+SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE="$CONFIG_DIR/system-server-snapshot-placement"
 CONFIG_SCHEMA_FILE="$CONFIG_DIR/schema-version"
 SERVICE_LOCK_DIR="$CONFIG_DIR/service.lock"
 SERVICE_LOCK_OWNER="$SERVICE_LOCK_DIR/owner"
@@ -71,6 +57,8 @@ RESTART_LOCK_DIR="$CONFIG_DIR/restart.lock"
 RESTART_LOCK_OWNER="$RESTART_LOCK_DIR/owner"
 RELOAD_REQUEST_FILE="$CONFIG_DIR/reload.request"
 RELOAD_ACK_FILE="$MODDIR/reload.ack"
+RESTART_PHASE_CONTEXT_FILE="$CONFIG_DIR/runtime-restart-phase"
+RESTART_SOURCE_CONTEXT_FILE="$CONFIG_DIR/runtime-restart-source"
 
 write_default() {
   [ -f "$1" ] || printf '%s\n' "$2" >"$1"
@@ -95,13 +83,11 @@ migrate_legacy_configuration() {
   migrate_config_file aux-policy.state "$AUX_POLICY_FILE"
   migrate_config_file frequency-policy.state "$FREQ_POLICY_FILE"
   migrate_config_file frequency-limit-percent "$FREQ_PERCENT_FILE"
-  migrate_config_file frequency-timeout-ms "$FREQ_TIMEOUT_FILE"
   migrate_config_file thread-policy.state "$THREAD_POLICY_STATE_FILE"
   migrate_config_file launcher-placement "$THREAD_PLACEMENT_FILE"
   migrate_config_file raster-placement "$THREAD_RASTER_PLACEMENT_FILE"
   migrate_config_file resmgr-placement "$THREAD_RESMGR_PLACEMENT_FILE"
   migrate_config_file fence-placement "$THREAD_FENCE_PLACEMENT_FILE"
-  migrate_config_file boost-duration-ms "$THREAD_BOOST_MS_FILE"
   migrate_config_file uclamp-raster "$THREAD_RASTER_UCLAMP_FILE"
   migrate_config_file uclamp-ui "$THREAD_UI_UCLAMP_FILE"
   migrate_config_file uclamp-rust "$THREAD_RUST_UCLAMP_FILE"
@@ -109,18 +95,24 @@ migrate_legacy_configuration() {
   migrate_config_file systemui-policy.state "$SYSTEMUI_POLICY_STATE_FILE"
   migrate_config_file systemui-critical-placement "$SYSTEMUI_CRITICAL_PLACEMENT_FILE"
   migrate_config_file systemui-maintenance-placement "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE"
-  migrate_config_file systemui-timeout-ms "$SYSTEMUI_TIMEOUT_FILE"
+  migrate_config_file system-server-policy.state "$SYSTEM_SERVER_POLICY_STATE_FILE"
+  migrate_config_file system-server-critical-placement "$SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE"
+  migrate_config_file system-server-snapshot-placement "$SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE"
+  migrate_config_file visual-quiet-ms "$VISUAL_QUIET_TIMEOUT_FILE"
+  migrate_config_file reassert-interval-ms "$POLICY_REASSERT_INTERVAL_FILE"
 }
 
 migrate_placement_schema() {
   local value
   read_first_line "$CONFIG_SCHEMA_FILE"
-  [ "$READ_VALUE" = 2 ] && return 0
+  [ "$READ_VALUE" = 3 ] && return 0
   # In schema 1, fence-placement=1 meant little. All schema 2 placement
   # fields use one shared enum, where little=5.
   read_first_line "$THREAD_FENCE_PLACEMENT_FILE"; value="$READ_VALUE"
   [ "$value" = 1 ] && printf '5\n' >"$THREAD_FENCE_PLACEMENT_FILE"
-  printf '2\n' >"$CONFIG_SCHEMA_FILE"
+  rm -f "$CONFIG_DIR/frequency-timeout-ms" "$CONFIG_DIR/boost-duration-ms" \
+    "$CONFIG_DIR/systemui-timeout-ms"
+  printf '3\n' >"$CONFIG_SCHEMA_FILE"
 }
 
 read_first_line() {
@@ -168,18 +160,20 @@ initialize_configuration() {
   write_default "$AUX_POLICY_FILE" enabled
   write_default "$THREAD_POLICY_STATE_FILE" enabled
   write_default "$SYSTEMUI_POLICY_STATE_FILE" enabled
+  write_default "$SYSTEM_SERVER_POLICY_STATE_FILE" enabled
   write_default "$FREQ_POLICY_FILE" disabled
   write_default "$FREQ_PERCENT_FILE" 78
-  write_default "$FREQ_TIMEOUT_FILE" 1500
   write_default "$APP_COMPLETION_TIMEOUT_FILE" 2000
+  write_default "$VISUAL_QUIET_TIMEOUT_FILE" 450
+  write_default "$POLICY_REASSERT_INTERVAL_FILE" 20
   write_default "$THREAD_PLACEMENT_FILE" 2
   write_default "$THREAD_RASTER_PLACEMENT_FILE" 4
   write_default "$THREAD_RESMGR_PLACEMENT_FILE" 2
   write_default "$THREAD_FENCE_PLACEMENT_FILE" 2
   write_default "$SYSTEMUI_CRITICAL_PLACEMENT_FILE" 2
   write_default "$SYSTEMUI_MAINTENANCE_PLACEMENT_FILE" 6
-  write_default "$SYSTEMUI_TIMEOUT_FILE" 2000
-  write_default "$THREAD_BOOST_MS_FILE" 1
+  write_default "$SYSTEM_SERVER_CRITICAL_PLACEMENT_FILE" 2
+  write_default "$SYSTEM_SERVER_SNAPSHOT_PLACEMENT_FILE" 6
   write_default "$THREAD_RASTER_UCLAMP_FILE" 928
   write_default "$THREAD_UI_UCLAMP_FILE" 768
   write_default "$THREAD_RUST_UCLAMP_FILE" 512

@@ -167,7 +167,8 @@ acknowledge_reload() {
 }
 
 restart_daemon() {
-  local daemon_pid watcher_pid current_pid serial attempt result=1
+  local daemon_pid watcher_pid current_pid current_online key value
+  local serial attempt result=1
   promote_controller_process
   acquire_restart_lock || return 1
   [ "$RESTART_LOCK_ACQUIRED" = 1 ] || return 0
@@ -182,16 +183,18 @@ restart_daemon() {
   signal_daemon_reload "$daemon_pid"
   attempt=0
   while [ "$attempt" -lt 50 ]; do
-    read_first_line "$RELOAD_ACK_FILE"
-    if [ "$READ_VALUE" = "$serial" ] && find_active_service_pid; then
-      result=0
-      break
-    fi
-    if is_module_service_pid "$daemon_pid" && [ -n "$watcher_pid" ]; then
-      find_daemon_logwatch_pid "$daemon_pid"
-      current_pid="$ACTIVE_LOGWATCH_PID"
-      if [ -n "$current_pid" ] && [ "$current_pid" != "$watcher_pid" ]; then
-        # The daemon refreshes configuration before starting the next watcher.
+    if [ -d "/proc/$daemon_pid" ] && [ -n "$watcher_pid" ]; then
+      current_pid=""; current_online=0
+      if [ -r "$COORDINATOR_STATUS" ]; then
+        while IFS='=' read -r key value; do
+          case "$key" in
+            coordinator_pid) current_pid="$value" ;;
+            online) current_online="$value" ;;
+          esac
+        done <"$COORDINATOR_STATUS"
+      fi
+      if [ -n "$current_pid" ] && [ "$current_pid" != "$watcher_pid" ] &&
+         [ "$current_online" = 1 ]; then
         printf '%s\n' "$serial" >"$RELOAD_ACK_FILE"
         result=0
         break

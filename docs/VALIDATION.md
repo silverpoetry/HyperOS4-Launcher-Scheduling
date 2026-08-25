@@ -1,5 +1,15 @@
 # 验证记录
 
+## v8.0 原生协调器收口验证
+
+2026-08-25 在 Sheng 上验证最终原生运行时。五轮最近任务往返使逻辑序号精确增加 10，半程取消再增加 1；最终阶段均为 `app/none`，来源回到 `top-app`、允许 CPU `0-7`、nice `0`，守卫停止 trace 且没有完成定时器残留。
+
+同一卡片返回的采样结果为：入口稳定后来源位于 `/hyperos4-source`、CPU `0-2`、nice `19`；展开期间持续保持约束；视觉稳定后恢复 `top-app`、CPU `0-7`、nice `0`。
+
+跨卡片测试使用文件管理作为来源、设置作为目标。点击设置卡片后 50 ms，设置已由系统放入完整 CPU 集且未被守卫压制；150 ms 时守卫身份更新为设置但 `active=0`，文件管理已恢复 nice `0` 并留在 background。重复 resumed 日志没有再次压制设置。
+
+在最近任务稳定态执行配置热重载后，新协调器仍以 `phase=recents` 启动，来源保持 CPU `0-2`、nice `19`、trace active；随后返回应用正常恢复。阻塞日志读取器在连续配置重载中能够退出并重新订阅，没有残留旧协调器。
+
 ## v4.0 来源应用真实退避
 
 Sheng 上确认 Xiaomi `metis` 的 `minor_window_app` 是旧方案失效的根因。该节点等于来源应用 UID 时，`sched_setaffinity()` 返回成功后线程仍会被立即扩回 `0-7`；按 Joyose 小窗结束语义写入 `0` 后，同一线程可以稳定保持在 `/dev/cpuset/background/cpus` 定义的 `0-2`。
@@ -91,8 +101,8 @@ SurfaceFlinger/SystemUI 仍有少量正反向离群 jank，不能从这组样本
 ## 静态与构建检查
 
 - 所有模块 Shell 脚本通过 `sh -n`；
-- `launcher-logwatch` 和 `launcher-threadctl` 均由 NDK arm64 编译并保留 C 源码；
-- ZIP 根目录包含 KernelSU 脚本和三个 arm64 工具；
+- `launcher-logwatch` 协调器和 `source-guard` 均由 NDK arm64 编译并保留 C 源码；
+- ZIP 根目录包含 KernelSU 脚本和两个 arm64 工具；
 - 源码不包含 blur 阈值、固定 CPU 编号、频率锁或前台轮询；
 - `git diff --check` 通过；
 - 构建产物生成 SHA-256 文件。

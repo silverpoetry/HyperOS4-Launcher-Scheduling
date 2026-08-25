@@ -3,7 +3,8 @@ import { cpuList, frequency, modeLabel, serviceSummary } from "./model.js";
 
 export class StatusView {
   render(status) {
-    const online = status.daemon_alive === "1";
+    const online = status.daemon_alive === "1" &&
+      (status.coordinator_online === "1" || status.master_policy === "disabled");
     const summary = serviceSummary(status);
     const serviceChip = $("#serviceState");
     serviceChip.classList.toggle("online", online);

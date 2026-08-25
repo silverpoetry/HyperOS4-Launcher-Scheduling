@@ -5,6 +5,24 @@ source_guard_command() {
   "$SOURCE_GUARD" "$@"
 }
 
+snapshot_source_guard() {
+  local pid="" uid="" package="" armed=0 key value
+  [ -r "$SOURCE_GUARD_STATUS" ] || return 1
+  while IFS='=' read -r key value; do
+    case "$key" in
+      pid) pid="$value" ;;
+      uid) uid="$value" ;;
+      package) package="$value" ;;
+      armed) armed="$value" ;;
+    esac
+  done <"$SOURCE_GUARD_STATUS"
+  case "$pid:$uid" in *[!0-9:]*|:|*:|'') return 1 ;; esac
+  [ "$pid" -gt 1 ] && [ "$uid" -ge 1000 ] && [ "$armed" = 1 ] &&
+    [ -n "$package" ] || return 1
+  printf '%s %s %s\n' "$pid" "$uid" "$package" >"$SOURCE_FILE.tmp" || return 1
+  mv -f "$SOURCE_FILE.tmp" "$SOURCE_FILE"
+}
+
 drain_source_group() {
   local controller="$1" destination="$2" pid
   [ -r "$controller/cgroup.procs" ] || return 0

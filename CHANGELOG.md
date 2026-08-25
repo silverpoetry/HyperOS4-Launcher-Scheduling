@@ -1,5 +1,21 @@
 # Changelog
 
+## 8.0
+
+- 将 Launcher 生命周期、来源身份交接和线程策略合并到一个原生转场协调器。shell 不再逐事件解析日志、执行 `pidof`、启动控制程序或创建定时任务。
+- 来源守卫采用单调转场 ID。入口、目标交接、进程重建和完成定时器都经过同一身份事务，旧事件不能覆盖新来源。
+- 完成信号改为视觉稳定定时器。目标应用在卡片展开、WMShell leash 和末尾合成完成后才恢复 top-app，默认等待 450 ms。
+- Launcher、SystemUI 和 system_server 线程使用同一内存策略事务。活动转场内默认每 20 ms 复核缓存 TID，只重写被系统覆盖的 affinity/uclamp。
+- system_server 的 `android.anim`、`android.display` 和 `TaskSnapshotPersister` 纳入可配置分流；SurfaceFlinger 和 Binder 线程保持系统策略。
+- Launcher uclamp 覆盖完整视觉转场并恢复线程原值，删除 1 ms shell boost、SystemUI 独立超时和旧的批处理控制器。
+- 所有线程放置统一使用八类动态 CPU 集合，WebUI 增加 system_server、视觉稳定时间和亲和复核间隔设置。
+- 状态发布移到协调器后台线程；来源 nice 目标每次接管只读取一次。转场热路径不创建子进程，不同步写状态文件。
+- 日志读取改为按 Launcher PID 过滤的阻塞 liblog 流；配置重载和异常退出统一经过信号等待、事件屏障和策略恢复，不会留下半个转场。
+- Launcher resumed 在进入最近任务时只作为中间信号，不再把 `entering` 提前写成 `home`；缺少稳定日志时由入口兜底收敛为 `recents`。
+- 区分返回原卡片与打开另一张卡片：前者持续压制来源直到动画完成，后者恢复旧来源到 background 并只登记目标身份，目标应用从不进入来源控制组。
+- 来源线程快照增加 TID starttime 校验，避免短生命周期线程退出后因 TID 复用恢复到无关线程。
+- 服务重载保留最近任务中的来源身份和阶段；重复 Launcher 日志合并到同一事务，连续往返和半程取消不会遗留小核亲和或 nice。
+
 ## 7.2
 
 - Reconcile source placement at thread granularity when Android or a vendor task profile moves an individual worker out of the source cgroup.

@@ -86,6 +86,7 @@
                   <label class="setting-row"><span><strong>壁纸与 MIMD</strong><small>动画期间移入后台控制组</small></span><input id="auxToggle" type="checkbox" role="switch" /><i></i></label>
                   <label class="setting-row"><span><strong>桌面线程</strong><small>动态亲和与最低利用率</small></span><input id="launcherToggle" type="checkbox" role="switch" /><i></i></label>
                   <label class="setting-row"><span><strong>SystemUI 转场线程</strong><small>渲染链与维护线程分流</small></span><input id="systemuiToggle" type="checkbox" role="switch" /><i></i></label>
+                  <label class="setting-row"><span><strong>系统转场线程</strong><small>动画、显示与任务快照分流</small></span><input id="systemServerToggle" type="checkbox" role="switch" /><i></i></label>
                 </div>
               </article>
               <article class="card">
@@ -94,6 +95,8 @@
                   <label class="field wide"><span>退避核心</span><select id="sourcePlacement" data-placement="source"></select></label>
                   <label class="field wide"><span>nice 压制目标</span><div><input id="sourceNiceSuppression" type="number" min="0" max="40" step="1" /><em>/40</em></div></label>
                   <label class="field wide"><span>应用转场完成超时</span><div><input id="appCompletionTimeout" type="number" min="500" max="5000" step="100" /><em>ms</em></div></label>
+                  <label class="field"><span>视觉稳定等待</span><div><input id="visualQuiet" type="number" min="200" max="1000" step="10" /><em>ms</em></div></label>
+                  <label class="field"><span>亲和复核间隔</span><div><input id="reassertInterval" type="number" min="10" max="100" step="5" /><em>ms</em></div></label>
                 </div>
               </article>
               <article class="card">
@@ -103,7 +106,6 @@
                   <label class="field wide"><span>界面与 Rust 线程</span><select id="launcherPlacement" data-placement="all"></select></label>
                   <label class="field wide"><span>资源管理线程</span><select id="resmgrPlacement" data-placement="all"></select></label>
                   <label class="field wide"><span>Fence 等待线程</span><select id="fencePlacement" data-placement="all"></select></label>
-                  <label class="field"><span>提升持续时间</span><div><input id="boostDuration" type="number" min="1" max="1000" step="1" /><em>ms</em></div></label>
                   <label class="field"><span>Raster 最低利用率</span><input id="uclampRaster" type="number" min="0" max="1024" step="16" /></label>
                   <label class="field"><span>界面最低利用率</span><input id="uclampUi" type="number" min="0" max="1024" step="16" /></label>
                   <label class="field"><span>Rust 最低利用率</span><input id="uclampRust" type="number" min="0" max="1024" step="16" /></label>
@@ -115,7 +117,13 @@
                 <div class="field-grid">
                   <label class="field wide"><span>主线程、渲染线程与 WMShell</span><select id="systemuiCriticalPlacement" data-placement="all"></select></label>
                   <label class="field wide"><span>GC、终结器与 JIT</span><select id="systemuiMaintenancePlacement" data-placement="all"></select></label>
-                  <label class="field wide"><span>结束事件缺失兜底</span><div><input id="systemuiTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
+                </div>
+              </article>
+              <article class="card">
+                <header class="card-header"><h2>系统转场线程</h2></header>
+                <div class="field-grid">
+                  <label class="field wide"><span>动画与显示线程</span><select id="systemServerCriticalPlacement" data-placement="all"></select></label>
+                  <label class="field wide"><span>任务快照持久化线程</span><select id="systemServerSnapshotPlacement" data-placement="all"></select></label>
                 </div>
               </article>
               <article class="card experimental-card">
@@ -125,7 +133,6 @@
                 </div>
                 <div class="field-grid">
                   <label class="field"><span>硬件上限比例</span><div><input id="frequencyPercent" type="number" min="40" max="100" step="1" /><em>%</em></div></label>
-                  <label class="field"><span>超时恢复</span><div><input id="frequencyTimeout" type="number" min="300" max="5000" step="100" /><em>ms</em></div></label>
                 </div>
               </article>
             </div>
