@@ -1,6 +1,6 @@
 id=hyperos4_recents_source_app_yield
 name=HyperOS 4 Launcher Scheduling
-version=7.1.1
-versionCode=711
+version=7.2
+versionCode=720
 author=silverpoetry
 description=HyperOS 4 transition scheduling with dynamic topology and an event-driven source cgroup guard.

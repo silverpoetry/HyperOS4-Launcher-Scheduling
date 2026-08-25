@@ -201,11 +201,16 @@ if ($sourceGuard -notmatch 'cgroup_attach_task' -or
     $sourceGuard -notmatch 'PERF_TYPE_TRACEPOINT' -or
     $sourceGuard -notmatch 'SOURCE_CPUSET_PROCS' -or
     $sourceGuard -notmatch 'SOURCE_CPUCTL_PROCS' -or
-    $sourceGuard -notmatch 'reassert_source\(\)' -or
+    $sourceGuard -notmatch 'reassert_source\(pid_t tid\)' -or
     $sourceGuard -notmatch 'SOCK_DGRAM' -or
     $sourceGuard -notmatch 'attribute.disabled = 1' -or
     $sourceGuard -notmatch 'starttime' -or
-    $sourceGuard -notmatch 'TRACE_FORMAT_PATH') {
+    $sourceGuard -notmatch 'TRACE_FORMAT_PATH' -or
+    $sourceGuard -notmatch 'SOURCE_CPUSET_TASKS' -or
+    $sourceGuard -notmatch 'SOURCE_CPUCTL_TASKS' -or
+    $sourceGuard -notmatch 'task_belongs_to_source' -or
+    $sourceGuard -notmatch 'trace_destination_is_source' -or
+    $sourceGuard -match 'process_in_source_groups\(state\.pid\)') {
     throw 'The resident source guard must own cgroup placement and kernel attach events'
 }
 if ($sourceGuard -match 'SAF[1-4]|source_affinityctl|SOURCE_AFFINITY' -or

@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.2
+
+- Reconcile source placement at thread granularity when Android or a vendor task profile moves an individual worker out of the source cgroup.
+- Index cached source TIDs in memory and validate previously unseen TIDs against the open source task directory without rescanning the process.
+- Reapply the configured nice target to a displaced or newly observed source thread in the same native correction.
+- Ignore the guard's own cgroup attach events by reading the tracepoint destination path, preventing self-generated correction loops.
+- Remove status-file and stdout writes from the kernel-event hot path; live corrections only update an in-memory counter.
+
 ## 7.1.1
 
 - Locate the log listener through `pidof` plus verified parent PID, without depending on the optional procfs children node or the truncated task name.

@@ -26,6 +26,8 @@
 #define TRACE_FORMAT_PATH "/sys/kernel/tracing/events/cgroup/cgroup_attach_task/format"
 #define SOURCE_CPUSET_PROCS "/dev/cpuset/hyperos4-source/cgroup.procs"
 #define SOURCE_CPUCTL_PROCS "/dev/cpuctl/hyperos4-source/cgroup.procs"
+#define SOURCE_CPUSET_TASKS "/dev/cpuset/hyperos4-source/tasks"
+#define SOURCE_CPUCTL_TASKS "/dev/cpuctl/hyperos4-source/tasks"
 #define TOP_CPUSET_PROCS "/dev/cpuset/top-app/cgroup.procs"
 #define TOP_CPUCTL_PROCS "/dev/cpuctl/top-app/cgroup.procs"
 #define BACKGROUND_CPUSET_PROCS "/dev/cpuset/background/cgroup.procs"
@@ -34,6 +36,7 @@
 #define MINOR_WINDOW_NODE "/sys/module/metis/parameters/minor_window_app"
 #define SOURCE_GROUP "/hyperos4-source"
 #define MAX_TASKS 4096
+#define TASK_HASH_SIZE 8192
 #define PERF_PAGES 8
 
 struct task_nice {
@@ -52,6 +55,7 @@ struct guard_state {
     long original_minor;
     unsigned long reassertions;
     struct task_nice tasks[MAX_TASKS];
+    uint16_t task_slots[TASK_HASH_SIZE];
     size_t task_count;
 };
 
@@ -68,6 +72,8 @@ static struct perf_ring trace_rings[64];
 static int trace_ring_count;
 static int trace_enabled;
 static size_t trace_pid_offset;
+static size_t trace_path_loc_offset;
+static int task_directory_fd = -1;
 
 static int set_trace_enabled(int enabled);
 
@@ -124,6 +130,38 @@ static int write_pid(const char *path, pid_t pid) {
     return write_number(path, (long)pid);
 }
 
+static void close_task_directory(void) {
+    if (task_directory_fd >= 0) close(task_directory_fd);
+    task_directory_fd = -1;
+}
+
+static void reset_guard_state(void) {
+    close_task_directory();
+    memset(&state, 0, sizeof(state));
+}
+
+static int open_task_directory(pid_t pid) {
+    char path[64];
+    close_task_directory();
+    snprintf(path, sizeof(path), "/proc/%d/task", pid);
+    task_directory_fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    return task_directory_fd >= 0 ? 0 : -1;
+}
+
+static int task_belongs_to_source(pid_t tid) {
+    char name[32];
+    struct stat metadata;
+    if (task_directory_fd >= 0) {
+        snprintf(name, sizeof(name), "%d", tid);
+        return fstatat(task_directory_fd, name, &metadata, 0) == 0;
+    }
+    {
+        char path[96];
+        snprintf(path, sizeof(path), "/proc/%d/task/%d", state.pid, tid);
+        return stat(path, &metadata) == 0;
+    }
+}
+
 static int read_process_identity(pid_t pid, uid_t *uid,
                                  unsigned long long *starttime) {
     char path[64];
@@ -169,9 +207,50 @@ static int suppression_target(void) {
     return level >= 40 ? 19 : (int)level - 20;
 }
 
+static size_t task_hash(pid_t tid) {
+    uint32_t value = (uint32_t)tid;
+    value ^= value >> 16;
+    value *= 0x7feb352dU;
+    value ^= value >> 15;
+    return (size_t)value & (TASK_HASH_SIZE - 1);
+}
+
 static struct task_nice *find_task(pid_t tid) {
-    for (size_t i = 0; i < state.task_count; ++i) {
-        if (state.tasks[i].tid == tid) return &state.tasks[i];
+    size_t slot = task_hash(tid);
+    for (size_t probe = 0; probe < TASK_HASH_SIZE; ++probe) {
+        uint16_t stored = state.task_slots[slot];
+        if (stored == 0) return NULL;
+        if (state.tasks[stored - 1].tid == tid) return &state.tasks[stored - 1];
+        slot = (slot + 1) & (TASK_HASH_SIZE - 1);
+    }
+    return NULL;
+}
+
+static struct task_nice *register_task(pid_t tid) {
+    struct task_nice *record = find_task(tid);
+    int target = suppression_target();
+    size_t slot;
+    int original;
+    if (record != NULL) {
+        record->applied = record->original < target ? target : record->original;
+        return record;
+    }
+    if (state.task_count >= MAX_TASKS) return NULL;
+    errno = 0;
+    original = getpriority(PRIO_PROCESS, (id_t)tid);
+    if (errno != 0) return NULL;
+    record = &state.tasks[state.task_count];
+    record->tid = tid;
+    record->original = original;
+    record->applied = original < target ? target : original;
+    slot = task_hash(tid);
+    for (size_t probe = 0; probe < TASK_HASH_SIZE; ++probe) {
+        if (state.task_slots[slot] == 0) {
+            state.task_slots[slot] = (uint16_t)(state.task_count + 1);
+            state.task_count++;
+            return record;
+        }
+        slot = (slot + 1) & (TASK_HASH_SIZE - 1);
     }
     return NULL;
 }
@@ -180,44 +259,37 @@ static int refresh_tasks(void) {
     char path[64];
     DIR *directory;
     struct dirent *entry;
-    int target = suppression_target();
     snprintf(path, sizeof(path), "/proc/%d/task", state.pid);
     directory = opendir(path);
     if (directory == NULL) return -1;
     while ((entry = readdir(directory)) != NULL) {
         char *end;
         long parsed;
-        int original;
         struct task_nice *record;
         if (entry->d_name[0] < '0' || entry->d_name[0] > '9') continue;
         parsed = strtol(entry->d_name, &end, 10);
         if (*end != '\0' || parsed <= 1 || parsed > INT32_MAX) continue;
-        record = find_task((pid_t)parsed);
-        if (record != NULL) {
-            record->applied = record->original < target ? target : record->original;
-            continue;
-        }
-        if (state.task_count >= MAX_TASKS) {
+        record = register_task((pid_t)parsed);
+        if (record == NULL && state.task_count >= MAX_TASKS) {
             closedir(directory);
             return -1;
         }
-        errno = 0;
-        original = getpriority(PRIO_PROCESS, (id_t)parsed);
-        if (errno != 0) continue;
-        record = &state.tasks[state.task_count++];
-        record->tid = (pid_t)parsed;
-        record->original = original;
-        record->applied = original < target ? target : original;
     }
     closedir(directory);
     return state.task_count > 0 ? 0 : -1;
 }
 
+static int apply_task_nice(struct task_nice *record) {
+    int current;
+    errno = 0;
+    current = getpriority(PRIO_PROCESS, (id_t)record->tid);
+    if (errno != 0 || current == record->applied) return 0;
+    return setpriority(PRIO_PROCESS, (id_t)record->tid, record->applied) == 0 ? 1 : 0;
+}
+
 static void apply_nice(void) {
     for (size_t i = 0; i < state.task_count; ++i) {
-        if (state.tasks[i].applied != state.tasks[i].original)
-            (void)setpriority(PRIO_PROCESS, (id_t)state.tasks[i].tid,
-                              state.tasks[i].applied);
+        (void)apply_task_nice(&state.tasks[i]);
     }
 }
 
@@ -245,14 +317,14 @@ static void publish_status(const char *reason) {
     if (fclose(file) == 0) (void)rename(temporary, STATUS_PATH);
 }
 
-static int process_in_source_groups(pid_t pid) {
-    char path[64];
+static int task_in_source_groups(pid_t tid) {
+    char path[96];
     char text[4096];
     int cpuset = 0;
     int cpu = 0;
     char *line;
-    snprintf(path, sizeof(path), "/proc/%d/cgroup", pid);
-    if (read_text(path, text, sizeof(text)) != 0) return 0;
+    snprintf(path, sizeof(path), "/proc/%d/task/%d/cgroup", state.pid, tid);
+    if (read_text(path, text, sizeof(text)) != 0) return -1;
     line = strtok(text, "\n");
     while (line != NULL) {
         if (strstr(line, ":cpuset:" SOURCE_GROUP) != NULL) cpuset = 1;
@@ -265,6 +337,12 @@ static int process_in_source_groups(pid_t pid) {
 static int move_source_group(pid_t pid) {
     int cpuset_ok = write_pid(SOURCE_CPUSET_PROCS, pid) == 0;
     int cpuctl_ok = write_pid(SOURCE_CPUCTL_PROCS, pid) == 0;
+    return cpuset_ok && cpuctl_ok ? 0 : -1;
+}
+
+static int move_source_task(pid_t tid) {
+    int cpuset_ok = write_pid(SOURCE_CPUSET_TASKS, tid) == 0;
+    int cpuctl_ok = write_pid(SOURCE_CPUCTL_TASKS, tid) == 0;
     return cpuset_ok && cpuctl_ok ? 0 : -1;
 }
 
@@ -294,13 +372,16 @@ static int arm_source(pid_t pid, uid_t uid) {
     }
     if (!state.armed || state.pid != pid || state.uid != uid ||
         state.starttime != starttime) {
-        memset(&state, 0, sizeof(state));
+        reset_guard_state();
         state.pid = pid;
         state.uid = uid;
         state.starttime = starttime;
         state.original_minor = read_number(MINOR_WINDOW_NODE);
         state.original_minor_valid = state.original_minor >= 0;
         state.armed = 1;
+        if (open_task_directory(pid) != 0) return -1;
+    } else if (task_directory_fd < 0 && open_task_directory(pid) != 0) {
+        return -1;
     }
     (void)refresh_tasks();
     publish_status("armed");
@@ -334,22 +415,40 @@ static int activate_source(pid_t pid, uid_t uid, const char *reason) {
     return 0;
 }
 
-static void reassert_source(void) {
-    long long started;
+static void reassert_source(pid_t tid) {
+    int group_state;
+    int corrected = 0;
+    struct task_nice *record;
     if (!state.active) return;
     if (!source_identity_matches()) {
         state.active = 0;
         (void)set_trace_enabled(0);
-        memset(&state, 0, sizeof(state));
+        reset_guard_state();
         publish_status("source-identity-ended");
         return;
     }
-    if (process_in_source_groups(state.pid)) return;
-    started = monotonic_us();
-    if (move_source_group(state.pid) == 0) {
+    record = find_task(tid);
+    if (record == NULL) {
+        if (!task_belongs_to_source(tid)) return;
+        record = register_task(tid);
+        if (record == NULL) return;
+    }
+    group_state = task_in_source_groups(tid);
+    if (group_state < 0) return;
+    if (group_state == 0) {
+        if (tid == state.pid) {
+            (void)refresh_tasks();
+            if (move_source_group(state.pid) == 0) {
+                apply_nice();
+                corrected = 1;
+            }
+        } else if (move_source_task(tid) == 0) {
+            corrected = 1;
+        }
+    }
+    if (apply_task_nice(record) > 0) corrected = 1;
+    if (corrected) {
         state.reassertions++;
-        publish_status("kernel-cgroup-attach");
-        log_line("reassert", monotonic_us() - started);
     }
 }
 
@@ -372,7 +471,7 @@ static int release_source(pid_t pid, int top_app, int preserve_minor) {
     publish_status(top_app ? "restored-top" : "released-background");
     log_line(top_app ? "restore-top" : "release-background",
              monotonic_us() - started);
-    memset(&state, 0, sizeof(state));
+    reset_guard_state();
     publish_status("idle");
     return 0;
 }
@@ -423,9 +522,11 @@ static int perf_event_open(struct perf_event_attr *attribute, int cpu) {
                         PERF_FLAG_FD_CLOEXEC);
 }
 
-static int read_trace_pid_offset(size_t *offset) {
+static int read_trace_offsets(size_t *pid_offset, size_t *path_loc_offset) {
     char text[8192];
     char *line;
+    int found_pid = 0;
+    int found_path = 0;
     if (read_text(TRACE_FORMAT_PATH, text, sizeof(text)) != 0) return -1;
     line = strtok(text, "\n");
     while (line != NULL) {
@@ -435,13 +536,35 @@ static int read_trace_pid_offset(size_t *offset) {
             char *end;
             unsigned long parsed = strtoul(offset_text + 7, &end, 10);
             if (end != offset_text + 7 && parsed <= 4096) {
-                *offset = (size_t)parsed;
-                return 0;
+                *pid_offset = (size_t)parsed;
+                found_pid = 1;
+            }
+        }
+        if (field != NULL && offset_text != NULL && strstr(field, " dst_path;") != NULL) {
+            char *end;
+            unsigned long parsed = strtoul(offset_text + 7, &end, 10);
+            if (end != offset_text + 7 && parsed <= 4096) {
+                *path_loc_offset = (size_t)parsed;
+                found_path = 1;
             }
         }
         line = strtok(NULL, "\n");
     }
-    return -1;
+    return found_pid && found_path ? 0 : -1;
+}
+
+static int trace_destination_is_source(const unsigned char *raw, size_t raw_size) {
+    uint32_t location;
+    size_t offset;
+    size_t length;
+    size_t expected = strlen(SOURCE_GROUP);
+    if (trace_path_loc_offset + sizeof(location) > raw_size) return 0;
+    memcpy(&location, raw + trace_path_loc_offset, sizeof(location));
+    offset = location & 0xffffU;
+    length = location >> 16;
+    if (length == 0 || offset > raw_size || length > raw_size - offset) return 0;
+    if (length > 0 && raw[offset + length - 1] == '\0') length--;
+    return length == expected && memcmp(raw + offset, SOURCE_GROUP, expected) == 0;
 }
 
 static int set_trace_enabled(int enabled) {
@@ -469,7 +592,7 @@ static int open_trace_rings(struct perf_ring *rings, int maximum) {
     long cpus = sysconf(_SC_NPROCESSORS_CONF);
     int count = 0;
     if (trace_id <= 0 || page_size <= 0 || cpus <= 0 ||
-        read_trace_pid_offset(&trace_pid_offset) != 0) return -1;
+        read_trace_offsets(&trace_pid_offset, &trace_path_loc_offset) != 0) return -1;
     if (cpus > maximum) cpus = maximum;
     for (int cpu = 0; cpu < cpus; ++cpu) {
         struct perf_event_attr attribute;
@@ -527,15 +650,16 @@ static void drain_ring(struct perf_ring *ring) {
         copy_ring_bytes(ring, tail, record, header.size);
         if (header.type == PERF_RECORD_SAMPLE && header.size >= 12) {
             uint32_t raw_size;
+            unsigned char *raw = record + sizeof(header) + sizeof(raw_size);
             memcpy(&raw_size, record + sizeof(header), sizeof(raw_size));
             if (raw_size >= trace_pid_offset + sizeof(int) &&
                 sizeof(header) + sizeof(raw_size) + raw_size <= header.size) {
                 int event_pid;
-                memcpy(&event_pid, record + sizeof(header) + sizeof(raw_size) + trace_pid_offset,
-                       sizeof(event_pid));
-                if (state.active &&
-                    (event_pid == state.pid || find_task((pid_t)event_pid) != NULL))
-                    reassert_source();
+                memcpy(&event_pid, raw + trace_pid_offset, sizeof(event_pid));
+                if (state.active && !trace_destination_is_source(raw, raw_size) &&
+                    (event_pid == state.pid || find_task((pid_t)event_pid) != NULL ||
+                     task_belongs_to_source((pid_t)event_pid)))
+                    reassert_source((pid_t)event_pid);
             }
         }
         tail += header.size;

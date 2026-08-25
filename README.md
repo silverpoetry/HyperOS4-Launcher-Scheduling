@@ -88,13 +88,13 @@ Sheng 在 policy0 固定 307200 kHz 的五轮 A/B 中，FenceWait 从 CPU0-2 移
 
 `module-src/bin/launcher-threadctl` 从 `native/launcher_threadctl.c` 构建。它在一个进程内枚举目标 TID，并直接批量设置 affinity/uclamp。旧 shell 实现一次动画需要启动约二十个工具进程，实测约 0.8 秒；原生批处理 apply/reset 各约 10 ms。
 
-`module-src/bin/source-guard` 从 `native/source_guard.c` 构建。它常驻内存，维护唯一的来源事务，并订阅内核 `cgroup_attach_task` tracepoint。ActivityManager 把受保护 PID 改回 `top-app` 时，守卫在内核迁移事件到达后立即把整个进程移回专用组。tracepoint 只在 active 事务中启用，3.3 实机空闲 10 秒的守卫 CPU tick 增量为 0。257 线程合成进程的 arm 为 1.701 ms、activate 为 5.684 ms；真实 83 线程 Settings 的系统覆盖纠正为 663 us。cgroup 硬限制在入口监听器的两次 PID 写入后已经生效。
+`module-src/bin/source-guard` 从 `native/source_guard.c` 构建。它常驻内存，维护唯一的来源事务，并订阅内核 `cgroup_attach_task` tracepoint。入口仍以一次 `cgroup.procs` 写入移动整个来源进程；之后 Android 或厂商 task profile 单独移动某个工作线程时，守卫根据事件携带的 TID 直接纠正该线程的 cpuset、cpu cgroup 与 nice。已知 TID 使用内存索引，未知 TID 只在已打开的来源 task 目录中验证一次，不重新扫描整个进程。守卫解析事件目标路径并忽略自己写回产生的 attach 事件，热路径不写状态文件或标准输出。tracepoint 只在 active 事务中启用，稳定应用阶段不处理系统其它 cgroup 事件。
 
 `module-src/bin/systemui-threadctl` 从 `native/systemui_threadctl.c` 构建。它只枚举两类明确命名的 SystemUI 线程，原子记录亲和快照、应用转场放置并在结束时恢复，不轮询进程或帧状态。
 
 ## Xiaomi 标记回写与 ActivityManager
 
-来源应用位于 `/dev/cpuset/hyperos4-source` 和 `/dev/cpuctl/hyperos4-source`。cpuset 提供硬 CPU 边界，`cpu.shares` 提供进程级退让，新线程自动继承。ActivityManager 的覆盖由内核 attach 事件直接驱动纠正；模块不轮询进程或 SurfaceFlinger，也不依赖较晚的 `activityResumed` 日志发现覆盖。稳定应用阶段关闭 tracepoint，不消费系统其它 cgroup 事件。
+来源应用位于 `/dev/cpuset/hyperos4-source` 和 `/dev/cpuctl/hyperos4-source`。cpuset 提供硬 CPU 边界，`cpu.shares` 提供进程级退让，新线程自动继承。进程级覆盖通过 `cgroup.procs` 纠正，逐线程覆盖通过对应控制器的 `tasks` 节点纠正；模块不轮询进程或 SurfaceFlinger，也不依赖较晚的 `activityResumed` 日志发现覆盖。稳定应用阶段关闭 tracepoint，不消费系统其它 cgroup 事件。
 
 Joyose 在应用恢复时可能重新写入 `minor_window_app`。守卫激活时清除当前来源 UID 标记，恢复前保存在内存中的原值；nice 快照同样只存在于常驻进程内存。
 
